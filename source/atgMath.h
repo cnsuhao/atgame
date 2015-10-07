@@ -935,14 +935,14 @@ inline bool operator != (const Vec3& v1, const Vec3& v2)
     return !FloatEqualArray(v1.m, v2.m, 3);
 }
 
-extern const Vec3 Vec3One;
-extern const Vec3 Vec3Zero;
-extern const Vec3 Vec3Left;
-extern const Vec3 Vec3Right;
-extern const Vec3 Vec3Up;
-extern const Vec3 Vec3Down;
-extern const Vec3 Vec3Forward;
-extern const Vec3 Vec3Back;
+extern const Vec3 Vec3One;      //{ 1.0f,  1.0f,  1.0f }
+extern const Vec3 Vec3Zero;     //{ 0.0f,  0.0f,  0.0f }
+extern const Vec3 Vec3Left;     //{-1.0f,  0.0f,  0.0f }
+extern const Vec3 Vec3Right;    //{ 1.0f,  0.0f,  0.0f }
+extern const Vec3 Vec3Up;       //{ 0.0f,  1.0f,  0.0f }
+extern const Vec3 Vec3Down;     //{ 0.0f, -1.0f,  0.0f }
+extern const Vec3 Vec3Forward;  //{ 0.0f,  0.0f,  1.0f }
+extern const Vec3 Vec3Back;     //{ 0.0f,  0.0f, -1.0f }
 
 typedef struct Vec4_t
 {

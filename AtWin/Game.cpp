@@ -538,6 +538,8 @@ bool Game::OnInitialize()
     main_bar_resume->addChildWindow(main_bar_resume);
     sheet->addChildWindow(main_bar_resume);
     
+    LoadConfig();
+
     return true;
 }
 
@@ -774,9 +776,16 @@ void Game::OnKeyScanDown(Key::Scan keyscan)
 	atgGame::OnKeyScanDown(keyscan);
 }
 
+static float g_points[3*1000];
+
 void Game::LoadConfig()
 {
-
+    for (int i = 0; i < 1000; i+=3)
+    {
+        g_points[3*i]       = Random(-500.0f, 500.f);
+        g_points[3*i + 1]   = Random(-500.0f, 500.f);
+        g_points[3*i + 2]   = Random(-500.0f, 500.f);
+    }
 }
 
 void Game::DrawAxis()
@@ -835,6 +844,23 @@ void Game::DrawAxis()
     f.BuildFrustumPlanes(camera.GetView().m,camera.GetProj().m);
     f.DebugRender();
 
+    float point[3];
+    for (int i = 0; i < 1000; i+=3)
+    {
+        point[0] = g_points[3*i];
+        point[1] = g_points[3*i+1];
+        point[2] = g_points[3*i+2];
+
+        if (f.IsPointInFrustum(point))
+        {
+            glPointSize(5);
+            g_Renderer->DrawPoint(point, Vec3Up.m);
+        }
+        else
+        {
+            //g_Renderer->DrawPoint(point, Vec3Right.m);
+        }
+    }
 }
 
 struct Point3
