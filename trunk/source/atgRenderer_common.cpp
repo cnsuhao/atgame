@@ -113,6 +113,12 @@ bool atgRenderer::DrawPoint( const float center[3], const float color[3] )
         {
             return false;
         }
+
+        if (pColorPass)
+        {
+            static_cast<atgShaderSolidColor*>(pColorPass)->SetSolidColor(
+                Vec3(color[0], color[1], color[2]));
+        }
     }
     // create vertex buffer
     if (!pVB)
