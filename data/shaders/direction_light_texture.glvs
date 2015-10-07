@@ -1,0 +1,45 @@
+////////////////////////////////////////
+// uniform variable
+////////////////////////////////////////
+uniform mat4 world_view_projection_matrix;
+uniform mat4 world_inverse_transpose_matrix;
+
+attribute vec3 vs_vertexPosition;
+attribute vec3 vs_vertexNormal;
+attribute vec2 vs_textureCoord;
+
+varying vec3 ps_vertex_normal;
+varying vec2 ps_texture_coord;
+
+// float3 light_position[max_number_light];
+// float3 light_color[max_number_light];
+// float  light_number_using;
+
+struct directional_light
+{
+    vec3 direction;
+    vec4 ambient_color;
+    vec4 diffuse_color;
+    vec4 specular_color;
+};
+
+struct material_properties
+{
+    vec4 ambient_color;
+    vec4 diffuse_color;
+    vec4 specular_color;
+    vec4 specular_exponent;
+};
+
+
+////////////////////////////////////////
+// Vertex Shader Function
+////////////////////////////////////////
+void main()
+{
+	gl_Position = world_view_projection_matrix * vec4(vs_vertexPosition, 1.0);
+    
+    ps_vertex_normal = (world_inverse_transpose_matrix * vec4(vs_vertexNormal, 1.0)).xyz;
+    
+    ps_texture_coord = vs_textureCoord;
+}

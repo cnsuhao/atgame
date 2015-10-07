@@ -1,0 +1,21 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+varying float ps_reflectivity;
+varying float ps_shinpercent;
+varying float ps_shininess;
+
+varying vec3 ps_diffuse;
+varying vec3 ps_emissive;
+varying vec3 ps_ambient;
+varying vec3 ps_specular;
+
+
+////////////////////////////////////////
+// Fragment Shader Function
+////////////////////////////////////////
+void main()
+{
+	gl_FragColor = vec4(1,0,0,1);
+}

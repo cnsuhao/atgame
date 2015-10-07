@@ -1,0 +1,48 @@
+////////////////////////////////////////
+// uniform variable
+////////////////////////////////////////
+
+uniform vec3 material_diffuse_color;
+uniform vec3 material_ambient_color;
+uniform vec3 material_emissive_color;
+
+uniform vec3 global_ambient_color;
+
+uniform vec3 light_position;
+uniform vec3 light_color;
+
+uniform sampler2D matrial_diffsue_sampler;
+
+varying vec3 ps_vertex_normal;
+varying vec2 ps_texture_coord;
+
+////////////////////////////////////////
+float half_lambert( vec3 normalDir, 
+					vec3 lightDir)
+{
+	// Half-Lambert漫反射
+	float NdotL = dot(normalDir, lightDir);
+	return max(0.0, (NdotL * 0.5 + 0.5));
+}
+
+////////////////////////////////////////
+// Fragment Shader Function
+////////////////////////////////////////
+void main()
+{
+    // 光照方程 surface_colour = emissive + ambient + diffuse + specular
+
+    vec4 ambient_color = vec4(global_ambient_color * material_ambient_color, 1.0);
+    
+    vec3 vertex_normal = normalize(ps_vertex_normal);
+    
+    vec3 light_dirction = normalize(light_position);
+
+    float NdotL = half_lambert(vertex_normal, light_dirction);
+
+    vec4 diffuse_color = texture2D(matrial_diffsue_sampler, ps_texture_coord) * vec4(material_diffuse_color * light_color, 1.0) * NdotL;
+    
+    vec4 emissive_color = vec4(material_emissive_color, 1.0);
+    
+    gl_FragColor = ambient_color + diffuse_color + emissive_color;
+}

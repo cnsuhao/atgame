@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "directxBase", "directxBase\directxBase.vcxproj", "{130011A7-B9B3-4F35-B866-2267B6EDFE2C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openglBase", "openglBase\openglBase.vcxproj", "{B243DB0C-8704-4802-A557-B1557BF4B998}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dierctx_Bone", "dierctx_Bone\dierctx_Bone.vcxproj", "{F0BE1AAF-F09D-43CE-B087-AD735FE69B42}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opengl_texture", "opengl_texture\opengl_texture.vcxproj", "{E354A29C-0E45-4B2B-A171-8FDF854613AE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "directx_texture", "directx_texture\directx_texture.vcxproj", "{ECD4387B-9A94-4499-8517-5113790B6A7A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{130011A7-B9B3-4F35-B866-2267B6EDFE2C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{130011A7-B9B3-4F35-B866-2267B6EDFE2C}.Debug|Win32.Build.0 = Debug|Win32
+		{130011A7-B9B3-4F35-B866-2267B6EDFE2C}.Release|Win32.ActiveCfg = Release|Win32
+		{130011A7-B9B3-4F35-B866-2267B6EDFE2C}.Release|Win32.Build.0 = Release|Win32
+		{B243DB0C-8704-4802-A557-B1557BF4B998}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B243DB0C-8704-4802-A557-B1557BF4B998}.Debug|Win32.Build.0 = Debug|Win32
+		{B243DB0C-8704-4802-A557-B1557BF4B998}.Release|Win32.ActiveCfg = Release|Win32
+		{B243DB0C-8704-4802-A557-B1557BF4B998}.Release|Win32.Build.0 = Release|Win32
+		{F0BE1AAF-F09D-43CE-B087-AD735FE69B42}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F0BE1AAF-F09D-43CE-B087-AD735FE69B42}.Debug|Win32.Build.0 = Debug|Win32
+		{F0BE1AAF-F09D-43CE-B087-AD735FE69B42}.Release|Win32.ActiveCfg = Release|Win32
+		{F0BE1AAF-F09D-43CE-B087-AD735FE69B42}.Release|Win32.Build.0 = Release|Win32
+		{E354A29C-0E45-4B2B-A171-8FDF854613AE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E354A29C-0E45-4B2B-A171-8FDF854613AE}.Debug|Win32.Build.0 = Debug|Win32
+		{E354A29C-0E45-4B2B-A171-8FDF854613AE}.Release|Win32.ActiveCfg = Release|Win32
+		{E354A29C-0E45-4B2B-A171-8FDF854613AE}.Release|Win32.Build.0 = Release|Win32
+		{ECD4387B-9A94-4499-8517-5113790B6A7A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{ECD4387B-9A94-4499-8517-5113790B6A7A}.Debug|Win32.Build.0 = Debug|Win32
+		{ECD4387B-9A94-4499-8517-5113790B6A7A}.Release|Win32.ActiveCfg = Release|Win32
+		{ECD4387B-9A94-4499-8517-5113790B6A7A}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

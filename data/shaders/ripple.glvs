@@ -1,0 +1,19 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+attribute vec3 vs_vertexPosition;
+attribute vec2 vs_textureCoord;
+
+uniform mat4 mat_world_view_projection;
+
+varying vec2 ps_textureCoord;
+
+////////////////////////////////////////
+// Vertex Shader Function
+////////////////////////////////////////
+void main(){
+
+	gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
+    ps_textureCoord = vs_textureCoord;
+}

@@ -1,0 +1,48 @@
+//#define UNF_M_W              "mat_world"
+//#define UNF_M_WV             "mat_world_view"
+//#define UNF_M_WVP            "mat_world_view_projection"
+//#define UNF_M_WI             "mat_world_inverse"
+//#define UNF_M_WVI            "mat_world_view_inverse"
+//#define UNF_M_WVPI           "mat_world_view_projection_inverse"
+//#define UNF_M_WIT            "mat_world_inverse_transpose"
+//#define UNF_M_WVIT           "mat_world_view_inverse_transpose"
+//#define UNF_M_WVPIT          "mat_world_view_projection_inverse_transpose"
+//#define UNF_M_V              "mat_view"
+//#define UNF_M_VP             "mat_view_projection"
+//#define UNF_M_VI             "mat_view_inverse"
+//#define UNF_M_VPI            "mat_view_projection_inverse"
+//#define UNF_M_VIT            "mat_view_inverse_transpose"
+//#define UNF_M_VPIT           "mat_view_projection_inverse_transpose"
+//#define UNF_M_P              "mat_projction"
+//#define UNF_M_PI             "mat_projection_inverse"
+//#define UNF_M_PIT            "mat_projection_inverse_transpose"
+//#define UNF_V_VP             "vec_viewer_position"
+//#define UNF_V_VD             "vec_viewer_direction"
+//#define UNF_V_VU             "vec_viewer_up"
+//#define UNF_V_GAC            "vec_global_ambient_color"
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+attribute vec3 vs_vertexPosition;
+attribute vec3 vs_vertexNormal;
+attribute vec2 vs_textureCoord;
+
+uniform mat4 mat_world_view_projection;
+uniform mat4 mat_world_view;
+uniform mat4 mat_world_view_inverse_transpose;
+
+varying vec3 ps_vertexPosition; // in view space
+varying vec3 ps_vertexNormal;
+varying vec2 ps_textureCoord;
+
+////////////////////////////////////////
+// Vertex Shader Function
+////////////////////////////////////////
+void main()
+{
+    gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
+    ps_vertexPosition = (mat_world_view * vec4(vs_vertexPosition, 1.0)).xyz;
+    ps_vertexNormal = (mat_world_view_inverse_transpose * vec4(vs_vertexNormal, 1.0)).xyz;
+    ps_textureCoord = vs_textureCoord;
+}
