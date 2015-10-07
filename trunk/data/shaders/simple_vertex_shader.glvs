@@ -1,0 +1,16 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+// Input vertex data, different for all executions of this shader.
+// 我写几个中文字，看看能编译得过吗？ 昨天在读取shader文件的时候错误，浪费很长时间
+attribute vec3 vertexPosition_modelspace;
+
+////////////////////////////////////////
+// Vertex Shader Function
+////////////////////////////////////////
+void main(){
+
+	gl_Position = vec4(vertexPosition_modelspace, 1.0);
+
+}

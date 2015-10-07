@@ -1,0 +1,17 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+varying vec2 ps_textureCoord;
+
+// Values that stay constant for the whole mesh.
+uniform sampler2D textureSampler;
+
+
+////////////////////////////////////////
+// Fragment Shader Function
+////////////////////////////////////////
+void main()
+{
+	gl_FragColor = texture2D(textureSampler, ps_textureCoord);
+}

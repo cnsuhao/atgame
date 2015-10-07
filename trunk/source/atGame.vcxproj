@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{F7F84103-E370-4948-B05F-9D209D23258C}</ProjectGuid>
+    <RootNamespace>atGame</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)</OutDir>
+    <IntDir>$(SolutionDir)Intermediate\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../Directx9/include;../glew/include;../jpeg-6b/src;../zlib/include;../libpng/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <StringPooling>
+      </StringPooling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MinimalRebuild>
+      </MinimalRebuild>
+      <AdditionalOptions>
+      </AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d9.lib;opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../glew/lib/windows/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <Lib>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>../Directx9/include;../glew/include;../jpeg-6b/src;../zlib/include;../libpng/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Lib>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="atgBase.cpp" />
+    <ClCompile Include="atgCamera.cpp" />
+    <ClCompile Include="atgGame.cpp" />
+    <ClCompile Include="atgIntersection.cpp" />
+    <ClCompile Include="atgLight.cpp" />
+    <ClCompile Include="atgMaterial.cpp" />
+    <ClCompile Include="atgMath.cpp" />
+    <ClCompile Include="atgMesh.cpp" />
+    <ClCompile Include="atgMisc.cpp" />
+    <ClCompile Include="atgProfile.cpp" />
+    <ClCompile Include="atgRenderer_common.cpp" />
+    <ClCompile Include="atgRenderer_dx.cpp" />
+    <ClCompile Include="atgRenderer_ogl.cpp" />
+    <ClCompile Include="atgShaderLibrary.cpp" />
+    <ClCompile Include="atgSkinAnimation.cpp" />
+    <ClCompile Include="atgThread.cpp" />
+    <ClCompile Include="atgUI.cpp" />
+    <ClCompile Include="atgUIBase.cpp" />
+    <ClCompile Include="atgUIElements.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="atgBase.h" />
+    <ClInclude Include="atgCamera.h" />
+    <ClInclude Include="atgGame.h" />
+    <ClInclude Include="atgIntersection.h" />
+    <ClInclude Include="atgLight.h" />
+    <ClInclude Include="atgMaterial.h" />
+    <ClInclude Include="atgMath.h" />
+    <ClInclude Include="atgMesh.h" />
+    <ClInclude Include="atgMisc.h" />
+    <ClInclude Include="atgProfile.h" />
+    <ClInclude Include="atgRenderer.h" />
+    <ClInclude Include="atgShaderLibrary.h" />
+    <ClInclude Include="atgSkinAnimation.h" />
+    <ClInclude Include="atgThread.h" />
+    <ClInclude Include="atgTypeDef.h" />
+    <ClInclude Include="atgUI.h" />
+    <ClInclude Include="atgUIBase.h" />
+    <ClInclude Include="atgUIElements.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\data\shaders\direction_light_texture.glfs" />
+    <None Include="..\data\shaders\direction_light_texture.glvs" />
+    <None Include="..\data\shaders\light_model.glfs" />
+    <None Include="..\data\shaders\light_model.glvs" />
+    <None Include="..\data\shaders\light_texture.glfs" />
+    <None Include="..\data\shaders\light_texture.glvs" />
+    <None Include="..\data\shaders\light_texture.hlsl" />
+    <None Include="..\data\shaders\normal_shader.hlsl" />
+    <None Include="..\data\shaders\not_light_texture.glfs" />
+    <None Include="..\data\shaders\not_light_texture.glvs" />
+    <None Include="..\data\shaders\not_light_texture.hlsl" />
+    <None Include="..\data\shaders\p3n3t2.glfs" />
+    <None Include="..\data\shaders\p3n3t2.glvs" />
+    <None Include="..\data\shaders\simple_fragment_shader.glfs" />
+    <None Include="..\data\shaders\simple_vertex_shader.glvs" />
+    <None Include="..\data\shaders\simple_vertex_shader.hlsl" />
+    <None Include="..\data\shaders\solid_color.glfs" />
+    <None Include="..\data\shaders\solid_color.glvs" />
+    <None Include="..\data\shaders\solid_color.hlsl" />
+    <None Include="..\data\shaders\ui_element.glfs" />
+    <None Include="..\data\shaders\ui_element.glvs" />
+    <None Include="..\data\shaders\ui_element.hlsl" />
+    <None Include="Note.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

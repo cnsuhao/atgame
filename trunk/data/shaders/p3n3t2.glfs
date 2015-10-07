@@ -1,0 +1,22 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+varying vec2 ps_textureUV;
+
+varying vec3 ps_vertexNor;
+
+uniform sampler2D myTextureSampler;
+
+
+////////////////////////////////////////
+// Fragment Shader Function
+////////////////////////////////////////
+void main(){
+
+	// Output color = color of the texture at the specified UV
+	//vec2 UV = ps_textureUV;
+	//UV.y = 1.0f - UV.y;
+	//gl_FragColor = texture2D( myTextureSampler, UV);
+	gl_FragColor = texture2D( myTextureSampler, ps_textureUV);
+}

@@ -1,0 +1,27 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+attribute vec3 vs_vertexPosition;
+
+attribute vec2 vs_textureCoord;
+
+attribute vec3 vs_vertexNormal;
+
+uniform mat4 MVPMatrix;
+
+varying vec2 ps_textureUV;
+
+varying vec3 ps_vertexNor;
+
+////////////////////////////////////////
+// Vertex Shader Function
+////////////////////////////////////////
+void main(){
+
+	gl_Position = MVPMatrix * vec4(vs_vertexPosition, 1.0);
+	ps_vertexNor = normalize(vs_vertexNormal);
+	ps_textureUV = vs_textureCoord;
+}
+
+

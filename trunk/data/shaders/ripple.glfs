@@ -1,0 +1,31 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+varying vec2 ps_textureCoord;
+
+
+// Values that stay constant for the whole mesh.
+uniform vec4 u_d;
+
+uniform sampler2D textureSampler;
+uniform sampler2D waterHeightSampler;
+
+float saturate(float x)
+{
+    return clamp(x, 0., 1.0);
+}
+
+////////////////////////////////////////
+// Fragment Shader Function
+////////////////////////////////////////
+void main()
+{
+	float xoff = texture2D(waterHeightSampler, vec2(saturate(ps_textureCoord.x + u_d.x), ps_textureCoord.y)).r - texture2D(waterHeightSampler, vec2(saturate(ps_textureCoord.x - u_d.x), ps_textureCoord.y)).r;
+	float yoff = texture2D(waterHeightSampler, vec2(ps_textureCoord.x, saturate(ps_textureCoord.y + u_d.y))).r - texture2D(waterHeightSampler, vec2(ps_textureCoord.x, saturate(ps_textureCoord.y - u_d.y))).r;
+
+    vec2 uv = vec2(saturate(ps_textureCoord.x + xoff / 40.0), saturate(ps_textureCoord.y + yoff / 40.0));
+    vec4 color = texture2D(textureSampler, uv);
+    color.rgb += (xoff + yoff) / 2;
+	gl_FragColor = color;
+}

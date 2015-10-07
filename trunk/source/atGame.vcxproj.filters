@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="资源文件\glsl">
+      <UniqueIdentifier>{51f1130d-bac5-4223-99c2-accca9400b14}</UniqueIdentifier>
+      <Extensions>glvs;glfs</Extensions>
+    </Filter>
+    <Filter Include="资源文件\hlsl">
+      <UniqueIdentifier>{1b968808-de7f-402c-8fa2-5d9cfeb15622}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="atgMath.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgBase.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgMisc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgRenderer_dx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgRenderer_ogl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgMesh.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgMaterial.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgSkinAnimation.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgRenderer_common.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgGame.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgIntersection.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgCamera.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgProfile.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgUI.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgUIElements.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgUIBase.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgThread.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgShaderLibrary.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="atgLight.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="atgMath.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgRenderer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgMisc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgTypeDef.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgMesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgMaterial.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgSkinAnimation.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgGame.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgIntersection.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgCamera.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgProfile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgUI.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgUIElements.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgUIBase.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgThread.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgShaderLibrary.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="atgLight.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Note.txt" />
+    <None Include="..\data\shaders\light_model.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\light_model.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\light_texture.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\light_texture.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\not_light_texture.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\not_light_texture.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\p3n3t2.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\p3n3t2.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\simple_fragment_shader.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\simple_vertex_shader.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\solid_color.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\solid_color.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\ui_element.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\ui_element.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\normal_shader.hlsl">
+      <Filter>资源文件\hlsl</Filter>
+    </None>
+    <None Include="..\data\shaders\not_light_texture.hlsl">
+      <Filter>资源文件\hlsl</Filter>
+    </None>
+    <None Include="..\data\shaders\simple_vertex_shader.hlsl">
+      <Filter>资源文件\hlsl</Filter>
+    </None>
+    <None Include="..\data\shaders\solid_color.hlsl">
+      <Filter>资源文件\hlsl</Filter>
+    </None>
+    <None Include="..\data\shaders\ui_element.hlsl">
+      <Filter>资源文件\hlsl</Filter>
+    </None>
+    <None Include="..\data\shaders\light_texture.hlsl">
+      <Filter>资源文件\hlsl</Filter>
+    </None>
+    <None Include="..\data\shaders\direction_light_texture.glfs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+    <None Include="..\data\shaders\direction_light_texture.glvs">
+      <Filter>资源文件\glsl</Filter>
+    </None>
+  </ItemGroup>
+</Project>

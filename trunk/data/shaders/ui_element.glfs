@@ -1,0 +1,17 @@
+////////////////////////////////////////
+// Global variable
+////////////////////////////////////////
+
+varying vec4 ps_vertexColor;
+
+varying vec2 ps_textureUV;
+
+uniform sampler2D myTextureSampler;
+
+////////////////////////////////////////
+// Fragment Shader Function
+////////////////////////////////////////
+void main()
+{
+    gl_FragColor = ps_vertexColor * texture2D( myTextureSampler, ps_textureUV);
+}
