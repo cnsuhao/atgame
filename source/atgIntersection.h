@@ -58,9 +58,6 @@ struct AABBox
     Vec3 vMax;
 };
 
-
-
-
 // We create an enum of the sides so we don't have to call each side 0 or 1.   
 // This way it makes it more understandable and readable when dealing with frustum sides.   
 enum FrustumSide   
@@ -70,16 +67,9 @@ enum FrustumSide
     BOTTOM  = 2,        // The BOTTOM side of the frustum   
     TOP     = 3,        // The TOP side of the frustum   
     BACK    = 4,        // The BACK side of the frustum   
-    FRONT   = 5         // The FRONT side of the frustum   
+    FRONT   = 5,         // The FRONT side of the frustum
+    SIDE_NUMBER,
 }; 
-
-enum PlaneData   
-{   
-    A = 0,              // The X value of the plane's normal   
-    B = 1,              // The Y value of the plane's normal   
-    C = 2,              // The Z value of the plane's normal   
-    D = 3               // The distance the plane is from the origin   
-};
 
 class atgFrustum
 {
@@ -97,8 +87,7 @@ public:
 
     void DebugRender();
 protected:
-    void NormalizePlane(FrustumSide side);
 
-    float _frustum[6][4];
+    Plane _frustum[SIDE_NUMBER];
 };
 
