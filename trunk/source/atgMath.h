@@ -1137,7 +1137,7 @@ typedef struct Plane_t
     }
 
     //>归一化参数平面
-    bool NormalizePlane()
+    void NormalizePlane()
     {
         float magnitude = VecLength(n);
         if (!IsFloatZero(magnitude - 1.0f))

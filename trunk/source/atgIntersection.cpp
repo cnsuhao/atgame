@@ -24,61 +24,61 @@ void atgFrustum::BuildFrustumPlanes( const float modl[4][4], const float proj[4]
     // the clipping planes we received above and extract the sides from them.
 
     // This will extract the RIGHT side of the frustum
-    _frustum[RIGHT][A] = clip[12] - clip[0];
-    _frustum[RIGHT][B] = clip[13] - clip[1];
-    _frustum[RIGHT][C] = clip[14] - clip[2];
-    _frustum[RIGHT][D] = clip[15] - clip[3];
+    _frustum[RIGHT].A = clip[12] - clip[0];
+    _frustum[RIGHT].B = clip[13] - clip[1];
+    _frustum[RIGHT].C = clip[14] - clip[2];
+    _frustum[RIGHT].D = clip[15] - clip[3];
 
     // Now that we have a normal (A,B,C) and a distance (D) to the plane,
     // we want to normalize that normal and distance.
 
     // Normalize the RIGHT side
-    NormalizePlane(RIGHT);
+    _frustum[RIGHT].NormalizePlane();
 
     // This will extract the LEFT side of the frustum
-    _frustum[LEFT][A] = clip[12] + clip[0];
-    _frustum[LEFT][B] = clip[13] + clip[1];
-    _frustum[LEFT][C] = clip[14] + clip[2];
-    _frustum[LEFT][D] = clip[15] + clip[3];
+    _frustum[LEFT].A = clip[12] + clip[0];
+    _frustum[LEFT].B = clip[13] + clip[1];
+    _frustum[LEFT].C = clip[14] + clip[2];
+    _frustum[LEFT].D = clip[15] + clip[3];
 
     // Normalize the LEFT side
-    NormalizePlane(LEFT);
+    _frustum[LEFT].NormalizePlane();
 
     // This will extract the BOTTOM side of the frustum
-    _frustum[BOTTOM][A] = clip[12] + clip[4];
-    _frustum[BOTTOM][B] = clip[13] + clip[5];
-    _frustum[BOTTOM][C] = clip[14] + clip[6];
-    _frustum[BOTTOM][D] = clip[15] + clip[7];
+    _frustum[BOTTOM].A = clip[12] + clip[4];
+    _frustum[BOTTOM].B = clip[13] + clip[5];
+    _frustum[BOTTOM].C = clip[14] + clip[6];
+    _frustum[BOTTOM].D = clip[15] + clip[7];
 
     // Normalize the BOTTOM side
-    NormalizePlane(BOTTOM);
+    _frustum[BOTTOM].NormalizePlane();
 
     // This will extract the TOP side of the frustum
-    _frustum[TOP][A] = clip[12] - clip[4];
-    _frustum[TOP][B] = clip[13] - clip[5];
-    _frustum[TOP][C] = clip[14] - clip[6];
-    _frustum[TOP][D] = clip[15] - clip[7];
+    _frustum[TOP].A = clip[12] - clip[4];
+    _frustum[TOP].B = clip[13] - clip[5];
+    _frustum[TOP].C = clip[14] - clip[6];
+    _frustum[TOP].D = clip[15] - clip[7];
 
     // Normalize the TOP side
-    NormalizePlane(TOP);
+    _frustum[TOP].NormalizePlane();
 
     // This will extract the BACK side of the frustum
-    _frustum[BACK][A] = clip[12] - clip[8];
-    _frustum[BACK][B] = clip[13] - clip[9];
-    _frustum[BACK][C] = clip[14] - clip[10];
-    _frustum[BACK][D] = clip[15] - clip[11];
+    _frustum[BACK].A = clip[12] - clip[8];
+    _frustum[BACK].B = clip[13] - clip[9];
+    _frustum[BACK].C = clip[14] - clip[10];
+    _frustum[BACK].D = clip[15] - clip[11];
 
     // Normalize the BACK side
-    NormalizePlane(BACK);
+    _frustum[BACK].NormalizePlane();
 
     // This will extract the FRONT side of the frustum
-    _frustum[FRONT][A] = clip[12] + clip[8];
-    _frustum[FRONT][B] = clip[13] + clip[9];
-    _frustum[FRONT][C] = clip[14] + clip[10];
-    _frustum[FRONT][D] = clip[15] + clip[11];
+    _frustum[FRONT].A = clip[12] + clip[8];
+    _frustum[FRONT].B = clip[13] + clip[9];
+    _frustum[FRONT].C = clip[14] + clip[10];
+    _frustum[FRONT].D = clip[15] + clip[11];
 
     // Normalize the FRONT side
-    NormalizePlane(FRONT);
+    _frustum[FRONT].NormalizePlane();
 }
 
 bool atgFrustum::IsPointInFrustum( const float v[3] )
@@ -103,7 +103,7 @@ bool atgFrustum::IsPointInFrustum( const float v[3] )
     for(int i = 0; i < 6; i++ )
     {
         // Calculate the plane equation and check if the point is behind a side of the frustum
-        if(_frustum[i][A] * v[0] + _frustum[i][B] * v[1] + _frustum[i][C] * v[2] + _frustum[i][D] <= 0)
+        if(_frustum[i].Resolve(v) <= 0)
         {
             // The point was behind a side, so it ISN'T in the frustum
             return false;
@@ -130,7 +130,7 @@ bool atgFrustum::IsSphereInFrustum( const float center[3], float radius )
     for(int i = 0; i < 6; i++ )
     {
         // If the center of the sphere is farther away from the plane than the radius
-        if( _frustum[i][A] * center[0] + _frustum[i][B] * center[1] + _frustum[i][C] * center[2] + _frustum[i][D] <= -radius )
+        if( _frustum[i].Resolve(center) <= -radius )
         {
             // The distance was greater than the radius so the sphere is outside of the frustum
             return false;
@@ -159,21 +159,21 @@ bool atgFrustum::IsCubeInFrustum( const float center[3], float size )
 
     for(int i = 0; i < 6; i++ )
     {
-        if(_frustum[i][A] * (x - size) + _frustum[i][B] * (y - size) + _frustum[i][C] * (z - size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x - size) + _frustum[i].B * (y - size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
             continue;
-        if(_frustum[i][A] * (x + size) + _frustum[i][B] * (y - size) + _frustum[i][C] * (z - size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x + size) + _frustum[i].B * (y - size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
             continue;
-        if(_frustum[i][A] * (x - size) + _frustum[i][B] * (y + size) + _frustum[i][C] * (z - size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x - size) + _frustum[i].B * (y + size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
             continue;
-        if(_frustum[i][A] * (x + size) + _frustum[i][B] * (y + size) + _frustum[i][C] * (z - size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x + size) + _frustum[i].B * (y + size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
             continue;
-        if(_frustum[i][A] * (x - size) + _frustum[i][B] * (y - size) + _frustum[i][C] * (z + size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x - size) + _frustum[i].B * (y - size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
             continue;
-        if(_frustum[i][A] * (x + size) + _frustum[i][B] * (y - size) + _frustum[i][C] * (z + size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x + size) + _frustum[i].B * (y - size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
             continue;
-        if(_frustum[i][A] * (x - size) + _frustum[i][B] * (y + size) + _frustum[i][C] * (z + size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x - size) + _frustum[i].B * (y + size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
             continue;
-        if(_frustum[i][A] * (x + size) + _frustum[i][B] * (y + size) + _frustum[i][C] * (z + size) + _frustum[i][D] > 0)
+        if(_frustum[i].A * (x + size) + _frustum[i].B * (y + size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
             continue;
 
         // If we get here, it isn't in the frustum
@@ -188,75 +188,57 @@ void atgFrustum::DebugRender()
     float p1[3];
     float p2[3];
     //后上
-    Plane::Intersection(_frustum[BACK], _frustum[TOP], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[BACK], _frustum[TOP], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3One.m);
     //后下
-    Plane::Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3One.m);
     //后左
-    Plane::Intersection(_frustum[BACK], _frustum[TOP], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[LEFT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3One.m);
     //后右
-    Plane::Intersection(_frustum[BACK], _frustum[TOP], _frustum[RIGHT], p1);
-    Plane::Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[RIGHT].m, p1);
+    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3One.m);
 
     //前上
-    Plane::Intersection(_frustum[FRONT], _frustum[TOP], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[TOP], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Right.m);
     //前下
-    Plane::Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Right.m);
     //前左
-    Plane::Intersection(_frustum[FRONT], _frustum[TOP], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[LEFT], p2);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Right.m);
     //前右
-    Plane::Intersection(_frustum[FRONT], _frustum[TOP], _frustum[RIGHT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[RIGHT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Right.m);
 
 
     //左上
-    Plane::Intersection(_frustum[BACK], _frustum[TOP], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[TOP], _frustum[LEFT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[LEFT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Up.m);
     //左下
-    Plane::Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[LEFT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[LEFT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Up.m);
     //右上
-    Plane::Intersection(_frustum[BACK], _frustum[TOP], _frustum[RIGHT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[TOP], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[RIGHT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Forward.m);
     //右下
-    Plane::Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[RIGHT], p1);
-    Plane::Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p1);
+    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
     g_Renderer->DrawLine(p1, p2, Vec3Forward.m);
 }
-
-void atgFrustum::NormalizePlane( FrustumSide side )
-{
-    // Here we calculate the magnitude of the normal to the plane (point A B C)
-    // Remember that (A, B, C) is that same thing as the normal's (X, Y, Z).
-    // To calculate magnitude you use the equation:  magnitude = sqrt( x^2 + y^2 + z^2)
-    float magnitude = sqrtf( _frustum[side][A] * _frustum[side][A] +
-                             _frustum[side][B] * _frustum[side][B] +
-                             _frustum[side][C] * _frustum[side][C] );
-
-    // Then we divide the plane's values by it's magnitude.
-    // This makes it easier to work with.
-    _frustum[side][A] /= magnitude;
-    _frustum[side][B] /= magnitude;
-    _frustum[side][C] /= magnitude;
-    _frustum[side][D] /= magnitude;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////
 //
