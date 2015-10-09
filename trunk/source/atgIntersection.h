@@ -33,6 +33,18 @@ struct AABBox
         return *this;
     }
 
+    Vec3 GetCenter()
+    {
+        Vec3 center = vMin.Add(vMax);
+        center.Scale(0.5f);
+        return center;
+    }
+
+    float GetSize()
+    {
+        vMax.Sub(vMin);
+    }
+
     bool IsInner(const AABBox& other)
     {
         if(IsInner(other.vMin) && IsInner(other.vMax))
