@@ -776,11 +776,12 @@ void Game::OnKeyScanDown(Key::Scan keyscan)
 	atgGame::OnKeyScanDown(keyscan);
 }
 
-static float g_points[3*1000];
+static const int g_pointNumber = 1000;
+static float g_points[3*g_pointNumber];
 
 void Game::LoadConfig()
 {
-    for (int i = 0; i < 1000; i+=3)
+    for (int i = 0; i < g_pointNumber; i+=3)
     {
         g_points[3*i]       = Random(-500.0f, 500.f);
         g_points[3*i + 1]   = Random(-500.0f, 500.f);
@@ -845,7 +846,7 @@ void Game::DrawAxis()
     f.DebugRender();
 
     float point[3];
-    for (int i = 0; i < 1000; i+=3)
+    for (int i = 0; i < g_pointNumber; i+=3)
     {
         point[0] = g_points[3*i];
         point[1] = g_points[3*i+1];
@@ -853,12 +854,13 @@ void Game::DrawAxis()
 
         if (f.IsPointInFrustum(point))
         {
-            glPointSize(5);
+            glPointSize(10);
             g_Renderer->DrawPoint(point, Vec3Up.m);
         }
         else
         {
-            //g_Renderer->DrawPoint(point, Vec3Right.m);
+            glPointSize(2);
+            g_Renderer->DrawPoint(point, Vec3Right.m);
         }
     }
 }

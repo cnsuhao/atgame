@@ -23,14 +23,38 @@ int adder(duk_context *ctx) {
 int sub(duk_context *ctx) {
 	int i;
 	int n = duk_get_top(ctx);  /* #args */
-	double res = 0.0;
-
-	for (i = 0; i < n; i++) {
-		res -= duk_to_number(ctx, i);
-	}
-
+	
+    double res = 0.0;
+    if (n > 0)
+    {
+        res = duk_to_number(ctx, 0);
+        for (i = 1; i < n; i++) {
+            res -= duk_to_number(ctx, i);
+        }
+    }
+    
 	duk_push_number(ctx, res);
 	return 1;  /* one return value */
+}
+
+int abs(duk_context* ctx)
+{
+    int n = duk_get_top(ctx);  /* #args */
+
+    duk_push_object(ctx);
+
+    double res = 0.0;
+    if (n > 0)
+    {
+        for (int i = 0; i < n; i++) {
+            res = duk_to_number(ctx, i);
+            res = abs(res);
+            duk_push_number(ctx, res);
+            duk_put_prop_index(ctx, -2, i);
+        }
+    }
+
+    return 1;  /* one return value */
 }
 
 
@@ -83,6 +107,7 @@ void Test22(duk_context *ctx)
     duk_pop(ctx);
 
     duk_get_global_string(ctx, "Lsh");
+
     duk_push_string(ctx, "Vesrion");
     duk_push_number(ctx, 1.01);
     duk_put_prop(ctx, -3);
@@ -94,6 +119,8 @@ void Test22(duk_context *ctx)
     duk_push_c_function(ctx, adder, DUK_VARARGS);
     duk_put_prop_string(ctx, -2, "adder");
 
+    duk_push_c_function(ctx, abs, DUK_VARARGS);
+    duk_put_prop_string(ctx, -2, "abs");
     duk_pop(ctx);
     
     duk_eval_string(ctx, "print(Lsh.Vesrion)");
@@ -110,6 +137,11 @@ void Test22(duk_context *ctx)
 
     duk_eval_string(ctx, "Lsh.show();");
     duk_pop(ctx);
+
+    duk_eval_string(ctx, "var ary = Lsh.abs(-2,3,-4,-5); for(var a in ary) { print(ary[a]); }");
+    duk_pop(ctx);
+
+    printf("stack top is %ld\n", (long) duk_get_top(ctx));
 }
 
 int _tmain(int argc, _TCHAR* argv[])
