@@ -94,7 +94,7 @@ void main()
     vec3 ambient = u_globalAmbient * u_materialAmbient;
     vec3 diffuse_total = vec3(0.0, 0.0, 0.0);
     vec3 specular_total = vec3(0.0, 0.0, 0.0);
-	
+
     int numberOfLights = min(u_numberOfLights, c_numberOfLights);
     for(int i = 0; i < u_numberOfLights; ++i)
     {

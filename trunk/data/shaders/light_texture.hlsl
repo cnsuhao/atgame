@@ -5,6 +5,8 @@ matrix mat_world_view_projection          : register(vs, c0);
 matrix mat_world_view                     : register(vs, c4);
 matrix mat_world_view_inverse_transpose   : register(vs, c8);
 
+static const int c_numberOfLights = 8;
+
 float3 u_globalAmbient              :register(ps, c0);  // È«¾Ö»·¾³¹â.
 
 float3 u_materialAmbient            :register(ps, c1);
@@ -12,12 +14,14 @@ float3 u_materialDiffuse            :register(ps, c2);
 float3 u_materialSpecular           :register(ps, c3);
 float4 u_materialData0              :register(ps, c4);
 
-float3 u_lightPosition              :register(ps, c5);  // transformed in view space.
-float3 u_lightDirection             :register(ps, c6);  // transformed in view space.
-float4 u_lightData0                 :register(ps, c7);  // light type | Ô¤Áô | Ô¤Áô | Ô¤Áô 
-float4 u_lightData1                 :register(ps, c8);  // intensity | range | outer cone | inner cone
-float3 u_lightDiffuse               :register(ps, c9);  // light diffuse
-float3 u_lightSpecular              :register(ps, c10);  // light specular
+float u_numberOfLights              :register(ps, c5);
+
+float3 u_lightPosition[c_numberOfLights]              :register(ps, c10);  // transformed in view space.
+float3 u_lightDirection[c_numberOfLights]             :register(ps, c18);  // transformed in view space.
+float4 u_lightData0[c_numberOfLights]                 :register(ps, c26);  // light type | Ô¤Áô | Ô¤Áô | Ô¤Áô 
+float4 u_lightData1[c_numberOfLights]                 :register(ps, c34);  // intensity | range | outer cone | inner cone
+float3 u_lightDiffuse[c_numberOfLights]               :register(ps, c42);  // light diffuse
+float3 u_lightSpecular[c_numberOfLights]              :register(ps, c50);  // light specular
 
 struct VS_INPUT
 {
@@ -66,46 +70,56 @@ float half_lambert( in float3 normalDir,
 ////////////////////////////////////////
 float4 ps_main(VS_OUTPUT input):COLOR0
 {
-
-    float light_intensity = u_lightData1.x;
-    float attenuation = light_intensity;
-    float effect = 1.0;
-    
     float3 ambient = u_globalAmbient * u_materialAmbient;
-    float3 lightDirection = normalize(u_lightDirection);
-    float3 vertexToLightDirection = -lightDirection;
-    
-    if(u_lightData0.x > 0.01) // point light or spot light.
+    float3 diffuse_total = float3(0.0, 0.0, 0.0);
+    float3 specular_total = float3(0.0, 0.0, 0.0);
+
+    int numberOfLights = min(u_numberOfLights, c_numberOfLights);
+    for(int i = 0; i < u_numberOfLights; ++i)
     {
-        float3 vertexToLight = u_lightPosition - input.ps_vertexPosition;
-        vertexToLightDirection = normalize(vertexToLight);
-        float light_rang = u_lightData1.y;
-        attenuation = light_intensity * clamp((light_rang - length(vertexToLight)) / light_rang, 0.0, 1.0);
-        if(u_lightData0.x > 1.01)
+        float light_intensity = u_lightData1[i].x;
+        float attenuation = light_intensity;
+        float effect = 1.0;
+
+        float3 lightDirection = normalize(u_lightDirection[i]);
+        float3 vertexToLightDirection = -lightDirection;
+        
+        if(u_lightData0[i].x > 0.01) // point light or spot light.
         {
-            float cos_outer_cone = u_lightData1.z; // cos(radians_for_outer_cone_);
-            float cos_inner_cone = u_lightData1.w; // cos(radians_for_int_cone);
-            float con = dot(lightDirection, -vertexToLightDirection);
-            effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
+            float3 vertexToLight = u_lightPosition[i] - input.ps_vertexPosition;
+            vertexToLightDirection = normalize(vertexToLight);
+            float light_rang = u_lightData1[i].y;
+            attenuation = light_intensity * clamp((light_rang - length(vertexToLight)) / light_rang, 0.0, 1.0);
+            if(u_lightData0[i].x > 1.01)
+            {
+                float cos_outer_cone = u_lightData1[i].z; // cos(radians_for_outer_cone_);
+                float cos_inner_cone = u_lightData1[i].w; // cos(radians_for_int_cone);
+                float con = dot(lightDirection, -vertexToLightDirection);
+                effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
+            }
         }
+        
+        //float ndl = half_lambert(normalize(input.ps_vertexNormal), vertexToLightDirection);
+        float ndl = max(0.0, dot(normalize(input.ps_vertexNormal), vertexToLightDirection));
+        float3 diffuse = effect * u_materialDiffuse;
+        diffuse = diffuse * u_lightDiffuse[i] * ndl;
+        diffuse = diffuse * tex2D(textureSampler, input.ps_textureCoord).xyz;
+        diffuse_total += attenuation * diffuse;
+        
+        //float3 h = vertexToLightDirection + normalize(-input.ps_vertexPosition);
+        //h = normalize(h);
+        //float facing = max(0.0, dot(input.ps_vertexNormal, vertexToLightDirection));
+        //if(facing > 0.0)
+        //    facing = 1.0;
+        
+        // u_materialData0.x is material shininess.
+        //float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
+        //                facing * pow(max(0.0, dot(input.ps_vertexNormal, h)), u_materialData0.x); 
+
+        //specular_total += attenuation * specular;
     }
     
-    //float ndl = half_lambert(normalize(input.ps_vertexNormal), vertexToLightDirection);
-    float ndl = max(0.0, dot(normalize(input.ps_vertexNormal), vertexToLightDirection));
-    float3 diffuse = effect * u_materialDiffuse * u_lightDiffuse * ndl;
-    diffuse = diffuse * tex2D(textureSampler, input.ps_textureCoord).xyz;
-    
-    float3 h = vertexToLightDirection + normalize(-input.ps_vertexPosition);
-    h = normalize(h);
-    float facing = max(0.0, dot(input.ps_vertexNormal, vertexToLightDirection));
-    if(facing > 0.0)
-        facing = 1.0;
-    
-    // u_materialData0.x is material shininess.
-    float3 specular = effect * u_materialSpecular * u_lightSpecular * 
-                    facing * pow(max(0.0, dot(input.ps_vertexNormal, h)), u_materialData0.x); 
-    
-    float4 color = float4(ambient + attenuation * diffuse + attenuation * specular, 1.0);
+    float4 color = float4(ambient + diffuse_total + specular_total, 1.0);
     return color;
 }
 
