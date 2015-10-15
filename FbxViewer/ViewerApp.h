@@ -34,7 +34,8 @@ public:
 //protected:
 	class FxbModel* pModel;
 	class atgCamera* pCamera;
-	class atgLight* pLight;
+	class atgLight* pLight1;
+    class atgLight* pLight2;
 
 	bool leftBtnDown;
 	bool rightBtnDown;

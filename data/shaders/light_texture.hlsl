@@ -7,17 +7,17 @@ matrix mat_world_view_inverse_transpose   : register(vs, c8);
 
 float3 u_globalAmbient              :register(ps, c0);  // »´æ÷ª∑æ≥π‚.
 
-float3 u_lightPosition              :register(ps, c1);  // transformed in view space.
-float3 u_lightDirection             :register(ps, c2);  // transformed in view space.
-float4 u_lightData0                 :register(ps, c3);  // light type | ‘§¡Ù | ‘§¡Ù | ‘§¡Ù 
-float4 u_lightData1                 :register(ps, c4);  // intensity | range | outer cone | inner cone
-float3 u_lightDiffuse               :register(ps, c5);  // light diffuse
-float3 u_lightSpecular              :register(ps, c6);  // light specular
+float3 u_materialAmbient            :register(ps, c1);
+float3 u_materialDiffuse            :register(ps, c2);
+float3 u_materialSpecular           :register(ps, c3);
+float4 u_materialData0              :register(ps, c4);
 
-float3 u_materialAmbient            :register(ps, c7);
-float3 u_materialDiffuse            :register(ps, c8);
-float3 u_materialSpecular           :register(ps, c9);
-float4 u_materialData0              :register(ps, c10);
+float3 u_lightPosition              :register(ps, c5);  // transformed in view space.
+float3 u_lightDirection             :register(ps, c6);  // transformed in view space.
+float4 u_lightData0                 :register(ps, c7);  // light type | ‘§¡Ù | ‘§¡Ù | ‘§¡Ù 
+float4 u_lightData1                 :register(ps, c8);  // intensity | range | outer cone | inner cone
+float3 u_lightDiffuse               :register(ps, c9);  // light diffuse
+float3 u_lightSpecular              :register(ps, c10);  // light specular
 
 struct VS_INPUT
 {

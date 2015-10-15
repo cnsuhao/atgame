@@ -134,7 +134,7 @@ inline const Vec3& atgLight::GetSpecular() const
 
 inline void atgLight::SetIntensity( float scale )
 {
-    _intensity = scale;
+    _intensity = Max(0.0f, scale);
 }
 
 inline float atgLight::GetIntensity() const

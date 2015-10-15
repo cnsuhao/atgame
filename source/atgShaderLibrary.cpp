@@ -156,65 +156,79 @@ void atgShaderLightTexture::BeginContext( void* data )
     const bindLights& lights = g_Renderer->GetBindLights();
     if (!lights.empty())
     {
-        // set light intensity
-        atgLight* light = lights[0];
-        switch (light->GetType())
+        char uniformNameBuff[64];
+        int numberLight = Min((int)lights.size(), 8);
+        SetInt("u_numberOfLights", numberLight);
+        for (int i = 0; i < numberLight; ++i)
         {
-        case LT_Directional:
+            // set light intensity
+            atgLight* light = lights[i];
+            switch (light->GetType())
             {
-                atgDirectionalLight* directionalLight = static_cast<atgDirectionalLight*>(light);
-                // set direction;
-                Vec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(directionalLight->GetDirection());
-                lightDirection.Normalize();
-                SetFloat3("u_lightDirection", lightDirection.m);
-            }break;
-        case LT_Point:
-            {
-                atgPointLight* pointLight = static_cast<atgPointLight*>(light);
-                // set position;
-                Vec3 lightPosition = WorldViewMatrix.Transfrom(pointLight->GetPosition());
-                SetFloat3("u_lightPosition", lightPosition.m);
-                // set range
-                lightData1.y = pointLight->GetRange();
-            }break;
-        case LT_Spot:
-            {
-                // set position;
-                atgSpotLight* spotLight = static_cast<atgSpotLight*>(light);
-                Vec3 lightPosition = WorldViewMatrix.Transfrom(spotLight->GetPosition());
-                SetFloat3("u_lightPosition", lightPosition.m);
-                // set direction;
-                Vec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(spotLight->GetDirection());
-                lightDirection.Normalize();
-                SetFloat3("u_lightDirection", lightDirection.m);
-                // set range
-                lightData1.y = spotLight->GetRange();
-                // outer cone angle and inner cone angle
-                lightData1.z = DegreesToRadians(Clamp(spotLight->GetOuterCone(),0.0f,90.0f)); 
-                lightData1.w = DegreesToRadians(Clamp(spotLight->GetInnerCone(),0.0f,90.0f));
+            case LT_Directional:
+                {
+                    atgDirectionalLight* directionalLight = static_cast<atgDirectionalLight*>(light);
+                    // set direction;
+                    Vec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(directionalLight->GetDirection());
+                    lightDirection.Normalize();
+                    sprintf(uniformNameBuff, "%s[%d]", "u_lightDirection", i);
+                    SetFloat3(uniformNameBuff, lightDirection.m);
+                }break;
+            case LT_Point:
+                {
+                    atgPointLight* pointLight = static_cast<atgPointLight*>(light);
+                    // set position;
+                    Vec3 lightPosition = WorldViewMatrix.Transfrom(pointLight->GetPosition());
+                    sprintf(uniformNameBuff, "%s[%d]", "u_lightPosition", i);
+                    SetFloat3(uniformNameBuff, lightPosition.m);
+                    // set range
+                    lightData1.y = pointLight->GetRange();
+                }break;
+            case LT_Spot:
+                {
+                    // set position;
+                    atgSpotLight* spotLight = static_cast<atgSpotLight*>(light);
+                    Vec3 lightPosition = WorldViewMatrix.Transfrom(spotLight->GetPosition());
+                    sprintf(uniformNameBuff, "%s[%d]", "u_lightPosition", i);
+                    SetFloat3(uniformNameBuff, lightPosition.m);
+                    // set direction;
+                    Vec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(spotLight->GetDirection());
+                    lightDirection.Normalize();
+                    sprintf(uniformNameBuff, "%s[%d]", "u_lightDirection", i);
+                    SetFloat3(uniformNameBuff, lightDirection.m);
+                    // set range
+                    lightData1.y = spotLight->GetRange();
+                    // outer cone angle and inner cone angle
+                    lightData1.z = DegreesToRadians(Clamp(spotLight->GetOuterCone(),0.0f,90.0f)); 
+                    lightData1.w = DegreesToRadians(Clamp(spotLight->GetInnerCone(),0.0f,90.0f));
 
-                if (lightData1.w > lightData1.z)
-                    Swap(lightData1.z, lightData1.w);
+                    if (lightData1.w > lightData1.z)
+                        Swap(lightData1.z, lightData1.w);
 
-                lightData1.z = cosf(lightData1.z);
-                lightData1.w = cosf(lightData1.w);
-            }break;
-        default:
-            break;
+                    lightData1.z = cosf(lightData1.z);
+                    lightData1.w = cosf(lightData1.w);
+                }break;
+            default:
+                break;
+            }
+
+            // set light type
+            lightData0.x = static_cast<float>(light->GetType());
+            // set light intensity
+            lightData1.x = light->GetIntensity();
+
+            sprintf(uniformNameBuff, "%s[%d]", "u_lightData0", i);
+            SetFloat4(uniformNameBuff, lightData0.m);
+            sprintf(uniformNameBuff, "%s[%d]", "u_lightData1", i);
+            SetFloat4(uniformNameBuff, lightData1.m);
+
+            // set light diffuse color
+            sprintf(uniformNameBuff, "%s[%d]", "u_lightDiffuse", i);
+            SetFloat3(uniformNameBuff, light->GetColor().m);
+            // set light specular color
+            sprintf(uniformNameBuff, "%s[%d]", "u_lightSpecular", i);
+            SetFloat3(uniformNameBuff, light->GetSpecular().m);
         }
-
-        // set light type
-        lightData0.x = static_cast<float>(light->GetType());
-        // set light intensity
-        lightData1.x = light->GetIntensity();
-
-        SetFloat4("u_lightData0", lightData0.m);
-        SetFloat4("u_lightData1", lightData1.m);
-
-        // set light diffuse color
-        SetFloat3("u_lightDiffuse", light->GetColor().m);
-        // set light specular color
-        SetFloat3("u_lightSpecular", light->GetSpecular().m);
     }
 
     atgMaterial* material = g_Renderer->GetBindMaterial();

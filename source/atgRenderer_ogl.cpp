@@ -875,6 +875,30 @@ void atgPass::EndContext(void* data)
 
 }
 
+bool atgPass::SetInt(const char* var_name, int value)
+{
+    GLint identityID = 0;
+    GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
+    if(identityID != -1)
+    {
+        glUniform1i(identityID, value);
+        return true;
+    }
+    return false;
+}
+
+bool atgPass::SetFloat(const char* var_name, float value)
+{
+    GLint identityID = 0;
+    GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
+    if(identityID != -1)
+    {
+        glUniform1f(identityID, value);
+        return true;
+    }
+    return false;
+}
+
 bool atgPass::SetFloat3(const char* var_name, const float f[3])
 {
     GLint identityID = 0;

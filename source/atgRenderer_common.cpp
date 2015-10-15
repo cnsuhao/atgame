@@ -75,15 +75,43 @@ const char* atgRenderer::getName()
 
 void atgRenderer::AddBindLight(atgLight* light)
 {
+#ifdef _DEBUG
+    bindLights::iterator it = _bindLights.begin();
+    for (bindLights::iterator end = _bindLights.end(); it != end; ++it)
+    {
+        if (*it == light)
+        {
+            AASSERT(0);
+            return;
+        }
+    }
+#endif
+
     _bindLights.push_back(light);
 }
 
-void atgRenderer::BindLights( const bindLights& lights )
+void atgRenderer::AddBindLights( const bindLights& lights )
 {
-    _bindLights.clear();
     std::copy(lights.begin(), lights.end(), _bindLights.begin());
 }
 
+void atgRenderer::RemoveBindLight(atgLight* light)
+{
+    bindLights::iterator it = _bindLights.begin();
+    for (bindLights::iterator end; it != end; ++it)
+    {
+        if (*it == light)
+        {
+            _bindLights.erase(it);
+            break;
+        }
+    }
+}
+
+void atgRenderer::ClearBindLight()
+{
+    _bindLights.clear();
+}
 
 void atgRenderer::BindMaterial( atgMaterial* material )
 {
