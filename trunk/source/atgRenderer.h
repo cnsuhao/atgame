@@ -310,6 +310,8 @@ public:
 
     const char*             GetName();
 
+    bool                    SetInt(const char* var_name, int value);
+    bool                    SetFloat(const char* var_name, float value);
     bool                    SetFloat3(const char* var_name, const float f[3]);
     bool                    SetFloat4(const char* var_name, const float f[4]);
     bool                    SetMatrix4x4(const char* var_name, const float mat[4][4]);
@@ -475,7 +477,9 @@ public:
     void                    Present();
 
     void                    AddBindLight(atgLight* light);
-    void                    BindLights(const bindLights& lights);
+    void                    AddBindLights(const bindLights& lights);
+    void                    RemoveBindLight(atgLight* light);
+    void                    ClearBindLight();
     inline const bindLights& GetBindLights() const;
 
     inline void             SetGlobalAmbientColor(const Vec3& color);

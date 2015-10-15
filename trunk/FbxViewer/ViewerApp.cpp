@@ -16,7 +16,8 @@ ViewerApp::ViewerApp(void)
 {
 	pModel = NULL;
 	pCamera = NULL;
-	pLight = NULL;
+	pLight1 = NULL;
+    pLight2 = NULL;
 
 	leftBtnDown = false;
 	rightBtnDown = false;
@@ -38,36 +39,32 @@ bool ViewerApp::OnInitialize()
 
     g_Renderer->SetGlobalAmbientColor(Vec3One);
 
-	//atgDirectionalLight* pDirectionalLight = new atgDirectionalLight();
-	//pDirectionalLight->SetDirection(Vec3(1.0f, 0.0f, 0.0f));
-    //pDirectionalLight->SetColor(Vec3(1.0f, 1.0f, 1.0f));
-    //pDirectionalLight->SetSpecular(Vec3One);
-    //pDirectionalLight->SetIntensity(3.0f);
+    atgDirectionalLight* pDirectionalLight = new atgDirectionalLight();
+    pDirectionalLight->SetDirection(Vec3(1.0f, -1.0f, 0.0f));
+    pDirectionalLight->SetColor(Vec3(0.3f, 0.3f, 0.3f));
+    pDirectionalLight->SetSpecular(Vec3One);
+    pDirectionalLight->SetIntensity(1.0f);
     //pLight = pDirectionalLight;
+    g_Renderer->AddBindLight(pDirectionalLight);
 
-    //atgPointLight* pPointLight = new atgPointLight();
-    //pPointLight->SetPosition(Vec3(30,80,0));
-    //pPointLight->SetColor(Vec3(1.0f, 1.0f, 1.0f));
-    //pPointLight->SetSpecular(Vec3One);
-    //pPointLight->SetRange(50.0f);
-
-    //atgPointLight* pPointLight = new atgPointLight();
-    //pPointLight->SetPosition(Vec3(30,80,0));
-    //pPointLight->SetColor(Vec3(1.0f, 1.0f, 1.0f));
-    //pPointLight->SetSpecular(Vec3One);
-    //pPointLight->SetRange(50.0f);
+    atgPointLight* pPointLight = new atgPointLight();
+    pPointLight->SetPosition(Vec3(30,80,0));
+    pPointLight->SetColor(Vec3(1.0f, 1.0f, 1.0f));
+    pPointLight->SetSpecular(Vec3One);
+    pPointLight->SetRange(50.0f);
+    pLight1 = pPointLight;
+    g_Renderer->AddBindLight(pLight1);
 
     atgSpotLight* pSpotLight = new atgSpotLight();
     pSpotLight->SetPosition(Vec3(0,80,0));
-    pSpotLight->SetColor(Vec3(1.0f, 1.0f, 1.0f));
+    pSpotLight->SetColor(Vec3(1.0f, 0.0f, 1.0f));
     pSpotLight->SetSpecular(Vec3One);
     pSpotLight->SetRange(200.0f);
     pSpotLight->SetOuterCone(35.0f);
     pSpotLight->SetInnerCone(30.0f);
     pSpotLight->SetDirection(Vec3(0.0f, -1.0f, 0.0));
-
-    pLight = pSpotLight;
-    g_Renderer->AddBindLight(pLight);
+    pLight2 = pSpotLight;
+    g_Renderer->AddBindLight(pLight2);
 
     RECT w_rect;
     GetClientRect(g_hWnd, &w_rect);
@@ -88,7 +85,8 @@ void ViewerApp::OnShutdown()
 {
 	SAFE_DELETE (pModel);
 	SAFE_DELETE (pCamera);
-    SAFE_DELETE (pLight);
+    SAFE_DELETE (pLight1);
+    SAFE_DELETE (pLight2);
 }
 
 void ViewerApp::OnPause()
@@ -155,8 +153,12 @@ void ViewerApp::OnFrame()
 
 	pModel->Render();
 
-    if (pLight)
-        pLight->DebugDraw();
+    const bindLights& lights = g_Renderer->GetBindLights();
+    bindLights::const_iterator it = lights.begin();
+    for (bindLights::const_iterator end = lights.end(); it != end; ++it)
+    {
+        (*it)->DebugDraw();
+    }
 
 	g_Renderer->EndFrame();
 
@@ -373,30 +375,44 @@ void ViewerApp::OnKeyScanDown( Key::Scan keyscan )
         break;
     case Key::N:
         {
-            Vec3 p = static_cast<atgSpotLight*>(pLight)->GetPosition();
+            Vec3 p = static_cast<atgSpotLight*>(pLight1)->GetPosition();
             p.x += 1;
-            static_cast<atgSpotLight*>(pLight)->SetPosition(p);
+            static_cast<atgSpotLight*>(pLight1)->SetPosition(p);
         }
         break;
     case Key::M:
         {
-            Vec3 p = static_cast<atgSpotLight*>(pLight)->GetPosition();
+            Vec3 p = static_cast<atgSpotLight*>(pLight1)->GetPosition();
             p.x -= 1;
-            static_cast<atgSpotLight*>(pLight)->SetPosition(p);
+            static_cast<atgSpotLight*>(pLight1)->SetPosition(p);
         }
         break;
     case Key::H:
         {
-            float r = static_cast<atgSpotLight*>(pLight)->GetRange();
+            float r = static_cast<atgSpotLight*>(pLight1)->GetRange();
             r += 1;
-            static_cast<atgSpotLight*>(pLight)->SetRange(r);
+            static_cast<atgSpotLight*>(pLight1)->SetRange(r);
         }
         break;
     case Key::J:
         {
-            float r = static_cast<atgSpotLight*>(pLight)->GetRange();
+            float r = static_cast<atgSpotLight*>(pLight1)->GetRange();
             r -= 1;
-            static_cast<atgSpotLight*>(pLight)->SetRange(r);
+            static_cast<atgSpotLight*>(pLight1)->SetRange(r);
+        }
+        break;
+    case Key::C:
+        {
+            float r = static_cast<atgSpotLight*>(pLight1)->GetIntensity();
+            r += 1;
+            static_cast<atgSpotLight*>(pLight1)->SetIntensity(r);
+        }
+        break;
+    case Key::V:
+        {
+            float r = static_cast<atgSpotLight*>(pLight1)->GetIntensity();
+            r -= 1;
+            static_cast<atgSpotLight*>(pLight1)->SetIntensity(r);
         }
         break;
 	default:

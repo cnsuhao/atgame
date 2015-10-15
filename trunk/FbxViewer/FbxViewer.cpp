@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "ViewerApp.h"
-
+#include "atgRenderer.h"
 
 class FxbViewer : public CWnd
 {
