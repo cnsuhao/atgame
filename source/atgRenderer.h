@@ -3,7 +3,7 @@
 
 #include "atgMath.h"
 
-#define USE_OPENGL
+//#define USE_OPENGL
 
 #ifndef USE_OPENGL
     #define USE_DIRECTX
@@ -319,10 +319,14 @@ public:
     bool                    SetTexture(const char* var_name, uint8 index);
 #ifdef USE_DIRECTX
 
+    bool                    SetVsInt(const char* var_name, int value);
+    bool                    SetVsFloat(const char* var_name, float value);
     bool                    SetVsFloat3(const char* var_name, const float f[3]);
     bool                    SetVsFloat4(const char* var_name, const float f[4]);
     bool                    SetVsMatrix4x4(const char* var_name, const float mat[4][4]);
 
+    bool                    SetPsInt(const char* var_name, int value);
+    bool                    SetPsFloat(const char* var_name, float value);
     bool                    SetPsFloat3(const char* var_name, const float f[3]);
     bool                    SetPsFloat4(const char* var_name, const float f[4]);
     bool                    SetPsMatrix4x4(const char* var_name, const float mat[4][4]);
