@@ -59,7 +59,7 @@ const char* atgRenderer::getName()
 
 const char* atgRenderer::getName()
 {
-    return StringOpenGLIdentity;
+    return StringDirectxIdentity;
 }
 
 #endif

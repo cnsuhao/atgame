@@ -75,7 +75,7 @@ float4 ps_main(VS_OUTPUT input):COLOR0
     float3 specular_total = float3(0.0, 0.0, 0.0);
 
     int numberOfLights = min(u_numberOfLights, c_numberOfLights);
-    for(int i = 0; i < u_numberOfLights; ++i)
+    for(int i = 0; i < numberOfLights; ++i)
     {
         float light_intensity = u_lightData1[i].x;
         float attenuation = light_intensity;
@@ -101,22 +101,21 @@ float4 ps_main(VS_OUTPUT input):COLOR0
         
         //float ndl = half_lambert(normalize(input.ps_vertexNormal), vertexToLightDirection);
         float ndl = max(0.0, dot(normalize(input.ps_vertexNormal), vertexToLightDirection));
-        float3 diffuse = effect * u_materialDiffuse;
-        diffuse = diffuse * u_lightDiffuse[i] * ndl;
+        float3 diffuse = effect * u_materialDiffuse * u_lightDiffuse[i] * ndl;
         diffuse = diffuse * tex2D(textureSampler, input.ps_textureCoord).xyz;
         diffuse_total += attenuation * diffuse;
         
-        //float3 h = vertexToLightDirection + normalize(-input.ps_vertexPosition);
-        //h = normalize(h);
-        //float facing = max(0.0, dot(input.ps_vertexNormal, vertexToLightDirection));
-        //if(facing > 0.0)
-        //    facing = 1.0;
+        float3 h = vertexToLightDirection + normalize(-input.ps_vertexPosition);
+        h = normalize(h);
+        float facing = max(0.0, dot(input.ps_vertexNormal, vertexToLightDirection));
+        if(facing > 0.0)
+            facing = 1.0;
         
         // u_materialData0.x is material shininess.
-        //float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
-        //                facing * pow(max(0.0, dot(input.ps_vertexNormal, h)), u_materialData0.x); 
+        float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
+                        facing * pow(max(0.0, dot(input.ps_vertexNormal, h)), u_materialData0.x); 
 
-        //specular_total += attenuation * specular;
+        specular_total += attenuation * specular;
     }
     
     float4 color = float4(ambient + diffuse_total + specular_total, 1.0);

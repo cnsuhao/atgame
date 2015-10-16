@@ -40,9 +40,11 @@ struct AABBox
         return center;
     }
 
-    float GetSize()
+    Vec3 GetSize()
     {
-        vMax.Sub(vMin);
+        Vec3 center = vMax.Sub(vMin);
+        center.Scale(0.5f);
+        return center;
     }
 
     bool IsInner(const AABBox& other)
