@@ -96,7 +96,7 @@ void main()
     vec3 specular_total = vec3(0.0, 0.0, 0.0);
 
     int numberOfLights = min(u_numberOfLights, c_numberOfLights);
-    for(int i = 0; i < u_numberOfLights; ++i)
+    for(int i = 0; i < numberOfLights; ++i)
     {
         float light_intensity = u_lightData1[i].x;
         float attenuation = light_intensity;
