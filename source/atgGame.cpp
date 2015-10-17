@@ -92,6 +92,7 @@
     bool win32_init_ogl()
     {
     #if defined (USE_OPENGL) 
+
         static PIXELFORMATDESCRIPTOR pfd =              // pfd Tells Windows How We Want Things To Be
         {
             sizeof(PIXELFORMATDESCRIPTOR),              // Size Of This Pixel Format Descriptor
@@ -114,6 +115,65 @@
             0, 0, 0                                     // Layer Masks Ignored
         };
 
+        g_hInstance = ::GetModuleHandle(NULL);
+        UINT windowStyle = 0;
+        WNDCLASSEX   wndclassex = {0};
+        wndclassex.cbSize        = sizeof(WNDCLASSEX);
+        wndclassex.style         = windowStyle;
+        wndclassex.lpfnWndProc   = DefWindowProc;
+        wndclassex.hInstance     = g_hInstance;
+        wndclassex.hIcon         = LoadIcon (NULL, IDI_WINLOGO);
+        wndclassex.hCursor       = LoadCursor (NULL, IDC_ARROW);
+        wndclassex.hbrBackground = (HBRUSH) GetStockObject (WHITE_BRUSH);
+        wndclassex.lpszClassName = "TempWindow";
+        wndclassex.hIconSm       = wndclassex.hIcon;
+        HWND temphWnd = NULL;
+        HDC temphDC = NULL;
+        HGLRC temphRc = NULL;
+        if (RegisterClassEx (&wndclassex))
+        {
+            temphWnd = CreateWindowEx (0, wndclassex.lpszClassName, wndclassex.lpszClassName, windowStyle, 0, 0, 
+                100, 100, NULL, NULL, g_hInstance, NULL);
+
+            if (temphWnd)
+            {
+                if (temphDC = GetDC(temphWnd))
+                {
+                    int tempPixelFormat;
+                    if ((tempPixelFormat=ChoosePixelFormat(temphDC, &pfd)))
+                    {
+                        if(SetPixelFormat(temphDC,tempPixelFormat,&pfd))
+                        {
+                            if ((temphRc=wglCreateContext(temphDC)))
+                            {
+                                wglMakeCurrent(temphDC,temphRc);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Initialize GLEW
+        if (GLEW_OK != glewInit())
+        {
+            wglMakeCurrent(NULL, NULL);
+            wglDeleteContext(hRC);
+            MessageBox(NULL,"Failed to initialize GLEW.","ERROR",MB_OK|MB_ICONEXCLAMATION);
+            DestroyWindow(g_hWnd);
+            return false;
+        }
+
+        // 销毁临时窗口
+        wglMakeCurrent(NULL, NULL);
+
+        if (temphRc)
+            wglDeleteContext(temphRc);
+        if(temphWnd)
+            DestroyWindow(temphWnd);
+        UnregisterClass(wndclassex.lpszClassName, g_hInstance);
+
+        // 设置主窗口
         if (!(hDC=GetDC(g_hWnd)))                           // Did We Get A Device Context?
         {
             MessageBox(NULL,"Can't Create A GL Device Context.","ERROR",MB_OK|MB_ICONEXCLAMATION);
@@ -121,14 +181,134 @@
             return false;                               // Return FALSE
         }
 
+        bool multisampling = true;
         int PixelFormat;
-        if (!(PixelFormat=ChoosePixelFormat(hDC, &pfd)))    // Did Windows Find A Matching Pixel Format?
+        if (multisampling && wglChoosePixelFormatARB /*&& wglCreateContextAttribsARB*/)
         {
-            MessageBox(NULL,"Can't Find A Suitable PixelFormat.","ERROR",MB_OK|MB_ICONEXCLAMATION);
-            DestroyWindow(g_hWnd);
-            return false;
-        }
+            // MSAA PixelFormat
+            int attributes[] =
+            {
+                WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+                WGL_ACCELERATION_ARB,   WGL_FULL_ACCELERATION_ARB,
+                WGL_COLOR_BITS_ARB,     32,
+                WGL_ALPHA_BITS_ARB,     8,
+                WGL_DEPTH_BITS_ARB,     24,
+                WGL_STENCIL_BITS_ARB,   8,
+                WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
+                WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+                WGL_SAMPLES_ARB,        0,
+                0, 0
+            };
 
+            UINT numFormats = 0;
+            BOOL bStatus = FALSE;
+
+            for (int samples = 16; samples > 0; samples /= 2)
+            {
+                attributes[17] = samples;
+
+                bStatus = wglChoosePixelFormatARB(hDC, attributes, 0, 1,
+                    &PixelFormat, &numFormats);
+
+                if (bStatus == TRUE && numFormats)
+                {
+                    break;
+                    /* 不指定环境版本
+                    int attribs[] =
+                    {
+                        WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+                        WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+                        WGL_CONTEXT_FLAGS_ARB, 0,
+                        0
+                    };
+
+                    if (!(hRC=wglCreateContextAttribsARB(hDC, 0, attribs)))               // Are We Able To Get A Rendering Context?
+                    {
+                        MessageBox(NULL,"Can't Create A GL Rendering Context.","ERROR",MB_OK|MB_ICONEXCLAMATION);
+                        DestroyWindow(g_hWnd);
+                        return false;                               // Return FALSE
+                    }
+
+                    glEnable(GL_MULTISAMPLE_ARB);
+                    */
+                }
+            }
+            if (!(bStatus == TRUE && numFormats))
+            {
+                MessageBox(NULL,"Can't Find A Suitable wglChoosePixelFormatARB.","ERROR",MB_OK|MB_ICONEXCLAMATION);
+                DestroyWindow(g_hWnd);
+                return false;
+            }
+            /*
+            if (wglChoosePixelFormatARB)
+            {
+                struct CSAAPixelFormat
+                {
+                    int numColorSamples;
+                    int numCoverageSamples;
+                    const char *pszDescription;
+                };
+
+                CSAAPixelFormat csaaPixelFormats[] =
+                {
+                    { 4, 16, "16x CSAA" },
+                    { 4, 8,  "8x CSAA" }
+                };
+
+                CSAAPixelFormat csaaQualityPixelFormats[] =
+                {
+                    { 8, 16, "16xQ (Quality) CSAA" },
+                    { 8, 8,  "8xQ (Quality) CSAA" }
+                };
+
+                CSAAPixelFormat *pCSAAFormats = 0;
+
+                int attributes[] =
+                {
+                    WGL_SAMPLE_BUFFERS_ARB,  1,
+                    WGL_COLOR_SAMPLES_NV,    0,
+                    WGL_COVERAGE_SAMPLES_NV, 0,
+                    WGL_DOUBLE_BUFFER_ARB,   1,
+                    0, 0
+                };
+
+                int returnedPixelFormat = 0;
+                UINT numFormats = 0;
+                BOOL bStatus = FALSE;
+
+                int samples = 8;
+                if (samples >= 8)
+                    pCSAAFormats = csaaQualityPixelFormats;
+                else
+                    pCSAAFormats = csaaPixelFormats;
+
+                for (int i = 0; i < 2; ++i)
+                {
+                    attributes[3] = pCSAAFormats[i].numColorSamples;
+                    attributes[5] = pCSAAFormats[i].numCoverageSamples;
+
+                    bStatus = wglChoosePixelFormatARB(hDC, attributes, 0, 1,
+                        &returnedPixelFormat, &numFormats);
+
+                    if (bStatus == TRUE && numFormats)
+                    {
+                        break;
+                    }
+                }
+            }
+            */
+        }
+        else
+        {
+            
+            if (!(PixelFormat=ChoosePixelFormat(hDC, &pfd)))    // Did Windows Find A Matching Pixel Format?
+            {
+                MessageBox(NULL,"Can't Find A Suitable PixelFormat.","ERROR",MB_OK|MB_ICONEXCLAMATION);
+                DestroyWindow(g_hWnd);
+                return false;
+            }
+        }
+      
         if(!SetPixelFormat(hDC,PixelFormat,&pfd))       // Are We Able To Set The Pixel Format?
         {
             MessageBox(NULL,"Can't Set The PixelFormat.","ERROR",MB_OK|MB_ICONEXCLAMATION);
@@ -149,16 +329,6 @@
             MessageBox(NULL,"Can't Activate The GL Rendering Context.","ERROR",MB_OK|MB_ICONEXCLAMATION);
             DestroyWindow(g_hWnd);
             return false;                               // Return FALSE
-        }
-
-        // Initialize GLEW
-        if (GLEW_OK != glewInit())
-        {
-            wglMakeCurrent(NULL, NULL);
-            wglDeleteContext(hRC);
-            MessageBox(NULL,"Failed to initialize GLEW.","ERROR",MB_OK|MB_ICONEXCLAMATION);
-            DestroyWindow(g_hWnd);
-            return false;
         }
 
         SetVSyncState(WINDOW_VSYNC ? true : false);

@@ -8,7 +8,7 @@ atgMaterial::atgMaterial(void)
     _emissiveColor = Vec3Zero;
     _diffuseColor = Vec3One;
     _specularColor = Vec3(1.0f, 0.0f, 0.0f);
-    _ambientColor = Vec3(0.02f, 0.02f, 0.02f);
+    _ambientColor = Vec3(1.0f, 1.0f, 1.0f);
     _shininess = 1.0f;
 }
 

@@ -236,7 +236,7 @@ void atgShaderLightTexture::BeginContext( void* data )
     {
         SetFloat3("u_materialAmbient", material->GetAmbientColor().m);
         SetFloat3("u_materialDiffuse", material->GetDiffuseColor().m);
-        SetFloat3("u_materialSpecular", Vec3One.m);
+        SetFloat3("u_materialSpecular", material->GetSpecularColor().m);
         Vec4 materialData0(material->GetShininess(), 0.0f, 0.0f, 0.0f);
         SetFloat4("u_materialData0", materialData0.m);
     }
