@@ -1,6 +1,7 @@
 #include "atgBase.h"
 #include "atgMisc.h"
 #include "atgMath.h"
+#include <sstream>      // std::istringstream
 
 const int IFACE_OK = 0;
 const int IFACE_FAILED = 1;
@@ -774,6 +775,221 @@ void PNG_Loader::Release( PNG_Image* image )
 		if ( image->imageData )
 			delete[] image->imageData;
 	}
+}
+
+bool strToBool(const std::string &s)
+{
+    if (s=="0" || s=="false"){
+        return false;
+    }
+    if (s=="1" || s=="true"){
+        return true;
+    }
+
+    AASSERT(0, "Error converting string to bool, expected 0 or 1, found: " + s);
+    return false;
+}
+
+int strToInt(const  std::string &s)
+{
+    char *endChar;
+    int intValue= strtol(s.c_str(), &endChar, 10);
+
+    if(*endChar!='\0'){
+        AASSERT(0, "Error converting from string to int, found: " + s);
+    }
+
+    return intValue;
+}
+float strToFloat(const  std::string &s)
+{
+    char *endChar;
+    float floatValue= static_cast<float>(strtod(s.c_str(), &endChar));
+
+    if(*endChar!='\0'){
+        AASSERT(0, "Error converting from string to float, found: "+s);
+    }
+
+    return floatValue;
+}
+
+bool strToBool(const  std::string &s, bool *b)
+{
+    if (s=="0" || s=="false"){
+        *b= false;
+        return true;
+    }
+    if (s=="1" || s=="true"){
+        *b= true;
+        return true;
+    }
+
+    return false;
+}
+
+bool strToInt(const  std::string &s, int *i)
+{
+    char *endChar;
+    *i= strtol(s.c_str(), &endChar, 10);
+
+    if(*endChar!='\0'){
+        return false;
+    }
+    return true;
+}
+
+bool strToFloat(const  std::string &s, float *f)
+{
+    char *endChar;
+    *f= static_cast<float>(strtod(s.c_str(), &endChar));
+
+    if(*endChar!='\0'){
+        return false;
+    }
+    return true;
+}
+
+std::string boolToStr(bool b){
+    if(b){
+        return "1";
+    }
+    else{
+        return "0";
+    }
+}
+
+std::string intToStr(int i){
+    char str[64];
+    sprintf(str, "%d", i);
+    return str; 
+}
+
+std::string intToHex(int i){
+    char str[64];
+    sprintf(str, "%x", i);
+    return str;
+}
+
+std::string floatToStr(float f){
+    char str[64];
+    sprintf(str, "%.2f", f);
+    return str; 
+}
+
+bool Properties::load( const std::string &path )
+{
+    this->path= path;
+
+    atgReadFile reader;
+    if(!reader.Open(path.c_str()))
+    {
+        LOG("can't open file=%s.\n", path.c_str());
+        return false;
+    }
+
+    uint32 fileLength = reader.GetLength();
+    std::string buffer;
+    buffer.resize(fileLength);
+    reader.Read((void*)buffer.c_str(), fileLength);
+    std::istringstream fileStream(buffer);
+
+
+    char lineBuffer[1024];
+    std::string line, key, value;
+    int pos;
+
+    propertyMap.clear();
+    while(!fileStream.eof()){
+
+        fileStream.getline(lineBuffer, 1024);
+
+        if(lineBuffer[0]==';'){
+            continue;
+        }
+
+        // gracefully handle win32 \r\n line endings
+        size_t len= strlen(lineBuffer);
+        if(len > 0 && lineBuffer[len-1] == '\r'){
+            lineBuffer[len-1]= 0;
+        }
+
+        line= lineBuffer;
+        pos= line.find('=');
+
+        if(pos == std::string::npos){
+            continue;
+        }
+
+        key= line.substr(0, pos);
+        value= line.substr(pos+1);
+        propertyMap.insert(PropertyPair(key, value));
+        propertyVector.push_back(PropertyPair(key, value));
+
+    }
+    return true;
+}
+
+bool Properties::save( const std::string &path ){
+    return true;
+}
+
+bool Properties::getBool( const std::string &key ) const{
+    return strToBool(getString(key));
+}
+
+
+int Properties::getInt(const std::string &key) const{
+    return strToInt(getString(key));
+}
+
+int Properties::getInt(const std::string &key, int min, int max) const{
+    int i= getInt(key);
+    if(i<min || i>max){
+        AASSERT(0, "Value out of range: " + key + ", min: " + intToStr(min) + ", max: " + intToStr(max));
+    }
+    return i;
+}
+
+float Properties::getFloat(const std::string &key) const{
+    return strToFloat(getString(key));
+}
+
+float Properties::getFloat(const std::string &key, float min, float max) const{
+    float f= getFloat(key);
+    if(f<min || f>max){
+        AASSERT(0, "Value out of range: " + key + ", min: " + floatToStr(min) + ", max: " + floatToStr(max));
+    }
+    return f;
+}
+
+const std::string& Properties::getString(const std::string &key) const{
+    PropertyMap::const_iterator it;
+    it= propertyMap.find(key);
+    if(it==propertyMap.end()){
+        AASSERT(0, "Value not found in propertyMap: " + key + ", loaded from: " + path);
+        static std::string str("unknown");
+        return str;
+    }
+    else{
+        return it->second;
+    }
+}
+
+void Properties::setInt(const std::string &key, int value){
+    setString(key, intToStr(value));
+}
+
+void Properties::setBool(const std::string &key, bool value){
+    setString(key, boolToStr(value));
+}
+
+void Properties::setFloat(const std::string &key, float value){
+    setString(key, floatToStr(value));
+}
+
+void Properties::setString(const std::string &key, const std::string &value){
+    propertyMap.erase(key);
+    propertyMap.insert(PropertyPair(key, value));
 }
 
 
@@ -1875,4 +2091,3 @@ int MdxModel::loadCollisionShape(MdxCollisionShape& CS)
     }
     return currentSize;
 }
-

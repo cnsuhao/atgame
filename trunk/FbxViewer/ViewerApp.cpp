@@ -12,6 +12,30 @@
 
 #include "resource.h"
 
+
+class MyProperty
+{
+public : 
+    MyProperty()
+    {
+        m_propertys.insert(std::pair<std::string, std::string>("name", "lsh"));
+    }
+
+    const std::string& operator [](const std::string& key)
+    {
+        static std::string emptyStr("");
+        std::map<std::string, std::string>::iterator it = m_propertys.find(key);
+        if (it != m_propertys.end())
+        {
+            return it->second;
+        }
+        return emptyStr;
+    }
+
+
+    std::map<std::string, std::string> m_propertys;
+};
+
 ViewerApp::ViewerApp(void)
 {
 	pModel = NULL;
@@ -31,13 +55,16 @@ ViewerApp::~ViewerApp(void)
 
 bool ViewerApp::OnInitialize()
 {
+    MyProperty p1;
+    LOG("Property[%s]=[%s]", "name", p1["name"].c_str());
+
 	g_Renderer->SetViewport(0, 0, GetWindowWidth(), GetWindowHeight());
 	g_Renderer->SetFaceCull(FCM_CW);
 
 	pCamera = new atgCamera();
 	g_Renderer->SetMatrix(MD_VIEW, pCamera->GetView().m);
 
-    g_Renderer->SetGlobalAmbientColor(Vec3One);
+    g_Renderer->SetGlobalAmbientColor(Vec3(0.2f,0.2f,0.2f));
 
     atgDirectionalLight* pDirectionalLight = new atgDirectionalLight();
     pDirectionalLight->SetDirection(Vec3(1.0f, -1.0f, 0.0f));

@@ -390,12 +390,15 @@ enum RenderTargetType
     RTT_Stencil
 };
 
-class RenderTarget
+class atgRenderTarget
 {
-    RenderTarget();
-    ~RenderTarget();
+public:
+    atgRenderTarget();
+    ~atgRenderTarget();
     bool                    Create(RenderTargetType type);
     bool                    Destroy();
+private:
+    class atgRenderTargetImpl* _impl;
 };
 
 enum MatrixDefine
