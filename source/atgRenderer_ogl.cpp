@@ -1100,6 +1100,40 @@ void atgTexture::SetAddressMode(TextureCoordinate coordinate, TextureAddressMode
     }
 }
 
+class atgRenderTargetImpl
+{
+public:
+    atgRenderTargetImpl() {}
+
+    GLuint renderBufferId;
+};
+
+atgRenderTarget::atgRenderTarget():_impl(NULL)
+{
+}
+
+bool atgRenderTarget::Create( RenderTargetType type )
+{
+    if (_impl == NULL)
+    {
+        _impl = new atgRenderTargetImpl();
+    }
+    glGenRenderbuffers(1, &_impl->renderBufferId);
+    glBindRenderbuffer(GL_RENDERBUFFER, _impl->renderBufferId);
+    uint32 offsetX, offsetY, width, height;
+    g_Renderer->GetViewPort(offsetX, offsetY, width, height);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4 /* 4 samples */, GL_RGBA8,  width, height);
+
+    GLuint fbID;
+    glGenFramebuffers(1, &fbID);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbID);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _impl->renderBufferId);
+
+    //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+    return true;
+}
+
 bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
 {
     bool rt;

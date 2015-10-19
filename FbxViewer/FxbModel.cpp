@@ -131,6 +131,7 @@ bool FxbModel::Paser()
 		atgPass* pass = atgShaderLibFactory::FindOrCreatePass(LIGHT_TEXTURE_PASS_IDENTITY);
 		pMaterial->SetPass(pass);
         pMaterial->SetShininess(128.0f);
+        pMaterial->SetSpecularColor(Vec3(0.1f, 0.1f, 0.1f));
 
 		JPEG_Image image;
 		ColorOrder co = IsOpenGLGraph() ? CO_RGBA : CO_ARGB;
