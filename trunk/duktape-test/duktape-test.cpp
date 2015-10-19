@@ -101,10 +101,16 @@ void Test(duk_context *ctx)
 
 void Test22(duk_context *ctx)
 {
+    printf("stack top is %ld\n", (long) duk_get_top(ctx));
     duk_push_global_object(ctx);
+    printf("stack top is %ld\n", (long) duk_get_top(ctx));
     duk_push_object(ctx);
+    printf("stack top is %ld\n", (long) duk_get_top(ctx));
     duk_put_prop_string(ctx, -2, "Lsh");
+    printf("stack top is %ld\n", (long) duk_get_top(ctx));
     duk_pop(ctx);
+
+    printf("stack top is %ld\n", (long) duk_get_top(ctx));
 
     duk_get_global_string(ctx, "Lsh");
 
@@ -139,6 +145,15 @@ void Test22(duk_context *ctx)
     duk_pop(ctx);
 
     duk_eval_string(ctx, "var ary = Lsh.abs(-2,3,-4,-5); for(var a in ary) { print(ary[a]); }");
+    duk_pop(ctx);
+
+    duk_get_global_string(ctx, "Lsh");
+    if (duk_has_prop_string(ctx, -1, "show"))
+    {
+        duk_push_string(ctx, "show");
+        duk_call_prop(ctx, -2, 0);
+        duk_pop(ctx);
+    }
     duk_pop(ctx);
 
     printf("stack top is %ld\n", (long) duk_get_top(ctx));

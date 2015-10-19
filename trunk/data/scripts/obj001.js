@@ -1,14 +1,17 @@
-﻿function load()
+﻿obj001 = {};
+
+obj001.load = function ()
 {
-    print("obj001");
+    print("load obj001.");
 }
 
-function update()
+obj001.update = function (delteTime)
 {
-    //print("!");
+    var t = delteTime;
 }
 
-function unload()
+obj001.unload = function ()
 {
-    
+    print("unload obj001.");
 }
+

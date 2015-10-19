@@ -1,13 +1,18 @@
-﻿function load()
+﻿obj002 = {};
+
+obj002.load = function ()
 {
-    print("obj002");
+    print("load obj002.");
+    ScriptMng.AddScriptObject("scripts/obj003.js", "obj003");
 }
 
-function update()
+obj002.update = function (delteTime)
 {
+    var t = delteTime;
 }
 
-function unload()
+obj002.unload = function ()
 {
-    
+    print("unload obj002.");
+    ScriptMng.RemoveScriptObject("obj003");
 }
