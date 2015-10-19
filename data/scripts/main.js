@@ -44,9 +44,8 @@ function show()
 function start()
 {
     show();
-    ScriptMng.AddScriptObject("scripts/obj001.js");
-    ScriptMng.AddScriptObject("scripts/obj002.js");
-    ScriptMng.AddScriptObject("scripts/obj003.js");
+    ScriptMng.AddScriptObject("scripts/obj001.js", "obj001");
+    ScriptMng.AddScriptObject("scripts/obj002.js", "obj002");
 }
 
 function update()

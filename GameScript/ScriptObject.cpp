@@ -10,12 +10,15 @@ ScriptObject::~ScriptObject(void)
 {
 }
 
-bool ScriptObject::LoadFile(const char* scriptfile)
+bool ScriptObject::LoadFile(const char* scriptfile, const char* objectName)
 {
     if (scriptfile != NULL)
     {
         _scriptFile.clear();
         _scriptFile.append(scriptfile);
+
+        _objectName.clear();
+        _objectName.append(objectName);
 
         return RealLoad();
     }
@@ -26,16 +29,21 @@ void ScriptObject::OnLoad()
 {
     if (_loaded)
     {
-        duk_push_global_object(_ctx);
-        duk_get_prop_string(_ctx, -1 /*index*/, "load");
-        if (duk_pcall(_ctx, 0 /*nargs*/) != 0) {
-            printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
+        duk_get_global_string(_ctx, _objectName.c_str());
+        if (duk_has_prop_string(_ctx, -1, "load"))
+        {
+            duk_push_string(_ctx, "load");
+            if (duk_pcall_prop(_ctx, -2, 0 /*nargs*/) != 0) {
+                printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
+            }
+            duk_pop(_ctx);  /* pop result/error */
         }
-        duk_pop(_ctx);  /* pop result/error */
+        duk_pop(_ctx);
+        //printf("stack top is %ld\n", (long) duk_get_top(_ctx));
     }
 }
 
-void ScriptObject::OnUpdate(float dt)
+void ScriptObject::OnUpdate(float deltaTime)
 {
     if (_loaded)
     {
@@ -47,12 +55,17 @@ void ScriptObject::OnUpdate(float dt)
 
         if (!_scriptFile.empty())
         {
-            duk_push_global_object(_ctx);
-            duk_get_prop_string(_ctx, -1 /*index*/, "update");
-            if (duk_pcall(_ctx, 0 /*nargs*/) != 0) {
-                printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
+            duk_get_global_string(_ctx, _objectName.c_str());
+            if (duk_has_prop_string(_ctx, -1, "update"))
+            {
+                duk_push_string(_ctx, "update");
+                duk_push_number(_ctx, deltaTime);
+                if (duk_pcall_prop(_ctx, -3, 1/*nargs*/) != 0) {
+                    printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
+                }
+                duk_pop(_ctx);  /* pop result/error */
             }
-            duk_pop(_ctx);  /* pop result/error */
+            duk_pop(_ctx);
         }
     }
 }
@@ -61,12 +74,16 @@ void ScriptObject::OnUnload()
 {
     if (_loaded)
     {
-        duk_push_global_object(_ctx);
-        duk_get_prop_string(_ctx, -1 /*index*/, "unload");
-        if (duk_pcall(_ctx, 0 /*nargs*/) != 0) {
-            printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
+        duk_get_global_string(_ctx, _objectName.c_str());
+        if (duk_has_prop_string(_ctx, -1, "unload"))
+        {
+            duk_push_string(_ctx, "unload");
+            if (duk_pcall_prop(_ctx, -2, 0/*nargs*/) != 0) {
+                printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
+            }
+            duk_pop(_ctx);  /* pop result/error */
         }
-        duk_pop(_ctx);  /* pop result/error */
+        duk_pop(_ctx);
     }
 }
 
@@ -76,6 +93,7 @@ bool ScriptObject::RealLoad()
         atgLog("Error: %s\n", duk_safe_to_string(_ctx, -1));
         return false;
     }
+    duk_pop(_ctx);  /* pop result/error */
 
     FILETIME creationTime;
     FILETIME lastAccessTime;

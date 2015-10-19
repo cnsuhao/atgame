@@ -38,7 +38,7 @@ void GameApp::OnResume()
 
 void GameApp::OnFrame()
 {
-	ScriptMng::Get().Update();
+	ScriptMng::Get().Update(999.0f);
 	::Sleep(1);
 }
 
