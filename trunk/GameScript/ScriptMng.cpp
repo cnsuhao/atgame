@@ -8,6 +8,16 @@ int ClearScreen(duk_context *ctx) {
     return 0;  /* one return value */
 }
 
+int AddScriptObject(duk_context *ctx) {
+    const char * scriptFile = duk_get_string(ctx, -1);
+    if (scriptFile)
+    {
+        ScriptMng::Get().AddScriptObject(scriptFile);
+    }
+
+    return 0;  /* one return value */
+}
+
 ScriptMng::ScriptMng(void)
 {
 	_ctx = duk_create_heap_default();
@@ -34,12 +44,18 @@ void ScriptMng::Init()
     duk_push_c_function(_ctx, ClearScreen, 0);
     duk_put_prop_string(_ctx, -2, "ClearScreen");
     
-    
-    
-    
-    
+    duk_push_object(_ctx);
+    duk_put_prop_string(_ctx, -2, "ScriptMng");
     duk_pop(_ctx);
 
+
+    duk_get_global_string(_ctx, "ScriptMng");
+    duk_push_c_function(_ctx, ::AddScriptObject, 1);
+    duk_put_prop_string(_ctx, -2, "AddScriptObject");
+
+
+
+    duk_pop(_ctx);
 }
 
 bool ScriptMng::LoadScriptMain( const char* scriptFile )
@@ -132,6 +148,13 @@ void ScriptMng::Update()
 			printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
 		}
 		duk_pop(_ctx);  /* pop result/error */
+
+        auto it = _scriptObjects.begin();
+        while (it != _scriptObjects.end())
+        {
+            it->second->OnUpdate(0.0f);
+            ++it;
+        }
 	}
 }
 

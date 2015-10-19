@@ -134,7 +134,7 @@ void atgSpotLight::DebugDraw()
     for (float i = 0; i < 10; i += 1.0f)
     {
         QuatFromAxisAngle(direction.m, angle, q.m);
-        VecRotate(p.m, left.m, q.m);
+        VecRotate(left.m, q.m, p.m);
         g_Renderer->DrawLine(p.m, _position.m, Vec3One.m);
         angle += 36.0f;
     }

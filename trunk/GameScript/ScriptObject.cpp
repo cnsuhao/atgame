@@ -17,7 +17,7 @@ bool ScriptObject::LoadFile(const char* scriptfile)
         _scriptFile.clear();
         _scriptFile.append(scriptfile);
 
-        RealLoad();
+        return RealLoad();
     }
     return false;
 }
@@ -27,7 +27,7 @@ void ScriptObject::OnLoad()
     if (_loaded)
     {
         duk_push_global_object(_ctx);
-        duk_get_prop_string(_ctx, -1 /*index*/, "Load");
+        duk_get_prop_string(_ctx, -1 /*index*/, "load");
         if (duk_pcall(_ctx, 0 /*nargs*/) != 0) {
             printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
         }
@@ -48,7 +48,7 @@ void ScriptObject::OnUpdate(float dt)
         if (!_scriptFile.empty())
         {
             duk_push_global_object(_ctx);
-            duk_get_prop_string(_ctx, -1 /*index*/, "Update");
+            duk_get_prop_string(_ctx, -1 /*index*/, "update");
             if (duk_pcall(_ctx, 0 /*nargs*/) != 0) {
                 printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
             }
@@ -62,7 +62,7 @@ void ScriptObject::OnUnload()
     if (_loaded)
     {
         duk_push_global_object(_ctx);
-        duk_get_prop_string(_ctx, -1 /*index*/, "Unload");
+        duk_get_prop_string(_ctx, -1 /*index*/, "unload");
         if (duk_pcall(_ctx, 0 /*nargs*/) != 0) {
             printf("Error: %s\n", duk_safe_to_string(_ctx, -1));
         }
