@@ -1,5 +1,7 @@
 #pragma once
 
+#include "atgGame.h"
+
 class GameApp : public atgGame
 {
 public:

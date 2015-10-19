@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ScriptObject.h"
+
 class ScriptMng
 {
 	ScriptMng(void);
@@ -12,22 +14,28 @@ public:
 		static ScriptMng mng; 
 		return mng; 
 	}
+    
+    //>ÅäÖÃ
+    void                Init();
+	bool                LoadScriptMain(const char* scriptFile);
+    void                Shutdown();
+    
+    //>½Å±¾
+    bool                AddScriptObject(const char* scriptFile);
+    bool                RemoveScriptObject(const char* scriptFile);
+    ScriptObject*       GetScriptObject(const char* scriptFile);
 
-	void Load(const char* fileName);
+    //>Âß¼­
+	void                Start();
+	void                Update();
+	void                End();
 
-	void HotLoad();
-
-	bool IsNeedHotLoad();
-
-	void Start();
-	void Update();
-	void End();
 protected:
-	void RealLoad();
+	bool                RealLoad();
 
 protected:
 	std::string _scriptFile;
 	duk_context * _ctx;
-	FILETIME _loadWriteTime;
+    std::map<std::string, ScriptObject*> _scriptObjects;
 };
 
