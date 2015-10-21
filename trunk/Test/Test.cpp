@@ -4,6 +4,9 @@
 #include "stdafx.h"
 #include "atgBase.h"
 #include "atgRenderer.h"
+#include "atgMisc.h"
+#include "atgShaderLibrary.h"
+#include "atgGame.h"
 
 class atgTextureImpl
 {
