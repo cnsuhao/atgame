@@ -71,12 +71,14 @@ bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexForma
         d3dFormat = D3DFMT_INDEX32;
     }
     DWORD d3dUsage = D3DUSAGE_WRITEONLY;
+    D3DPOOL d3dPool = D3DPOOL_MANAGED;
     _impl->accessMode = accessMode;
-    if(accessMode == BAM_Dynamic)
+    if(accessMode == BAM_Dynamic){
         d3dUsage = d3dUsage | D3DUSAGE_DYNAMIC;
+        d3dPool = D3DPOOL_DEFAULT;
+    }
     uint32 buffSize = numIndices * indexSize;
     _size = buffSize;
-    D3DPOOL d3dPool = D3DPOOL_DEFAULT;
     if( FAILED(g_pd3dDevice->CreateIndexBuffer( buffSize, 
         d3dUsage, d3dFormat, d3dPool, &_impl->pDXIB, NULL)))
     {
@@ -443,12 +445,14 @@ bool atgVertexBuffer::Create( atgVertexDecl* decl, const void *pData, uint32 siz
     }
     
     DWORD d3dusage = D3DUSAGE_WRITEONLY;
+    D3DPOOL d3dPool = D3DPOOL_MANAGED;
     if( accessMode == BAM_Dynamic)
     {
         d3dusage = D3DUSAGE_DYNAMIC;
+        d3dPool = D3DPOOL_DEFAULT;
     }
     
-    if( FAILED(g_pd3dDevice->CreateVertexBuffer(size, d3dusage, 0, D3DPOOL_DEFAULT, &_impl->pDXVB, NULL)) )
+    if( FAILED(g_pd3dDevice->CreateVertexBuffer(size, d3dusage, 0, d3dPool, &_impl->pDXVB, NULL)) )
     {
         SAFE_DELETE(_impl);
         return false;
@@ -1541,10 +1545,43 @@ void atgRenderer::EndFrame()
     BindMaterial(NULL);
 }
 
+
+static bool isLost(HRESULT _hr)
+{
+    return D3DERR_DEVICELOST == _hr
+        || D3DERR_DRIVERINTERNALERROR == _hr
+#if !defined(D3D_DISABLE_9EX)
+        || D3DERR_DEVICEHUNG == _hr
+        || D3DERR_DEVICEREMOVED == _hr
+#endif // !defined(D3D_DISABLE_9EX)
+        ;
+}
+
 void atgRenderer::Present()
 {
     ATG_PROFILE("atgRenderer::Present");
-    DX_ASSERT( g_pd3dDevice->Present( NULL, NULL, NULL, NULL ) );
+    //DX_ASSERT( g_pd3dDevice->Present( NULL, NULL, NULL, NULL ) );
+
+    HRESULT hr = g_pd3dDevice->Present( NULL, NULL, NULL, NULL );
+    if (isLost(hr) )
+    {
+        do
+        {
+            do
+            {
+                hr = g_pd3dDevice->TestCooperativeLevel();
+            }
+            while (D3DERR_DEVICENOTRESET != hr);
+
+            do
+            {
+                hr = g_pd3dDevice->Reset(g_d3dpp);
+            } while (FAILED(hr) );
+
+            hr = g_pd3dDevice->TestCooperativeLevel();
+        }
+        while (FAILED(hr) );
+    }
 }
 
 bool PrimitiveTypeConvertToDX(PrimitveType pt, D3DPRIMITIVETYPE& dx_pt)

@@ -127,6 +127,11 @@ bool FxbModel::Paser()
 
         aiColor4D colorDiff;
         pAIMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, colorDiff);
+        //pMaterial->SetDiffuseColor(Vec3(colorDiff.r, colorDiff.g, colorDiff.b));
+
+        aiColor4D ambient;
+        pAIMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
+        //pMaterial->SetAmbientColor(Vec3(ambient.r, ambient.g, ambient.b));
 
 		atgPass* pass = atgShaderLibFactory::FindOrCreatePass(LIGHT_TEXTURE_PASS_IDENTITY);
 		pMaterial->SetPass(pass);

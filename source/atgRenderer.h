@@ -3,7 +3,7 @@
 
 #include "atgMath.h"
 
-#define USE_OPENGL
+//#define USE_OPENGL
 
 #ifndef USE_OPENGL
     #define USE_DIRECTX
