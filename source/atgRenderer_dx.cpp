@@ -1252,6 +1252,135 @@ void atgPass::EndContext(void* data)
 
 }
 
+class atgRenderTargetImpl
+{
+public:
+    atgRenderTargetImpl() {}
+    ~atgRenderTargetImpl() {}
+
+    bool Create(uint16 width, uint16 height, D3DFORMAT d3dFormat)
+    {
+        //> level为1, 渲染到纹理不需要做minmap采样. 
+        DX_ASSERT( g_pd3dDevice->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, d3dFormat, D3DPOOL_DEFAULT, &pRenderTexture, NULL) );
+        //> 必然需要一块深度缓存来满足绘制图元所需要的基本需求.
+        DX_ASSERT( g_pd3dDevice->CreateDepthStencilSurface(width, height, g_d3dpp->AutoDepthStencilFormat, D3DMULTISAMPLE_NONE, 0, TRUE, &pDepthStencilSurface, NULL) );
+
+        return true;
+    }
+
+    void Bind(uint8 index_)
+    {
+        index = index_;
+        IDirect3DSurface9* pSurface;
+        DX_ASSERT( pRenderTexture->GetSurfaceLevel(0, &pSurface) );
+
+        IDirect3DSurface9* pOldRT = NULL;
+        if( SUCCEEDED( g_pd3dDevice->GetRenderTarget(index, &pOldRT)) )
+        {
+            DX_ASSERT( g_pd3dDevice->SetRenderTarget(index, pSurface) );
+            SAFE_RELEASE( pSurface );
+
+            IDirect3DSurface9* pOldDS = NULL;
+            if ( SUCCEEDED(g_pd3dDevice->GetDepthStencilSurface(&pOldDS)) )
+            {
+                DX_ASSERT( g_pd3dDevice->SetDepthStencilSurface(pDepthStencilSurface) );
+            }
+        }
+    }
+
+    void Unbind()
+    {
+        if (pOldDS != NULL)
+        {
+            g_pd3dDevice->SetDepthStencilSurface( pOldDS );
+            SAFE_RELEASE( pOldDS );
+        }
+
+        if (pOldRT != NULL)
+        {
+            g_pd3dDevice->SetRenderTarget(index, pOldRT);
+            SAFE_RELEASE( pOldRT );
+        }
+    }
+
+IDirect3DTexture9* pRenderTexture;
+IDirect3DSurface9* pDepthStencilSurface;
+IDirect3DSurface9* pOldRT;
+IDirect3DSurface9* pOldDS;
+
+uint8  index;
+};
+
+
+atgRenderTarget::atgRenderTarget():_impl(NULL)
+{
+
+}
+
+atgRenderTarget::~atgRenderTarget()
+{
+    Destroy();
+}
+
+bool atgRenderTarget::Create(uint16 width, uint16 height, RenderTargetFormat format)
+{
+    Destroy();
+    
+    _impl = new atgRenderTargetImpl();
+    if (_impl)
+    {
+        D3DFORMAT d3dFormat = D3DFMT_UNKNOWN;
+        switch (format)
+        {
+        case RTF_A8R8G8B8:
+            d3dFormat = D3DFMT_A8R8G8B8;
+            break;
+        case RTF_R32F:
+            d3dFormat = D3DFMT_R32F;
+            break;
+        default:
+            break;
+        }
+
+        if (d3dFormat != D3DFMT_UNKNOWN)
+        {
+            return _impl->Create(width, height, d3dFormat);
+        }
+    }
+
+    if (_impl)
+    {
+        SAFE_DELETE( _impl );
+    }
+
+    return false;
+}
+
+bool atgRenderTarget::Destroy()
+{
+    if (_impl)
+    {
+        SAFE_DELETE( _impl );
+    }
+    return true;
+}
+
+bool atgRenderTarget::Active(uint8 index)
+{
+    if (_impl)
+    {
+        _impl->Bind(index);
+    }
+    return false;
+}
+void atgRenderTarget::Deactive()
+{
+    if (_impl)
+    {
+        _impl->Unbind();
+    }
+}
+
 bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
 {
     // Create DirectX 9 Device Interface.

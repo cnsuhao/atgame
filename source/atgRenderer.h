@@ -2,6 +2,7 @@
 #define _ATG_RENDERER_H_
 
 #include "atgMath.h"
+#include <stack>
 
 //#define USE_OPENGL
 
@@ -383,11 +384,17 @@ class atgEffect
 };
 
 
-enum RenderTargetType
+//enum RenderTargetType
+//{
+//    RTT_Color,
+//    RTT_Depth,
+//    RTT_Stencil
+//};
+
+enum RenderTargetFormat
 {
-    RTT_Color,
-    RTT_Depth,
-    RTT_Stencil
+    RTF_A8R8G8B8,       // color
+    RTF_R32F,           // color
 };
 
 class atgRenderTarget
@@ -395,11 +402,17 @@ class atgRenderTarget
 public:
     atgRenderTarget();
     ~atgRenderTarget();
-    bool                    Create(RenderTargetType type);
+
+    bool                    Create(uint16 width, uint16 height, RenderTargetFormat format);
     bool                    Destroy();
+
+
+    bool                    Active(uint8 index);
+    void                    Deactive();
 private:
     class atgRenderTargetImpl* _impl;
 };
+
 
 enum MatrixDefine
 {
@@ -483,6 +496,9 @@ public:
     void                    EndFrame();
     void                    Present();
 
+    void                    PushRenderTarget(uint8 index, atgRenderTarget* pRenderTarget);
+    void                    PopRenderTarget(uint8 index);
+
     void                    AddBindLight(atgLight* light);
     void                    AddBindLights(const bindLights& lights);
     void                    RemoveBindLight(atgLight* light);
@@ -560,6 +576,10 @@ private:
 
     typedef std::map<std::string, atgTexture* > atgTextureSet;
     atgTextureSet _cacheTextures;
+
+    typedef std::stack<atgRenderTarget* > atgRenderTargetStack;
+    atgRenderTargetStack _renderTargetStack;
+
 };
 
 //////////////////////////////////////////////////////////////////////////
