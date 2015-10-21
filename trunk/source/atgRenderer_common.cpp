@@ -449,3 +449,22 @@ void atgRenderer::InsertCacheTexture(const char* Key, atgTexture* TexturePack)
 
     _cacheTextures.insert(atgTextureSet::value_type(Key, TexturePack));
 }
+
+void atgRenderer::PushRenderTarget(uint8 index, atgRenderTarget* pRenderTarget)
+{
+    if (pRenderTarget)
+    {
+        _renderTargetStack.push(pRenderTarget);
+        pRenderTarget->Active(index);
+    }
+}
+
+void atgRenderer::PopRenderTarget(uint8 index)
+{
+    if (!_renderTargetStack.empty())
+    {
+        atgRenderTarget* pRenderTarget = _renderTargetStack.top();
+        pRenderTarget->Deactive();
+        _renderTargetStack.pop();
+    }
+}

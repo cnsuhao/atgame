@@ -69,7 +69,7 @@ bool FxbModel::Paser()
 
     Assimp::Exporter exporter;
     size_t t = exporter.GetExportFormatCount();
-    for (int i = 0; i < t; ++i)
+    for (size_t i = 0; i < t; ++i)
     {
         const aiExportFormatDesc* pDesc = exporter.GetExportFormatDescription(i);
         LOG("=============>", pDesc->id);
