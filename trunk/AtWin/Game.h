@@ -12,6 +12,7 @@
 #include "atgMaterial.h"
 #include "atgMesh.h"
 #include "atgGame.h"
+#include "atgIntersection.h"
 
 struct MdxNode;
 class MdxModel;
@@ -100,6 +101,8 @@ protected:
     float _rootPosition[3];
     int _index;
     float* _vertexsStreamData;
+
+    AABBox _bbox;
 };
 
 /*

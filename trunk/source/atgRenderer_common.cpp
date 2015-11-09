@@ -141,13 +141,14 @@ bool atgRenderer::DrawPoint( const float center[3], const float color[3] )
         {
             return false;
         }
-
-        if (pColorPass)
-        {
-            static_cast<atgShaderSolidColor*>(pColorPass)->SetSolidColor(
-                Vec3(color[0], color[1], color[2]));
-        }
     }
+
+    if (pColorPass)
+    {
+        static_cast<atgShaderSolidColor*>(pColorPass)->SetSolidColor(
+            Vec3(color[0], color[1], color[2]));
+    }
+
     // create vertex buffer
     if (!pVB)
     {
@@ -166,6 +167,7 @@ bool atgRenderer::DrawPoint( const float center[3], const float color[3] )
             pVB->Unlock();
         }
     }
+
     g_Renderer->SetDepthTestEnable(false);
     g_Renderer->BindPass(pColorPass);
     g_Renderer->BindVertexBuffer(pVB);
@@ -396,6 +398,119 @@ bool atgRenderer::DrawTexureQuadPass(const float p1[3], const float p2[3], const
     g_Renderer->BindVertexBuffer(pVB);
 
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
+    g_Renderer->SetDepthTestEnable(true);
+    return true;
+}
+
+bool atgRenderer::DrawAABBox(const float vMin[3], const float vMax[3], const float color[3])
+{
+    //  /4 - 5
+    // 0 + 1 |
+    // | 6 + 7
+    // 2 - 3
+
+    ATG_PROFILE("atgRenderer::DrawAABBox");
+    static float AABBoxData[] = {
+        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
+
+        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f,
+    };
+
+    static uint16 AABBoxIdx1[] = {
+        0,2,1,3,5,7,4,6,0,
+    };
+
+    static uint16 AABBoxIdx2[] = {
+        0,1,5,4,0
+    };
+
+    static uint16 AABBoxIdx3[] = {
+        2,3,7,6,2
+    };
+
+    static const int sizeOfLineData = sizeof(AABBoxData);
+    static atgPass* pColorPass = NULL;
+    static atgVertexBuffer* pVB = NULL;
+    static atgIndexBuffer* pIB1 = NULL;
+    static atgIndexBuffer* pIB2 = NULL;
+    static atgIndexBuffer* pIB3 = NULL;
+
+    AABBoxData[0] = vMin[0]; AABBoxData[1] = vMax[1]; AABBoxData[2] = vMax[2];
+    AABBoxData[3] = vMax[0]; AABBoxData[4] = vMax[1]; AABBoxData[5] = vMax[2];
+    AABBoxData[6] = vMin[0]; AABBoxData[7] = vMin[1]; AABBoxData[8] = vMax[2];
+    AABBoxData[9] = vMax[0]; AABBoxData[10] = vMin[1]; AABBoxData[11] = vMax[2];
+
+    AABBoxData[12] = vMin[0]; AABBoxData[13] = vMax[1]; AABBoxData[14] = vMin[2];
+    AABBoxData[15] = vMax[0]; AABBoxData[16] = vMax[1]; AABBoxData[17] = vMin[2];
+    AABBoxData[18] = vMin[0]; AABBoxData[19] = vMin[1]; AABBoxData[20] = vMin[2];
+    AABBoxData[21] = vMax[0]; AABBoxData[22] = vMin[1]; AABBoxData[23] = vMin[2];
+
+    // create pass
+    if (!pColorPass)
+    {
+        pColorPass = atgShaderLibFactory::FindOrCreatePass(SOLIDCOLOR_PASS_IDENTITY);
+        if (NULL == pColorPass)
+            return false;
+    }
+
+    if (pColorPass)
+    {
+        static_cast<atgShaderSolidColor*>(pColorPass)->SetSolidColor(
+            Vec3(color[0], color[1], color[2]));
+    }
+
+    // create vertex buffer
+    if (!pVB)
+    {
+        atgVertexDecl decl;
+        decl.AppendElement(0, atgVertexDecl::VA_Pos3);
+        pVB = new atgVertexBuffer();
+        pVB->Create(&decl, AABBoxData, sizeOfLineData, BAM_Static);
+    }else
+    {
+        // only update vertex buffer
+        void *pLockData = pVB->Lock(0, sizeOfLineData);
+        if(pLockData)
+        {
+            memcpy(pLockData, AABBoxData, sizeOfLineData);
+            pVB->Unlock();
+        }
+    }
+
+    if (pIB1 == NULL)
+    {
+        pIB1 = new atgIndexBuffer();
+        pIB1->Create(AABBoxIdx1, 9, atgIndexBuffer::IFB_Index16, BAM_Static);
+    }
+
+    if (pIB2 == NULL)
+    {
+        pIB2 = new atgIndexBuffer();
+        pIB2->Create(AABBoxIdx2, 5, atgIndexBuffer::IFB_Index16, BAM_Static);
+    }
+
+    if (pIB3 == NULL)
+    {
+        pIB3 = new atgIndexBuffer();
+        pIB3->Create(AABBoxIdx3, 5, atgIndexBuffer::IFB_Index16, BAM_Static);
+    }
+
+    g_Renderer->SetDepthTestEnable(false);
+    g_Renderer->BindPass(pColorPass);
+    g_Renderer->BindVertexBuffer(pVB);
+    g_Renderer->BindIndexBuffer(pIB1);
+    g_Renderer->DrawIndexedPrimitive(PT_LINE_STRIP, 8, 9, 8);
+    g_Renderer->BindIndexBuffer(pIB2);
+    g_Renderer->DrawIndexedPrimitive(PT_LINE_STRIP, 4, 5, 8);
+    g_Renderer->BindIndexBuffer(pIB3);
+    g_Renderer->DrawIndexedPrimitive(PT_LINE_STRIP, 4, 5, 8);
+
     g_Renderer->SetDepthTestEnable(true);
     return true;
 }

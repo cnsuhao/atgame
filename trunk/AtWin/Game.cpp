@@ -4,7 +4,7 @@
 #include "atgShaderLibrary.h"
 #include "atgProfile.h"
 #include "atgUIBase.h"
-#include "atgIntersection.h"
+
 
 int width = 800;
 int height = 600;
@@ -14,6 +14,9 @@ typedef std::vector<class MyMdxMesh*> MdxMeshVector;
 MdxMeshVector g_ModelMeshs;
 class MyMdxAnimation* g_Animation;
 uint8 g_palyIndex;
+
+
+atgCamera g_TestCamera;
 
 using namespace ELGUI;
 
@@ -257,6 +260,9 @@ MyMdxMesh::MyMdxMesh(MdxModel* model, int index):_model(model)
     _rootNode = new MyMdxNode(model);
     _rootNode->SetPivot(&_rootPosition);
     MyMdxNode::BuildSkeleton(_rootNode);
+
+    int numberVertexs = GetNumberOfVertexs();
+    MdxFloat3* vertexs = (MdxFloat3*)GetVertexs();
 }
 
 uint32 MyMdxMesh::GetNumberOfVertexs() const
@@ -312,6 +318,14 @@ void* MyMdxMesh::GetVertexs()
         *(++pBegin) = *(++p);
         ++pBegin;
     }
+
+    _bbox.vMin = Vec3Zero;
+    _bbox.vMax = Vec3Zero;
+    for (int i = 0; i < numberVertexs; ++i)
+    {
+        _bbox.Merge(_vertexsStreamData+i*8);
+    }
+
     return _vertexsStreamData;
 }
 
@@ -339,6 +353,12 @@ void MyMdxMesh::Render()
 {
     atgMesh::Render();
     DrawJoint();
+
+    atgFrustum f;
+    f.BuildFrustumPlanes(g_TestCamera.GetView().m,g_TestCamera.GetProj().m);
+    bool rs = f.IsAABBoxInFurstum(_bbox);
+
+    g_Renderer->DrawAABBox(_bbox.vMin.m, _bbox.vMax.m, rs ? Vec3Up.m : Vec3Right.m);
 }
 
 void MyMdxMesh::DrawJoint()
@@ -416,6 +436,10 @@ Game::Game(void)
 {
     _down = false;
     _Camera = NULL;
+
+    g_TestCamera.SetClipNear(10);
+    g_TestCamera.SetClipFar(400);
+    g_TestCamera.SetPosition(Vec3(0,150,300));
 }
 
 Game::~Game(void)
@@ -432,7 +456,7 @@ bool Game::OnInitialize()
     g_Renderer->SetFaceCull(FCM_CW);
 
     Matrix world(MatrixIdentity);
-    //world.RotationZXY(0.0f, -90.0f, -90.0f);
+    world.RotationZXY(0.0f, -90.0f, -90.0f);
     g_Renderer->SetMatrix(MD_WORLD, world.m);
 
     _Camera = new atgCamera();
@@ -837,12 +861,8 @@ void Game::DrawAxis()
     g_Renderer->SetMatrix(MD_PROJECTION, oldProj.m);
     g_Renderer->SetViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
 
-    atgCamera camera;
-    camera.SetClipNear(10);
-    camera.SetClipFar(300);
-    camera.SetPosition(Vec3(0,120,250));
     atgFrustum f;
-    f.BuildFrustumPlanes(camera.GetView().m,camera.GetProj().m);
+    f.BuildFrustumPlanes(g_TestCamera.GetView().m,g_TestCamera.GetProj().m);
     f.DebugRender();
 
     float point[3];
@@ -854,12 +874,12 @@ void Game::DrawAxis()
 
         if (f.IsPointInFrustum(point))
         {
-            glPointSize(10);
+            //g_Renderer->SetPointSize(10.0f);
             g_Renderer->DrawPoint(point, Vec3Up.m);
         }
         else
         {
-            glPointSize(2);
+            //g_Renderer->SetPointSize(5.0f);
             g_Renderer->DrawPoint(point, Vec3Right.m);
         }
     }

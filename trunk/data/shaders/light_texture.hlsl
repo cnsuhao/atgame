@@ -91,7 +91,7 @@ float4 ps_main(VS_OUTPUT input):COLOR0
                 vertexToLightDirection = normalize(vertexToLight);
                 float light_rang = u_lightData1[i].y;
                 attenuation = light_intensity * clamp((light_rang - length(vertexToLight)) / light_rang, 0.0, 1.0);
-                if(u_lightData0[i].x > 1.01)
+                if(u_lightData0[i].x > 1.01) // is spot light
                 {
                     //float cos_outer_cone = u_lightData1[i].z; // cos(radians_for_outer_cone_);
                     //float cos_inner_cone = u_lightData1[i].w; // cos(radians_for_int_cone);

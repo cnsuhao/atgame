@@ -4,7 +4,7 @@
 #include "atgMath.h"
 #include <stack>
 
-//#define USE_OPENGL
+#define USE_OPENGL
 
 #ifndef USE_OPENGL
     #define USE_DIRECTX
@@ -526,6 +526,8 @@ public:
     inline void             SetCamera(atgCamera* pCamera) { _camera = pCamera; }
     inline atgCamera*       GetCamera() const { return _camera; }
 
+    void                    SetPointSize(float size);
+
     // ‰÷»æµ˜”√
     bool                    DrawPrimitive(PrimitveType pt, uint32 primitveCount, uint32 verticesCount);
     bool                    DrawIndexedPrimitive(PrimitveType pt, uint32 primitveCount, uint32 indicesCount, uint32 verticesCount);
@@ -537,7 +539,7 @@ public:
     bool                    DrawQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float color[3]);
     bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
     bool                    DrawTexureQuadPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture, atgPass* pPass);
-
+    bool                    DrawAABBox(const float vMin[3], const float vMax[3], const float color[3]);
 private:
     void                    _CommonInitialize();
 
