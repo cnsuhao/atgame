@@ -31,6 +31,7 @@
 #define MATRIX44_SIZE (sizeof(float)*16)
 
 #define FPTR_TO_F4x4(ptr)  (*(float(*)[4][4])(ptr))
+#define FPTR_TO_F3(ptr) (*(float(*)[3])(ptr))
 
 //> 定义图形引擎坐标系。
 //> 图形引擎使用右手坐标系

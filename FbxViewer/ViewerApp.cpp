@@ -66,13 +66,13 @@ bool ViewerApp::OnInitialize()
 
     g_Renderer->SetGlobalAmbientColor(Vec3(0.2f,0.2f,0.2f));
 
-    atgDirectionalLight* pDirectionalLight = new atgDirectionalLight();
-    pDirectionalLight->SetDirection(Vec3(1.0f, -1.0f, 0.0f));
-    pDirectionalLight->SetColor(Vec3(0.3f, 0.3f, 0.3f));
-    pDirectionalLight->SetSpecular(Vec3One);
-    pDirectionalLight->SetIntensity(1.0f);
-    //pLight = pDirectionalLight;
-    g_Renderer->AddBindLight(pDirectionalLight);
+    //atgDirectionalLight* pDirectionalLight = new atgDirectionalLight();
+    //pDirectionalLight->SetDirection(Vec3(1.0f, -1.0f, 0.0f));
+    //pDirectionalLight->SetColor(Vec3(0.3f, 0.3f, 0.3f));
+    //pDirectionalLight->SetSpecular(Vec3One);
+    //pDirectionalLight->SetIntensity(1.0f);
+    ////pLight = pDirectionalLight;
+    //g_Renderer->AddBindLight(pDirectionalLight);
 
     atgPointLight* pPointLight = new atgPointLight();
     pPointLight->SetPosition(Vec3(30,80,0));
@@ -96,7 +96,7 @@ bool ViewerApp::OnInitialize()
     RECT w_rect;
     GetClientRect(g_hWnd, &w_rect);
     float aspect = (w_rect.right - w_rect.left) * 1.0f / (w_rect.bottom - w_rect.top) * 1.0f;
-    pCamera->SetProjection(60.0f, aspect, 0.1f, 1000.0f);
+    pCamera->SetProjection(60.0f, aspect, 10.0f, 500.0f);
     g_Renderer->SetMatrix(MD_PROJECTION, pCamera->GetProj().m);
 
     g_Renderer->SetCamera(pCamera);

@@ -1112,7 +1112,7 @@ atgRenderTarget::atgRenderTarget():_impl(NULL)
 {
 }
 
-bool atgRenderTarget::Create( RenderTargetType type )
+bool atgRenderTarget::Create( uint16 width, uint16 height, RenderTargetFormat format )
 {
     if (_impl == NULL)
     {
@@ -1120,8 +1120,8 @@ bool atgRenderTarget::Create( RenderTargetType type )
     }
     glGenRenderbuffers(1, &_impl->renderBufferId);
     glBindRenderbuffer(GL_RENDERBUFFER, _impl->renderBufferId);
-    uint32 offsetX, offsetY, width, height;
-    g_Renderer->GetViewPort(offsetX, offsetY, width, height);
+    //uint32 offsetX, offsetY, width, height;
+    //g_Renderer->GetViewPort(offsetX, offsetY, width, height);
     glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4 /* 4 samples */, GL_RGBA8,  width, height);
 
     GLuint fbID;
@@ -1132,6 +1132,22 @@ bool atgRenderTarget::Create( RenderTargetType type )
     //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
     return true;
+}
+
+bool atgRenderTarget::Destroy()
+{
+    return true;
+}
+
+bool atgRenderTarget::Active(uint8 index)
+{
+
+    return false;
+}
+
+void atgRenderTarget::Deactive()
+{
+
 }
 
 bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
@@ -1520,6 +1536,12 @@ void atgRenderer::BindTexture( uint8 index, atgTexture* texture )
             atgTextureImpl::Unbind(index);
         }
     }
+}
+
+void atgRenderer::SetPointSize(float size)
+{
+    GLfloat pointSize = size;
+    glPointSize(size);
 }
 
 #endif

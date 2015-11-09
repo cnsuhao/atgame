@@ -183,6 +183,16 @@ bool atgFrustum::IsCubeInFrustum( const float center[3], float size )
     return true;
 }
 
+bool atgFrustum::IsAABBoxInFurstum(const AABBox& bbox)
+{
+    if (IsPointInFrustum(bbox.vMin.m) && IsPointInFrustum(bbox.vMax.m))
+    {
+        return true;
+    }
+
+    return false;
+}
+
 void atgFrustum::DebugRender()
 {
     float p1[3];

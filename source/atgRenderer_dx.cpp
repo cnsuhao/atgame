@@ -1823,4 +1823,10 @@ void atgRenderer::BindTexture( uint8 index, atgTexture* texture )
     }
 }
 
+void atgRenderer::SetPointSize(float size)
+{
+    float pointSize = size;
+    g_pd3dDevice->SetRenderState(D3DRS_POINTSIZE, *((DWORD*)&pointSize));
+}
+
 #endif
