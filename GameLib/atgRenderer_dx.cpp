@@ -1813,13 +1813,7 @@ void atgRenderer::Present()
 
             do
             {
-                LOG("release all gup resoucse.\n");
-                //>ÊÍ·ÅËùÓÐatgGpuResouce
-                auto it = _gpuResources.begin();
-                for (; it != _gpuResources.end(); ++it)
-                {
-                    (it->first->*it->second)();
-                }
+                ReleaseAllGpuResource();
 
                 hr = g_pd3dDevice->Reset(g_d3dpp);
             } while (FAILED(hr) );
@@ -1858,12 +1852,12 @@ bool PrimitiveTypeConvertToDX(PrimitveType pt, D3DPRIMITIVETYPE& dx_pt)
     return true;
 }
 
-bool atgRenderer::DrawPrimitive( PrimitveType pt, uint32 primitveCount, uint32 verticesCount )
+bool atgRenderer::DrawPrimitive( PrimitveType pt, uint32 primitveCount, uint32 verticesCount, uint32 offset )
 {
     D3DPRIMITIVETYPE dx_pt = D3DPT_TRIANGLELIST;
     if(PrimitiveTypeConvertToDX(pt, dx_pt))
     {
-        DX_ASSERT( g_pd3dDevice->DrawPrimitive(dx_pt, 0, primitveCount) );
+        DX_ASSERT( g_pd3dDevice->DrawPrimitive(dx_pt, offset, primitveCount) );
         return true;
     }
 

@@ -73,9 +73,9 @@ public :
             addTime -= 1.f;
             LOG("FPS = %d, %lf\n", frame, elapsedTime);
             frame = 0;
-
             //LOG("_monitor FPS = %f\n", fps);
         }
+        
         ++frame;
 
 
@@ -212,11 +212,16 @@ public :
     void DrawAxis()
     {
 
+        g_Renderer->BeginQuad();
+        g_Renderer->AddQuad(Vec3(0.f,0.0f,0.0f).m, Vec3(0.0f, 100.0f, 0.0f).m, Vec3(100.0f, 0.0f, 0.0f).m, Vec3(100.0f, 100.0f, 0.0f).m, Vec3Up.m);
+        g_Renderer->AddQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
+        g_Renderer->EndQuad();
+
         atgFrustum f;
         f.BuildFrustumPlanes(_Camera2->GetView().m,_Camera2->GetProj().m);
         f.DebugRender();
-
         
+        /*
         g_Renderer->SetPointSize(5.0f);
         g_Renderer->BeginPoint();
         float point[3];
@@ -238,7 +243,7 @@ public :
             }
         }
         g_Renderer->EndPoint();
-        
+        */
 
         uint32 oldVP[4];
         g_Renderer->GetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);

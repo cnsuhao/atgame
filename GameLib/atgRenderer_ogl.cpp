@@ -100,7 +100,15 @@ class atgIndexBufferImpl
 {
 public:
     atgIndexBufferImpl():vbo_indicesID(0),accessMode(BAM_Static),locked(false),lockOffset(0),lockSize(0),pLockMemory(0) {}
-    ~atgIndexBufferImpl() { SAFE_DELETE(pLockMemory); GL_ASSERT( glDeleteBuffers(1, &vbo_indicesID) ); }
+    ~atgIndexBufferImpl() 
+    { 
+        SAFE_DELETE(pLockMemory); 
+        if(vbo_indicesID)
+        {
+            GL_ASSERT( glDeleteBuffers(1, &vbo_indicesID) );
+            vbo_indicesID = 0;
+        }
+    }
     bool Bind();
     bool Unbind();
 public:
@@ -324,7 +332,15 @@ class atgVertexBufferImpl
 {
 public:
     atgVertexBufferImpl():vbo_vertexbufferID(0),accessMode(BAM_Static),locked(false),lockOffset(0),lockSize(0),pLockMemory(0) {}
-    ~atgVertexBufferImpl(){ SAFE_DELETE(pLockMemory); GL_ASSERT( glDeleteBuffers(1, &vbo_vertexbufferID) ); }
+    ~atgVertexBufferImpl()
+    { 
+        SAFE_DELETE(pLockMemory); 
+        if(vbo_vertexbufferID) 
+        { 
+            GL_ASSERT( glDeleteBuffers(1, &vbo_vertexbufferID) ); 
+            vbo_vertexbufferID = 0; 
+        } 
+    }
     void Bind(GLuint programID);
     void Unbind();
 public:
@@ -486,29 +502,28 @@ void* atgVertexBuffer::Lock( uint32 offset, uint32 size )
 
     return pVertexBuffer;
 
-/*
-#ifdef OPENGL_USE_MAP
-    if (_impl)
-    {
-        if (!_impl->locked)
-        {
-            GLvoid* buffer = NULL;
-            GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, _impl->vbo_vertexbufferID) );
-            GL_ASSERT( buffer = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) );
-            _impl->locked = true;
-            return buffer;
-        }
-    }
-#else
-    SAFE_DELETE_ARRAY(_impl->pLockBuffer);
-    _impl->pLockBuffer = new char[size];
-    _impl->lockBufferSize = size;
-    _impl->offsetLockBuffer = offset;
-    _impl->locked = true;
-    return (void*)_impl->pLockBuffer;
-#endif
-    return NULL;
-*/
+//#ifdef OPENGL_USE_MAP
+//    if (_impl)
+//    {
+//        if (!_impl->locked)
+//        {
+//            GLvoid* buffer = NULL;
+//            GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, _impl->vbo_vertexbufferID) );
+//            GL_ASSERT( buffer = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) );
+//            _impl->locked = true;
+//            return buffer;
+//        }
+//    }
+//#else
+//    SAFE_DELETE_ARRAY(_impl->pLockBuffer);
+//    _impl->pLockBuffer = new char[size];
+//    _impl->lockBufferSize = size;
+//    _impl->offsetLockBuffer = offset;
+//    _impl->locked = true;
+//    return (void*)_impl->pLockBuffer;
+//#endif
+//    return NULL;
+
 }
 
 void atgVertexBuffer::Unlock()
@@ -529,32 +544,30 @@ void atgVertexBuffer::Unlock()
     }
 
 
-    /*
-#ifdef OPENGL_USE_MAP
-    if (_impl)
-    {
-        if (_impl->locked)
-        {
-            GL_ASSERT( glUnmapBuffer(GL_ARRAY_BUFFER) );
-            _impl->locked = false;
-        }
-    }
-#else
-    if (_impl)
-    {
-        if (_impl->locked)
-        {
-            if(_impl->pLockBuffer != NULL)
-            {
-                GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, _impl->vbo_vertexbufferID) );
-                GL_ASSERT( glBufferSubData(GL_ARRAY_BUFFER, _impl->offsetLockBuffer, _impl->lockBufferSize, (GLvoid*)_impl->pLockBuffer) );
-                SAFE_DELETE_ARRAY(_impl->pLockBuffer);
-            }
-            _impl->locked = false;
-        }
-    }
-#endif
-    */
+//#ifdef OPENGL_USE_MAP
+//    if (_impl)
+//    {
+//        if (_impl->locked)
+//        {
+//            GL_ASSERT( glUnmapBuffer(GL_ARRAY_BUFFER) );
+//            _impl->locked = false;
+//        }
+//    }
+//#else
+//    if (_impl)
+//    {
+//        if (_impl->locked)
+//        {
+//            if(_impl->pLockBuffer != NULL)
+//            {
+//                GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, _impl->vbo_vertexbufferID) );
+//                GL_ASSERT( glBufferSubData(GL_ARRAY_BUFFER, _impl->offsetLockBuffer, _impl->lockBufferSize, (GLvoid*)_impl->pLockBuffer) );
+//                SAFE_DELETE_ARRAY(_impl->pLockBuffer);
+//            }
+//            _impl->locked = false;
+//        }
+//    }
+//#endif
 }
 
 bool atgVertexBuffer::IsLocked() const
@@ -570,7 +583,14 @@ class atgTextureImpl
 {
 public:
     atgTextureImpl():TextureID(0),locked(false) {}
-    ~atgTextureImpl() { GL_ASSERT( glDeleteTextures(1, &TextureID) ); }
+    ~atgTextureImpl() 
+    {
+        if(TextureID)
+        {
+            GL_ASSERT( glDeleteTextures(1, &TextureID) );
+            TextureID = 0;
+        }
+    }
     void Bind(uint8 index);
     static void Unbind(uint8 index);
 public:
@@ -722,7 +742,11 @@ public:
     ~atgVertexShaderImpl()
     {
         SAFE_DELETE_ARRAY(vertexShaderCode);
-        GL_ASSERT(glDeleteShader(vertexShaderID));
+        if(vertexShaderID)
+        {
+            GL_ASSERT(glDeleteShader(vertexShaderID));
+            vertexShaderID = 0;
+        }
     }
 public:
     GLuint vertexShaderID;
@@ -838,7 +862,11 @@ public:
     ~atgFragmentShaderImpl()
     {
         SAFE_DELETE_ARRAY(fragmentShaderCode);
-        GL_ASSERT( glDeleteShader(fragmentShaderID) );
+        if (fragmentShaderID)
+        {
+            GL_ASSERT( glDeleteShader(fragmentShaderID) );
+            fragmentShaderID = 0;
+        }
     }
 public:
     GLuint fragmentShaderID;
@@ -938,7 +966,16 @@ class atgPassImpl
 {
 public:
     atgPassImpl():programID(0),pVS(0),pFS(0){}
-    ~atgPassImpl() { SAFE_DELETE(pVS); SAFE_DELETE(pFS); GL_ASSERT( glDeleteProgram(programID) ); }
+    ~atgPassImpl() 
+    { 
+        SAFE_DELETE(pVS); 
+        SAFE_DELETE(pFS); 
+        if (programID)
+        {
+            GL_ASSERT( glDeleteProgram(programID) ); 
+            programID = 0;
+        }
+    }
 
     void Bind();
     void Unbind();
@@ -1549,11 +1586,11 @@ bool PrimitiveTypeConvertToOGL(PrimitveType pt, GLenum& gl_pt)
     return true;
 }
 
-bool atgRenderer::DrawPrimitive( PrimitveType pt, uint32 primitveCount, uint32 verticesCount )
+bool atgRenderer::DrawPrimitive( PrimitveType pt, uint32 primitveCount, uint32 verticesCount, uint32 offset )
 {
     GLenum gl_pt;
     if(PrimitiveTypeConvertToOGL(pt, gl_pt)){
-        GL_ASSERT( glDrawArrays(gl_pt, 0, verticesCount) );
+        GL_ASSERT( glDrawArrays(gl_pt, offset, verticesCount) );
     }
     return true;
 }
