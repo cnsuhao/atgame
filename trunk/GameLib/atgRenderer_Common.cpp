@@ -292,71 +292,112 @@ void  atgRenderer::EndLine()
     }
 }
 
-bool atgRenderer::DrawQuad(const float point1[3], const float point2[3], const float point3[3], const float point4[3], const float color[3])
+bool atgRenderer::BeginQuad()
 {
-    static float QuadData[] = {
-        -1.0f,  1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f,
-         1.0f,  1.0f, 0.0f,
-         1.0f, -1.0f, 0.0f
-
-    };
-    static const int sizeOfQuadData = sizeof(QuadData);
-    static atgPass* pColorPass = NULL;
-    static atgVertexBuffer* pVB = NULL;
-    
-    atgMath::VecCopy(point1, &QuadData[0]);
-    atgMath::VecCopy(point2, &QuadData[3]);
-    atgMath::VecCopy(point3, &QuadData[6]);
-    atgMath::VecCopy(point4, &QuadData[9]);
-    // create pass
-    if (!pColorPass || pColorPass->IsLost())
-    {
-        if (pColorPass)
-        {
-            SAFE_DELETE(pColorPass);
-        }
-
-        pColorPass = atgShaderLibFactory::FindOrCreatePass(SOLIDCOLOR_PASS_IDENTITY);
-        if (NULL == pColorPass)
-            return false;
-    }
-
-    if (pColorPass)
-    {
-        static_cast<atgShaderSolidColor*>(pColorPass)->SetSolidColor(
-            Vec3(color[0], color[1], color[2]));
-    }
-
-    // create vertex buffer
-    if (!pVB || pVB->IsLost())
-    {
-        if (pVB)
-        {
-            SAFE_DELETE(pVB);
-        }
-
-        atgVertexDecl decl;
-        decl.AppendElement(0, atgVertexDecl::VA_Pos3);
-        pVB = new atgVertexBuffer();
-        pVB->Create(&decl, QuadData, sizeOfQuadData, BAM_Static);
-    }else
-    {
-        // only update vertex buffer
-        void *pLockData = pVB->Lock(0, sizeOfQuadData);
-        if(pLockData)
-        {
-            memcpy(pLockData, QuadData, sizeOfQuadData);
-            pVB->Unlock();
-        }
-    }
-    g_Renderer->SetDepthTestEnable(false);
-    g_Renderer->BindPass(pColorPass);
-    g_Renderer->BindVertexBuffer(pVB);
-
-    g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
-    g_Renderer->SetDepthTestEnable(true);
+    _drawQuads.clear();
     return true;
+}
+
+void atgRenderer::AddQuad(const float point1[3], const float point2[3], const float point3[3], const float point4[3], const float color[3])
+{
+    _drawQuads.push_back(point1[0]);
+    _drawQuads.push_back(point1[1]);
+    _drawQuads.push_back(point1[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+
+    _drawQuads.push_back(point3[0]);
+    _drawQuads.push_back(point3[1]);
+    _drawQuads.push_back(point3[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+
+    _drawQuads.push_back(point4[0]);
+    _drawQuads.push_back(point4[1]);
+    _drawQuads.push_back(point4[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+
+    _drawQuads.push_back(point2[0]);
+    _drawQuads.push_back(point2[1]);
+    _drawQuads.push_back(point2[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+
+    _drawQuads.push_back(point1[0]);
+    _drawQuads.push_back(point1[1]);
+    _drawQuads.push_back(point1[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+}
+
+void atgRenderer::EndQuad()
+{
+    if (!_drawQuads.empty())
+    {
+        ATG_PROFILE("atgRenderer::EndQuad");
+
+        static const int numVertex = 5;
+        static const int dataCount = 6 * numVertex;
+        static atgPass* pColorPass = NULL;
+        static atgVertexBuffer* pVB = NULL;
+
+        const std::vector<float>& quads = _drawQuads;
+        if (quads.size() < dataCount)
+            return;
+
+        int quadCount = quads.size() / dataCount;
+        int sizeOfQuadData = quads.size() * sizeof(float);
+
+        // create pass
+        if (!pColorPass || pColorPass->IsLost())
+        {
+            pColorPass = atgShaderLibFactory::FindOrCreatePass(VERTEXCOLOR_PASS_IDENTITY);
+            if (NULL == pColorPass)
+                return;
+        }
+
+        // create vertex buffer
+        if (!pVB || pVB->IsLost())
+        {
+            if (pVB)
+            {
+                SAFE_DELETE(pVB);
+            }
+
+            atgVertexDecl decl;
+            decl.AppendElement(0, atgVertexDecl::VA_Pos3);
+            decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
+            pVB = new atgVertexBuffer();
+            pVB->Create(&decl, &quads[0], sizeOfQuadData, BAM_Static);
+        }else
+        {
+            // only update vertex buffer
+            void *pLockData = pVB->Lock(0, sizeOfQuadData);
+            if(pLockData)
+            {
+                memcpy(pLockData, &quads[0], sizeOfQuadData);
+                pVB->Unlock();
+            }
+        }
+
+        g_Renderer->SetLightEnable(false);
+        g_Renderer->SetDepthTestEnable(false);
+        g_Renderer->BindPass(pColorPass);
+        g_Renderer->BindVertexBuffer(pVB);
+
+        for (int i = 0; i < quadCount; ++i)
+        {
+            g_Renderer->DrawPrimitive(PT_LINE_STRIP, numVertex - 1, numVertex, i*numVertex);
+        }
+        g_Renderer->SetDepthTestEnable(true);
+        g_Renderer->SetLightEnable(true);
+    }
 }
 
 bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture)
@@ -697,5 +738,16 @@ void atgRenderer::RemoveGpuResource( atgGpuResource* pRes )
     if (it != _gpuResources.end())
     {
         _gpuResources.erase(it);
+    }
+}
+
+void atgRenderer::ReleaseAllGpuResource()
+{
+    LOG("release all gup resoucse.\n");
+    //>ÊÍ·ÅËùÓÐatgGpuResouce
+    atgGpuResourceMap::iterator it = _gpuResources.begin();
+    for (; it != _gpuResources.end(); ++it)
+    {
+        (it->first->*it->second)();
     }
 }

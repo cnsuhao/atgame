@@ -549,7 +549,23 @@
                 hDC = NULL;
             }
         #else
+            if (__eglDisplay)
+            {
+                if (__eglSurface)
+                {
+                    eglDestroySurface(__eglDisplay, __eglSurface);
+                    __eglSurface = EGL_NO_SURFACE;
+                }
 
+                if (__eglContext)
+                {
+                    eglDestroyContext(__eglDisplay, __eglContext);
+                    __eglContext = EGL_NO_CONTEXT;
+                }
+                
+                eglTerminate(__eglDisplay);
+                __eglDisplay = EGL_NO_DISPLAY;
+            }
         #endif // !USE_OPENGLES
     #endif
     }
@@ -684,8 +700,6 @@
             eglTerminate(__eglDisplay);
             __eglDisplay = EGL_NO_DISPLAY;
         }
-
-        __animating = 0;
     }
 
     /**
@@ -776,19 +790,22 @@
     static void android_handle_cmd(struct android_app* app, int32_t cmd)
     {
         atgGame* game = (atgGame*)app->userData;
-        LOG("android_handle_cmd=%d\n", cmd);
+        LOG("android_handle_cmd=%d", cmd);
         switch (cmd)
         {
         case APP_CMD_SAVE_STATE: // code : 12
+            LOG("APP_CMD_SAVE_STATE");
             // The system has asked us to save our current state.  Do so.
             __state->savedState = malloc(sizeof(struct saved_state));
             *((struct saved_state*)__state->savedState) = __saved_state;
             __state->savedStateSize = sizeof(struct saved_state);
             break;
         case APP_CMD_INIT_WINDOW: // code : 1
+            LOG("APP_CMD_INIT_WINDOW");
             // The window is being shown, get it ready.
             if (app->window != NULL)
             {
+                g_Renderer->ReleaseAllGpuResource();
                 if(g_Renderer->Initialize(0, 0, 0))
                 {
                     __initialized = true;
@@ -803,14 +820,20 @@
             }
             break;
         case APP_CMD_TERM_WINDOW: // code : 2
+            LOG("APP_CMD_TERM_WINDOW");
             android_term_display(game);
             __initialized = false;
             break;
+        case APP_CMD_CONFIG_CHANGED:
+            LOG("APP_CMD_CONFIG_CHANGED");
+            break;
         case APP_CMD_DESTROY: // code : 15
+            LOG("APP_CMD_DESTROY");
             android_term_display(game);
             __initialized = false;
             break;
         case APP_CMD_GAINED_FOCUS: // code : 6
+            LOG("APP_CMD_GAINED_FOCUS");
             // When our app gains focus, we start monitoring the sensors.
             if (__accelerometerSensor != NULL)
             {
@@ -835,6 +858,7 @@
             //}
             break;
         case APP_CMD_RESUME: // code : 11
+            LOG("APP_CMD_RESUME");
             if (__initialized && game)
             {
                 game->Resume();
@@ -842,17 +866,25 @@
             __animating = true;
             break;
         case APP_CMD_PAUSE: // code : 13
+            LOG("APP_CMD_PAUSE");
             if (game)
             {
                 game->Pause();
             }
             __animating = false;
             break;
+        case APP_CMD_START: // code : 10
+            LOG("APP_CMD_START");
+            {
+                break;
+            }
         case APP_CMD_STOP : // code : 14
+            LOG("APP_CMD_STOP");
             {
                 break;
             }
         case APP_CMD_LOST_FOCUS: // code : 7
+            LOG("APP_CMD_LOST_FOCUS");
             // When our app loses focus, we stop monitoring the sensors.
             // This is to avoid consuming battery while not being used.
             if (__accelerometerSensor != NULL)
@@ -954,7 +986,7 @@
             // If not animating, we will block forever waiting for events.
             // If animating, we loop until all events are read, then continue
             // to draw the next frame of animation.
-            while ((ident= ALooper_pollAll(__animating ? 0 : -1, NULL, &events,
+            while ((ident= ALooper_pollAll(0, NULL, &events,
                 (void**)&source)) >= 0) 
             {
                 // Process this event.
@@ -998,12 +1030,10 @@
             if (__initialized && __animating)
             {
                 //android_draw_frame(game);
-
                 if (game)
                 {
                     game->OnFrame();
                 }
-                
 
                 // Post the new frame to the display.
                 // Note that there are a couple cases where eglSwapBuffers could fail
@@ -1027,11 +1057,12 @@
                         if (__state->window != NULL)
                         {
                             android_term_surface(game);
+                            g_Renderer->ReleaseAllGpuResource();
                             g_Renderer->Initialize(0, 0, 0);
                         }
                         __initialized = true;
                     }
-                    else
+                    else if(error != EGL_SUCCESS)
                     {
                         perror("eglSwapBuffers");
                         break;
