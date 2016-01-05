@@ -531,7 +531,7 @@ class atgTextureImpl
 {
 public:
     atgTextureImpl():pDXTX(NULL),locked(false) {}
-    ~atgTextureImpl() { SAFE_RELEASE(pDXTX); }
+    ~atgTextureImpl() { locked = false; SAFE_RELEASE(pDXTX); }
     bool Bind(uint8 index);
     static bool Unbind(uint8 index);
 public:
@@ -578,14 +578,29 @@ bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pD
     
     _impl = new atgTextureImpl;
 
-    if( FAILED( g_pd3dDevice->CreateTexture(width, height, 0, D3DUSAGE_AUTOGENMIPMAP, \
+    DWORD usage = 0;
+    D3DPOOL pool = D3DPOOL_MANAGED;
+
+    //>静态纹理
+    //usage = 0;
+    //pool = D3DPOOL_MANAGED;
+
+    //>如果是动态纹理 
+    //usage |= D3DUSAGE_DYNAMIC;
+    //pool = D3DPOOL_DEFAULT;
+
+    //>如果是renderTarget
+    //usage |= D3DUSAGE_RENDERTARGET; 或者 usage_ |= D3DUSAGE_DEPTHSTENCIL;
+    //pool = D3DPOOL_DEFAULT;
+
+    if( FAILED( g_pd3dDevice->CreateTexture(width, height, usage, D3DUSAGE_AUTOGENMIPMAP, \
             D3DFMT_A8R8G8B8,
-            D3DPOOL_DEFAULT,
+            pool,
             &_impl->pDXTX,
             NULL)) )
     {
         LOG("create texture fail.\n");
-        return NULL;
+        return false;
     }
 
     if (pData)
@@ -594,7 +609,7 @@ bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pD
         if( FAILED( _impl->pDXTX->LockRect(0, &rect, NULL, NULL) )  )
         {
             LOG("lock texture data fail.\n");
-            return NULL;
+            return false;
         }
         if (_bbp == 4)
         {
@@ -626,7 +641,11 @@ bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pD
     }
 
     atgGpuResource::ReSet();
-    g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgTexture::Destory));
+
+    if (pool != D3DPOOL_MANAGED)
+    {
+        g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgTexture::Destory));
+    }
     return true;
 }
 
@@ -1652,6 +1671,8 @@ void atgRenderer::SetAlphaTestEnable(bool enbale, float value)
 
 void atgRenderer::SetFaceCull(FaceCullMode mode)
 {
+    //> d3d9 reset 的时候会自动把cullmode变成D3DCULL_CCW, 
+    //> 所以建议每帧开始的时候设置SetFaceCull(FCM_CW);
     if (mode == FCM_NONE)
     {
         DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE) );

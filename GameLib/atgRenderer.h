@@ -80,6 +80,8 @@ public:
     void        Lost();
 
     void        ReSet();
+
+    virtual const char* GetTypeName() const = 0;
 private:
     bool _isLost;
 };
@@ -107,6 +109,8 @@ public:
     void*                   Lock(uint32 offset, uint32 size);
     void                    Unlock();
     bool                    IsLocked() const;
+
+    const char*             GetTypeName() const { return "atgIndexBuffer"; }
 private:
     uint32 _size;
     class atgIndexBufferImpl* _impl;
@@ -179,6 +183,8 @@ public:
     void*                   Lock( uint32 offset, uint32 size );
     void                    Unlock();
     bool                    IsLocked() const;
+
+    const char*             GetTypeName() const { return "atgVertexBuffer"; }
 private:
 
     uint32 _size;
@@ -237,6 +243,8 @@ public:
 
     void                    SetFilterMode(TextureFilterMode filter);
     void                    SetAddressMode(TextureCoordinate coordinate, TextureAddressMode address);
+
+    const char*             GetTypeName() const { return "atgTexture"; }
 private:
     uint32 _width;
     uint32 _height;
@@ -258,6 +266,8 @@ public:
 
     inline ResourceShaderType GetType() { return type; }
     bool                    IsCompiled() { return compiled; }
+
+    const char*             GetTypeName() const { return "atgResourceShader"; }
 private:
     ResourceShaderType type;
 protected:
@@ -274,6 +284,8 @@ public:
     bool                    LoadFromFile(const char* SourceFilePath);
     bool                    LoadFromSource(const char* Source);
     bool                    Destory();
+
+    const char*             GetTypeName() const { return "atgVertexShader"; }
 protected:
     bool                    Compile();
 private:
@@ -290,6 +302,8 @@ public:
     bool                    LoadFromFile(const char* SourceFilePath);
     bool                    LoadFormSource(const char* Source);
     bool                    Destory();
+
+    const char*             GetTypeName() const { return "atgFragmentShader"; }
 protected:
     bool                    Compile();
 private:
@@ -366,6 +380,7 @@ public:
     bool                    SetPsMatrix4x4(const char* var_name, const float mat[4][4]);
 #endif // USE_DIRECTX
 
+    const char*             GetTypeName() const { return "atgPass"; }
 protected:
 
     virtual void            BeginContext(void* data);
@@ -592,9 +607,13 @@ public:
     bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
     bool                    DrawTexureQuadPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture, atgPass* pPass);
     
+    //> Öá¶ÔÆäºÐ×Ó
     bool                    BeginAABBoxLine();
     void                    AddAABBoxLine(const float vMin[3], const float vMax[3], const float color[3]);
     void                    EndAABBoxLine();
+
+    //>Ô²
+
 private:
     void                    _CommonInitialize();
 
