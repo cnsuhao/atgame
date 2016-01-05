@@ -29,7 +29,7 @@ public :
         //LoadConfig();
 
         g_Renderer->SetViewport(0, 0, GetWindowWidth(), GetWindowHeight());
-        g_Renderer->SetFaceCull(FCM_CW);
+        g_Renderer->SetFaceCull(FCM_CCW);
 
         Matrix world(MatrixIdentity);
         //world.RotationZXY(0.0f, -90.0f, -90.0f);
@@ -212,10 +212,20 @@ public :
     void DrawAxis()
     {
 
-        g_Renderer->BeginQuad();
-        g_Renderer->AddQuad(Vec3(0.f,0.0f,0.0f).m, Vec3(0.0f, 100.0f, 0.0f).m, Vec3(100.0f, 0.0f, 0.0f).m, Vec3(100.0f, 100.0f, 0.0f).m, Vec3Up.m);
-        g_Renderer->AddQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
-        g_Renderer->EndQuad();
+        //g_Renderer->BeginQuad();
+        //g_Renderer->AddQuad(Vec3(0.f,0.0f,1.0f).m, Vec3(0.0f, 100.0f, 1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3Up.m);
+        //g_Renderer->AddQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
+        //g_Renderer->EndQuad();
+
+        g_Renderer->BeginFullQuad();
+        g_Renderer->AddFullQuad(Vec3(0.f,0.0f,1.0f).m, Vec3(0.0f, 100.0f, 1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3Up.m);
+        g_Renderer->AddFullQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
+        g_Renderer->EndFullQuad();
+
+        g_Renderer->BeginAABBoxLine();
+        g_Renderer->AddAABBoxLine(Vec3(-100.f,-100.0f,-100.0f).m, Vec3(0.0f, 0.0f, 0.0f).m, Vec3Right.m);
+        //g_Renderer->AddFullQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
+        g_Renderer->EndAABBoxLine();
 
         atgFrustum f;
         f.BuildFrustumPlanes(_Camera2->GetView().m,_Camera2->GetProj().m);

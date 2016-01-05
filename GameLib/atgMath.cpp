@@ -525,7 +525,7 @@ void atgMath::MatConcatenate( const float mat1[4][4], const float mat2[4][4],flo
     memcpy(result, temp, MATRIX44_SIZE());
 }
 
-bool atgMath::Is0to1ForClipZ()
+bool atgMath::IsBetween0And1ForClipZ()
 {
     return !IsOpenGLGraph();
 }
