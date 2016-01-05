@@ -93,12 +93,12 @@ void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
             }
         }
         g_Renderer->SetLightEnable(false);
-        g_Renderer->SetDepthTestEnable(false);
+        //g_Renderer->SetDepthTestEnable(false);
         g_Renderer->BindPass(pColorPass);
         g_Renderer->BindVertexBuffer(pVB);
 
         g_Renderer->DrawPrimitive(PT_LINES, lineCount, lineCount*2);
-        g_Renderer->SetDepthTestEnable(true);
+        //g_Renderer->SetDepthTestEnable(true);
         g_Renderer->SetLightEnable(true);
     }
 }
@@ -289,12 +289,12 @@ void atgRenderer::EndPoint()
             }
         }
 
-        g_Renderer->SetDepthTestEnable(false);
+        //g_Renderer->SetDepthTestEnable(false);
         g_Renderer->BindPass(pColorPass);
         g_Renderer->BindVertexBuffer(pVB);
 
         g_Renderer->DrawPrimitive(PT_POINTS, pointCount, pointCount);
-        g_Renderer->SetDepthTestEnable(true);
+        //g_Renderer->SetDepthTestEnable(true);
     }
 }
 
@@ -313,7 +313,7 @@ void  atgRenderer::EndLine()
     atgRenderer_Private_EndLine(_drawLines);
 }
 
-
+//> 使用线队列.比使用线strip速度更快.但是浪费内存,以空间换时间
 #define DRAW_QUAD_USE_LINE_LIST
 
 bool atgRenderer::BeginQuad()
@@ -451,7 +451,7 @@ void atgRenderer::EndQuad()
         }
 
         g_Renderer->SetLightEnable(false);
-        g_Renderer->SetDepthTestEnable(false);
+        //g_Renderer->SetDepthTestEnable(false);
         g_Renderer->BindPass(pColorPass);
         g_Renderer->BindVertexBuffer(pVB);
 
@@ -464,7 +464,7 @@ void atgRenderer::EndQuad()
         }
 #endif // DRAW_QUAD_USE_LINE_LIST
 
-        g_Renderer->SetDepthTestEnable(true);
+        //g_Renderer->SetDepthTestEnable(true);
         g_Renderer->SetLightEnable(true);
     }
 }
@@ -475,6 +475,7 @@ bool  atgRenderer::BeginFullQuad()
     return true;
 }
 
+//> 使用三角队列.比使用三角strip速度更快.但是浪费内存,以空间换时间 
 #define FULL_QUAD_USE_TRIANGLE_LIST
 
 void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], const float point3[3], const float point4[3], const float color[3])
@@ -630,11 +631,6 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
     // create pass
     if (!pTexturePass || pTexturePass->IsLost())
     {
-        if (pTexturePass)
-        {
-            SAFE_DELETE(pTexturePass);
-        }
-
         pTexturePass = atgShaderLibFactory::FindOrCreatePass(NOT_LIGNTE_TEXTURE_PASS_IDENTITY);
         if (NULL == pTexturePass)
             return false;
@@ -664,13 +660,13 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
             pVB->Unlock();
         }
     }
-    g_Renderer->SetDepthTestEnable(false);
+    //g_Renderer->SetDepthTestEnable(false);
     g_Renderer->BindTexture(0, pTexture);
     g_Renderer->BindPass(pTexturePass);
     g_Renderer->BindVertexBuffer(pVB);
 
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
-    g_Renderer->SetDepthTestEnable(true);
+    //g_Renderer->SetDepthTestEnable(true);
     return true;
 }
 
@@ -738,45 +734,50 @@ bool atgRenderer::BeginAABBoxLine()
 
 void atgRenderer::AddAABBoxLine(const float vMin[3], const float vMax[3], const float color[3])
 {
+    //  /6 - 7
+    // 5 + 2 |
+    // | 1 + 8
+    // 3 - 4
+
     float a[3];
     float b[3];
 
-    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>3
+    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点3
     atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>6
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点6
     atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
-    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMin[2]; //>8
+    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMin[2]; //>顶点8
     atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
 
-    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>7
+    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点7
     atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
-    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>4
+    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点4
     atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>5
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>顶点5
     atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
 
-    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>3
-    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMax[2]; //>4
+    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点3
+    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMax[2]; //>顶点4
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>3
-    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMax[2]; //>5
+    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点3
+    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMax[2]; //>顶点5
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>5
-    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>6
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>顶点5
+    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>顶点6
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>6
-    b[0] = vMax[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>7
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点6
+    b[0] = vMax[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>顶点7
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>7
-    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>8
+    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点7
+    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>顶点8
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>4
-    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>8
+    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点4
+    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>顶点8
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 }
 
@@ -988,6 +989,7 @@ void atgRenderer::InsertGpuResource( atgGpuResource* pRes, GpuResDestoryFunc pFu
     }
     else
     {
+        LOG("insert gup resoucse[%s] addr=%p.\n",pRes->GetTypeName(), pRes);
         _gpuResources.insert(std::pair<atgGpuResource*, GpuResDestoryFunc>(pRes, pFunc));
     }
 }
@@ -997,6 +999,7 @@ void atgRenderer::RemoveGpuResource( atgGpuResource* pRes )
     atgGpuResourceMap::iterator it = _gpuResources.find(pRes);
     if (it != _gpuResources.end())
     {
+        LOG("remove gup resoucse[%s] addr=%p.\n",it->first->GetTypeName(), it->first);
         _gpuResources.erase(it);
     }
 }
@@ -1009,6 +1012,6 @@ void atgRenderer::ReleaseAllGpuResource()
     for (; it != _gpuResources.end(); ++it)
     {
         (it->first->*it->second)();
-        LOG("release gup resoucse %p.\n", it->first);
+        LOG("release gup resoucse[%s] addr=%p.\n",it->first->GetTypeName(), it->first);
     }
 }

@@ -13,6 +13,7 @@
 
 static const int g_pointNumber = 1000;
 static float g_points[3*g_pointNumber];
+static atgTexture* g_Texture = NULL;
 
 class Game : public atgGame
 {
@@ -29,7 +30,7 @@ public :
         //LoadConfig();
 
         g_Renderer->SetViewport(0, 0, GetWindowWidth(), GetWindowHeight());
-        g_Renderer->SetFaceCull(FCM_CCW);
+        g_Renderer->SetFaceCull(FCM_CW);
 
         Matrix world(MatrixIdentity);
         //world.RotationZXY(0.0f, -90.0f, -90.0f);
@@ -50,6 +51,17 @@ public :
             g_points[3*i]       = Random(-500.0f, 500.f);
             g_points[3*i + 1]   = Random(-500.0f, 500.f);
             g_points[3*i + 2]   = Random(-500.0f, 500.f);
+        }
+
+        JPEG_Loader::Load(&image, "ui/ui1.jpg", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
+
+        if (image.width > 0)
+        {
+            if (g_Texture == NULL || g_Texture->IsLost())
+            {
+                g_Texture = new atgTexture();
+                g_Texture->Create(image.width, image.height, image.bpp, image.imageData);
+            }
         }
 
         return true;
@@ -85,6 +97,7 @@ public :
             g_Renderer->SetMatrix(MD_PROJECTION, _Camera->GetProj());
         }
 
+        g_Renderer->SetFaceCull(FCM_CW);
         g_Renderer->Clear();
         g_Renderer->BeginFrame();
         DrawAxis();
@@ -211,15 +224,30 @@ public :
 
     void DrawAxis()
     {
+        const float textureQuadData[] = {
+            -100.0f,  100.0f, 0.0f, 0.0f, 0.0f,
+            -100.0f, -100.0f, 0.0f, 0.0f, 1.0f,
+            100.0f,  100.0f, 0.0f, 1.0f, 0.0f,
+            100.0f, -100.0f, 0.0f, 1.0f, 1.0f,
+        };
 
+        if (g_Texture)
+        {
+            if (g_Texture->IsLost())
+            {
+                g_Texture->Create(image.width, image.height, image.bpp, image.imageData);
+            }
+            g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
+        }
+        
         //g_Renderer->BeginQuad();
         //g_Renderer->AddQuad(Vec3(0.f,0.0f,1.0f).m, Vec3(0.0f, 100.0f, 1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3Up.m);
         //g_Renderer->AddQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
         //g_Renderer->EndQuad();
 
         g_Renderer->BeginFullQuad();
-        g_Renderer->AddFullQuad(Vec3(0.f,0.0f,1.0f).m, Vec3(0.0f, 100.0f, 1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3Up.m);
-        g_Renderer->AddFullQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
+        g_Renderer->AddFullQuad(Vec3(0.0f, 100.0f, 1.0f).m, Vec3(0.f,0.0f,1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3Up.m);
+        g_Renderer->AddFullQuad(Vec3(0.0f, 60.0f, 0.0f).m, Vec3(-10.f,-10.0f,0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3Right.m);
         g_Renderer->EndFullQuad();
 
         g_Renderer->BeginAABBoxLine();
@@ -306,7 +334,7 @@ public :
     class atgCamera* _Camera;
     class atgCamera* _Camera2;
     bool _down;
-
+    JPEG_Image image;
     //atgPerfMonitor _monitor;
 };
 
