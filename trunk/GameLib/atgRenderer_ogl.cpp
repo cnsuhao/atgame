@@ -101,7 +101,7 @@ class atgIndexBufferImpl
 public:
     atgIndexBufferImpl():vbo_indicesID(0),accessMode(BAM_Static),locked(false),lockOffset(0),lockSize(0),pLockMemory(0) {}
     ~atgIndexBufferImpl() 
-    { 
+    {
         SAFE_DELETE(pLockMemory); 
         if(vbo_indicesID)
         {
@@ -139,6 +139,7 @@ atgIndexBuffer::atgIndexBuffer():_impl(NULL)
 atgIndexBuffer::~atgIndexBuffer()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexFormat format, BufferAccessMode accessMode )
@@ -167,7 +168,7 @@ bool atgIndexBuffer::Destory()
 {
     atgGpuResource::Lost();
     SAFE_DELETE(_impl);
-    
+
     return true;
 }
 
@@ -333,13 +334,13 @@ class atgVertexBufferImpl
 public:
     atgVertexBufferImpl():vbo_vertexbufferID(0),accessMode(BAM_Static),locked(false),lockOffset(0),lockSize(0),pLockMemory(0) {}
     ~atgVertexBufferImpl()
-    { 
+    {
         SAFE_DELETE(pLockMemory); 
         if(vbo_vertexbufferID) 
         { 
             GL_ASSERT( glDeleteBuffers(1, &vbo_vertexbufferID) ); 
             vbo_vertexbufferID = 0; 
-        } 
+        }
     }
     void Bind(GLuint programID);
     void Unbind();
@@ -456,6 +457,7 @@ atgVertexBuffer::atgVertexBuffer():_impl(NULL),_size(0)
 atgVertexBuffer::~atgVertexBuffer()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 bool atgVertexBuffer::Create( atgVertexDecl* decl, const void *pData, uint32 size, BufferAccessMode accessMode )
@@ -623,6 +625,7 @@ atgTexture::atgTexture():_width(0),_height(0),_bbp(0),_impl(NULL)
 atgTexture::~atgTexture()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pData/*=NULL*/ )
@@ -1002,6 +1005,7 @@ atgPass::atgPass():_impl(0)
 atgPass::~atgPass()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 const char* atgPass::GetName()
@@ -1325,6 +1329,7 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
 
 void atgRenderer::Shutdown()
 {
+    ReleaseAllGpuResource();
 #ifdef _WIN32
     win32_shutdown_ogl();
 #endif

@@ -60,6 +60,7 @@ atgIndexBuffer::atgIndexBuffer():_impl(NULL)
 atgIndexBuffer::~atgIndexBuffer()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexFormat format, BufferAccessMode accessMode )
@@ -301,6 +302,7 @@ atgVertexBuffer::atgVertexBuffer():_impl(0)
 atgVertexBuffer::~atgVertexBuffer()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 bool atgVertexBuffer::Create( atgVertexDecl* decl, const void *pData, uint32 size, BufferAccessMode accessMode )
@@ -485,7 +487,7 @@ bool atgVertexBuffer::Destory()
 {
     atgGpuResource::Lost();
     SAFE_DELETE(_impl);
-    
+
     return true;
 }
 
@@ -562,6 +564,7 @@ atgTexture::atgTexture():_width(0),_height(0),_bbp(0),_impl(NULL)
 atgTexture::~atgTexture()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pData/*=NULL*/ )
@@ -1054,6 +1057,7 @@ atgPass::atgPass():_impl(0)
 atgPass::~atgPass()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 const char* atgPass::GetName()
@@ -1522,6 +1526,8 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
 
 void atgRenderer::Shutdown()
 {
+    ReleaseAllGpuResource();
+
     if(g_pd3dDevice)
     {
         DX_ASSERT( g_pd3dDevice->Release() );

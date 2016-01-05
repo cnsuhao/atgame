@@ -203,7 +203,7 @@ public:
 
     static inline void      OrthoProjectRH(float width, float height, float zNear, float zFar, float result[4][4]);
 
-    static bool             Is0to1ForClipZ();
+    static bool             IsBetween0And1ForClipZ();
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -739,7 +739,7 @@ inline void atgMath::PerspectiveLH(float fov_y, float aspect, float zNear, float
     if (zNear > zFar)
         Swap(zNear, zFar);
 
-    if (false == Is0to1ForClipZ()) // z=> -1 to 1.
+    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
     {
         // Right Hand
         float f_n = 1.0f / (zFar - zNear);
@@ -776,7 +776,7 @@ inline void atgMath::PerspectiveRH(float fov_y, float aspect, float zNear, float
     if (zNear > zFar)
         Swap(zNear, zFar);
 
-    if (false == Is0to1ForClipZ()) // z=> -1 to 1.
+    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
     {
         float n_f = 1.0f / (zNear - zFar);
         float yScale = Cot(DegreesToRadians(fov_y) * 0.5f);
@@ -815,7 +815,7 @@ inline void atgMath::OrthoProjectLH(float width, float height, float zNear, floa
     if (zNear > zFar)
         Swap(zNear, zFar);
 
-    if (false == Is0to1ForClipZ()) // z=> -1 to 1.
+    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
     {
         float n_f = 1.0f / (zNear - zFar);
 
@@ -845,7 +845,7 @@ inline void atgMath::OrthoProjectRH(float width, float height, float zNear, floa
     if (zNear > zFar)
         Swap(zNear, zFar);
 
-    if (false == Is0to1ForClipZ()) // z=> -1 to 1.
+    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
     {
         float f_n = 1.0f / (zFar - zNear);
 

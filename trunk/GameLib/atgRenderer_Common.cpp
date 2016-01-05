@@ -20,6 +20,90 @@ bool IsOpenGLGraph()
 #endif // USE_OPENGL
 }
 
+
+
+bool atgRenderer_Private_BeginLine(std::vector<float>& drawLines)
+{
+    drawLines.clear();
+    return true;
+}
+
+void atgRenderer_Private_AddLine(std::vector<float>& drawLines, const float point1[3], const float point2[3], const float color[3])
+{
+    drawLines.push_back(point1[0]);
+    drawLines.push_back(point1[1]);
+    drawLines.push_back(point1[2]);
+    drawLines.push_back(color[0]);
+    drawLines.push_back(color[1]);
+    drawLines.push_back(color[2]);
+    drawLines.push_back(point2[0]);
+    drawLines.push_back(point2[1]);
+    drawLines.push_back(point2[2]);
+    drawLines.push_back(color[0]);
+    drawLines.push_back(color[1]);
+    drawLines.push_back(color[2]);
+}
+
+void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
+{
+    if (!drawLines.empty())
+    {
+        ATG_PROFILE("atgRenderer_Private_EndLine");
+
+        static const int dataCount = 12;
+        static atgPass* pColorPass = NULL;
+        static atgVertexBuffer* pVB = NULL;
+
+        const std::vector<float>& lines = drawLines;
+        if (lines.size() < dataCount)
+            return;
+
+        int lineCount = lines.size() / dataCount;
+        size_t sizeOfLineData = lines.size() * sizeof(float);
+
+        // create pass
+        if (!pColorPass || pColorPass->IsLost())
+        {
+            pColorPass = atgShaderLibFactory::FindOrCreatePass(VERTEXCOLOR_PASS_IDENTITY);
+            if (NULL == pColorPass)
+                return;
+        }
+
+        // create vertex buffer
+        if (!pVB || pVB->IsLost() || sizeOfLineData > pVB->GetSize())
+        {
+            if (pVB)
+            {
+                SAFE_DELETE(pVB);
+            }
+
+            atgVertexDecl decl;
+            decl.AppendElement(0, atgVertexDecl::VA_Pos3);
+            decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
+            pVB = new atgVertexBuffer();
+            pVB->Create(&decl, &lines[0], sizeOfLineData, BAM_Static);
+        }else
+        {
+            // only update vertex buffer
+            void *pLockData = pVB->Lock(0, sizeOfLineData);
+            if(pLockData)
+            {
+                memcpy(pLockData, &lines[0], sizeOfLineData);
+                pVB->Unlock();
+            }
+        }
+        g_Renderer->SetLightEnable(false);
+        g_Renderer->SetDepthTestEnable(false);
+        g_Renderer->BindPass(pColorPass);
+        g_Renderer->BindVertexBuffer(pVB);
+
+        g_Renderer->DrawPrimitive(PT_LINES, lineCount, lineCount*2);
+        g_Renderer->SetDepthTestEnable(true);
+        g_Renderer->SetLightEnable(true);
+    }
+}
+
+
 void atgGpuResource::Lost()
 {
     _isLost = true;
@@ -52,11 +136,14 @@ atgRenderer::atgRenderer(atgGame* game)
     _VP_width = 0;
     _VP_height = 0;
 
+    _cullMode = FCM_CW;
+
     //LOG("atgRenderer _CommonInitialized!\n");
 }
 
 atgRenderer::~atgRenderer(void)
 {
+
 }
 
 #if defined (WIN32)
@@ -213,84 +300,21 @@ void atgRenderer::EndPoint()
 
 bool atgRenderer::BeginLine()
 {
-    _drawLines.clear();
-    return true;
+    return atgRenderer_Private_BeginLine(_drawLines);
 }
 
 void atgRenderer::AddLine(const float point1[3], const float point2[3], const float color[3])
 {
-    _drawLines.push_back(point1[0]);
-    _drawLines.push_back(point1[1]);
-    _drawLines.push_back(point1[2]);
-    _drawLines.push_back(color[0]);
-    _drawLines.push_back(color[1]);
-    _drawLines.push_back(color[2]);
-    _drawLines.push_back(point2[0]);
-    _drawLines.push_back(point2[1]);
-    _drawLines.push_back(point2[2]);
-    _drawLines.push_back(color[0]);
-    _drawLines.push_back(color[1]);
-    _drawLines.push_back(color[2]);
+    atgRenderer_Private_AddLine(_drawLines, point1, point2, color);
 }
 
 void  atgRenderer::EndLine()
 {
-    if (!_drawLines.empty())
-    {
-        ATG_PROFILE("atgRenderer::EndLine");
-
-        static const int dataCount = 12;
-        static atgPass* pColorPass = NULL;
-        static atgVertexBuffer* pVB = NULL;
-
-        const std::vector<float>& lines = _drawLines;
-        if (lines.size() < dataCount)
-            return;
-
-        int lineCount = lines.size() / dataCount;
-        int sizeOfLineData = lines.size() * sizeof(float);
-
-        // create pass
-        if (!pColorPass || pColorPass->IsLost())
-        {
-            pColorPass = atgShaderLibFactory::FindOrCreatePass(VERTEXCOLOR_PASS_IDENTITY);
-            if (NULL == pColorPass)
-                return;
-        }
-
-        // create vertex buffer
-        if (!pVB || pVB->IsLost())
-        {
-            if (pVB)
-            {
-                SAFE_DELETE(pVB);
-            }
-
-            atgVertexDecl decl;
-            decl.AppendElement(0, atgVertexDecl::VA_Pos3);
-            decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
-            pVB = new atgVertexBuffer();
-            pVB->Create(&decl, &lines[0], sizeOfLineData, BAM_Static);
-        }else
-        {
-            // only update vertex buffer
-            void *pLockData = pVB->Lock(0, sizeOfLineData);
-            if(pLockData)
-            {
-                memcpy(pLockData, &lines[0], sizeOfLineData);
-                pVB->Unlock();
-            }
-        }
-        g_Renderer->SetLightEnable(false);
-        g_Renderer->SetDepthTestEnable(false);
-        g_Renderer->BindPass(pColorPass);
-        g_Renderer->BindVertexBuffer(pVB);
-
-        g_Renderer->DrawPrimitive(PT_LINES, lineCount, lineCount*2);
-        g_Renderer->SetDepthTestEnable(true);
-        g_Renderer->SetLightEnable(true);
-    }
+    atgRenderer_Private_EndLine(_drawLines);
 }
+
+
+#define DRAW_QUAD_USE_LINE_LIST
 
 bool atgRenderer::BeginQuad()
 {
@@ -314,6 +338,18 @@ void atgRenderer::AddQuad(const float point1[3], const float point2[3], const fl
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
 
+#ifdef DRAW_QUAD_USE_LINE_LIST
+
+    _drawQuads.push_back(point3[0]);
+    _drawQuads.push_back(point3[1]);
+    _drawQuads.push_back(point3[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+
+#endif // DRAW_QUAD_USE_LINE_LIST
+
+
     _drawQuads.push_back(point4[0]);
     _drawQuads.push_back(point4[1]);
     _drawQuads.push_back(point4[2]);
@@ -321,12 +357,34 @@ void atgRenderer::AddQuad(const float point1[3], const float point2[3], const fl
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
 
+#ifdef DRAW_QUAD_USE_LINE_LIST
+
+    _drawQuads.push_back(point4[0]);
+    _drawQuads.push_back(point4[1]);
+    _drawQuads.push_back(point4[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+
+#endif // DRAW_QUAD_USE_LINE_LIST
+
     _drawQuads.push_back(point2[0]);
     _drawQuads.push_back(point2[1]);
     _drawQuads.push_back(point2[2]);
     _drawQuads.push_back(color[0]);
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
+
+#ifdef DRAW_QUAD_USE_LINE_LIST
+
+    _drawQuads.push_back(point2[0]);
+    _drawQuads.push_back(point2[1]);
+    _drawQuads.push_back(point2[2]);
+    _drawQuads.push_back(color[0]);
+    _drawQuads.push_back(color[1]);
+    _drawQuads.push_back(color[2]);
+
+#endif // DRAW_QUAD_USE_LINE_LIST
 
     _drawQuads.push_back(point1[0]);
     _drawQuads.push_back(point1[1]);
@@ -342,7 +400,13 @@ void atgRenderer::EndQuad()
     {
         ATG_PROFILE("atgRenderer::EndQuad");
 
+#ifdef DRAW_QUAD_USE_LINE_LIST
+        static const int numVertex = 8;
+#else
         static const int numVertex = 5;
+#endif // DRAW_QUAD_USE_LINE_LIST
+
+        
         static const int dataCount = 6 * numVertex;
         static atgPass* pColorPass = NULL;
         static atgVertexBuffer* pVB = NULL;
@@ -352,7 +416,7 @@ void atgRenderer::EndQuad()
             return;
 
         int quadCount = quads.size() / dataCount;
-        int sizeOfQuadData = quads.size() * sizeof(float);
+        size_t sizeOfQuadData = quads.size() * sizeof(float);
 
         // create pass
         if (!pColorPass || pColorPass->IsLost())
@@ -363,7 +427,7 @@ void atgRenderer::EndQuad()
         }
 
         // create vertex buffer
-        if (!pVB || pVB->IsLost())
+        if (!pVB || pVB->IsLost() || sizeOfQuadData > pVB->GetSize())
         {
             if (pVB)
             {
@@ -391,14 +455,154 @@ void atgRenderer::EndQuad()
         g_Renderer->BindPass(pColorPass);
         g_Renderer->BindVertexBuffer(pVB);
 
+#ifdef DRAW_QUAD_USE_LINE_LIST
+        g_Renderer->DrawPrimitive(PT_LINES, quadCount*4, quadCount*numVertex);
+#else
         for (int i = 0; i < quadCount; ++i)
         {
             g_Renderer->DrawPrimitive(PT_LINE_STRIP, numVertex - 1, numVertex, i*numVertex);
         }
+#endif // DRAW_QUAD_USE_LINE_LIST
+
         g_Renderer->SetDepthTestEnable(true);
         g_Renderer->SetLightEnable(true);
     }
 }
+
+bool  atgRenderer::BeginFullQuad()
+{
+    _drawFullQuads.clear();
+    return true;
+}
+
+#define FULL_QUAD_USE_TRIANGLE_LIST
+
+void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], const float point3[3], const float point4[3], const float color[3])
+{
+    _drawFullQuads.push_back(point1[0]);
+    _drawFullQuads.push_back(point1[1]);
+    _drawFullQuads.push_back(point1[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+    _drawFullQuads.push_back(point2[0]);
+    _drawFullQuads.push_back(point2[1]);
+    _drawFullQuads.push_back(point2[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+    _drawFullQuads.push_back(point3[0]);
+    _drawFullQuads.push_back(point3[1]);
+    _drawFullQuads.push_back(point3[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+#ifdef FULL_QUAD_USE_TRIANGLE_LIST
+
+    _drawFullQuads.push_back(point2[0]);
+    _drawFullQuads.push_back(point2[1]);
+    _drawFullQuads.push_back(point2[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+#endif // FULL_QUAD_USE_TRIANGLE_LIST
+
+    _drawFullQuads.push_back(point4[0]);
+    _drawFullQuads.push_back(point4[1]);
+    _drawFullQuads.push_back(point4[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+#ifdef FULL_QUAD_USE_TRIANGLE_LIST
+
+    _drawFullQuads.push_back(point3[0]);
+    _drawFullQuads.push_back(point3[1]);
+    _drawFullQuads.push_back(point3[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+#endif // FULL_QUAD_USE_TRIANGLE_LIST
+}
+
+void   atgRenderer::EndFullQuad()
+{
+    if (!_drawFullQuads.empty())
+    {
+        ATG_PROFILE("atgRenderer::EndFullQuad");
+
+#ifdef FULL_QUAD_USE_TRIANGLE_LIST
+        static const int numVertex = 6;
+#else
+        static const int numVertex = 4;
+#endif // FULL_QUAD_USE_TRIANGLE_LIST
+
+        
+        static const int dataCount = 6 * numVertex;
+        static atgPass* pColorPass = NULL;
+        static atgVertexBuffer* pVB = NULL;
+
+        const std::vector<float>& quads = _drawFullQuads;
+        if (quads.size() < dataCount)
+            return;
+
+        int quadCount = quads.size() / dataCount;
+        size_t sizeOfQuadData = quads.size() * sizeof(float);
+
+        // create pass
+        if (!pColorPass || pColorPass->IsLost())
+        {
+            pColorPass = atgShaderLibFactory::FindOrCreatePass(VERTEXCOLOR_PASS_IDENTITY);
+            if (NULL == pColorPass)
+                return;
+        }
+
+        // create vertex buffer
+        if (!pVB || pVB->IsLost() || sizeOfQuadData > pVB->GetSize())
+        {
+            if (pVB)
+            {
+                SAFE_DELETE(pVB);
+            }
+
+            atgVertexDecl decl;
+            decl.AppendElement(0, atgVertexDecl::VA_Pos3);
+            decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
+            pVB = new atgVertexBuffer();
+            pVB->Create(&decl, &quads[0], sizeOfQuadData, BAM_Static);
+        }else
+        {
+            // only update vertex buffer
+            void *pLockData = pVB->Lock(0, sizeOfQuadData);
+            if(pLockData)
+            {
+                memcpy(pLockData, &quads[0], sizeOfQuadData);
+                pVB->Unlock();
+            }
+        }
+
+        g_Renderer->SetLightEnable(false);
+        g_Renderer->BindPass(pColorPass);
+        g_Renderer->BindVertexBuffer(pVB);
+
+#ifdef FULL_QUAD_USE_TRIANGLE_LIST
+        g_Renderer->DrawPrimitive(PT_TRIANGLES, quadCount*2, quadCount*numVertex);
+#else
+        for (int i = 0; i < quadCount; ++i)
+        {
+            g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, numVertex, i*numVertex);
+        }
+#endif // FULL_QUAD_USE_TRIANGLE_LIST
+
+        g_Renderer->SetLightEnable(true);
+    }
+}
+
 
 bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture)
 {
@@ -527,6 +731,61 @@ bool atgRenderer::DrawTexureQuadPass(const float p1[3], const float p2[3], const
     return true;
 }
 
+bool atgRenderer::BeginAABBoxLine()
+{
+    return atgRenderer_Private_BeginLine(_drawAABBoxs);
+}
+
+void atgRenderer::AddAABBoxLine(const float vMin[3], const float vMax[3], const float color[3])
+{
+    float a[3];
+    float b[3];
+
+    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>3
+    atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>6
+    atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
+    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMin[2]; //>8
+    atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
+
+    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>7
+    atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
+    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>4
+    atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>5
+    atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
+
+    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>3
+    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMax[2]; //>4
+    atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
+
+    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>3
+    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMax[2]; //>5
+    atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
+
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>5
+    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>6
+    atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
+
+    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>6
+    b[0] = vMax[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>7
+    atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
+
+    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>7
+    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>8
+    atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
+
+    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>4
+    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>8
+    atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
+}
+
+void atgRenderer::EndAABBoxLine()
+{
+    atgRenderer_Private_EndLine(_drawAABBoxs);
+}
+
+/*
 bool atgRenderer::DrawAABBox(const float vMin[3], const float vMax[3], const float color[3])
 {
     //  /4 - 5
@@ -649,6 +908,7 @@ bool atgRenderer::DrawAABBox(const float vMin[3], const float vMax[3], const flo
     g_Renderer->SetDepthTestEnable(true);
     return true;
 }
+*/
 
 atgPass* atgRenderer::FindCachePass(const char* key)
 {
@@ -749,5 +1009,6 @@ void atgRenderer::ReleaseAllGpuResource()
     for (; it != _gpuResources.end(); ++it)
     {
         (it->first->*it->second)();
+        LOG("release gup resoucse %p.\n", it->first);
     }
 }

@@ -568,6 +568,7 @@ public:
     bool                    DrawPrimitive(PrimitveType pt, uint32 primitveCount, uint32 verticesCount, uint32 offset = 0);
     bool                    DrawIndexedPrimitive(PrimitveType pt, uint32 primitveCount, uint32 indicesCount, uint32 verticesCount);
 
+    //> mobile phone 不是支持得很好.所以没啥用
     bool                    BeginPoint();
     void                    AddPoint(const float center[3], const float color[3]);
     void                    EndPoint();
@@ -581,9 +582,19 @@ public:
     bool                    BeginQuad();
     void                    AddQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float color[3]);
     void                    EndQuad();
+
+    //> 绘制实四边形
+    bool                    BeginFullQuad();
+    void                    AddFullQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float color[3]);
+    void                    EndFullQuad();
+
+    //> 绘制纹理多边形
     bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
     bool                    DrawTexureQuadPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture, atgPass* pPass);
-    bool                    DrawAABBox(const float vMin[3], const float vMax[3], const float color[3]);
+    
+    bool                    BeginAABBoxLine();
+    void                    AddAABBoxLine(const float vMin[3], const float vMax[3], const float color[3]);
+    void                    EndAABBoxLine();
 private:
     void                    _CommonInitialize();
 
@@ -606,6 +617,8 @@ protected:
     uint32 _VP_offsetY;
     uint32 _VP_width;
     uint32 _VP_height;
+
+    FaceCullMode            _cullMode;
 
 public:
     atgPass*                FindCachePass(const char* Key);
@@ -643,6 +656,12 @@ private:
 
     typedef std::vector<float> atgDrawQuads;
     atgDrawQuads _drawQuads;
+
+    typedef std::vector<float> atgDrawFullQuads;
+    atgDrawFullQuads _drawFullQuads;
+
+    typedef std::vector<float> atgDrawAABBoxs;
+    atgDrawAABBoxs _drawAABBoxs;
 };
 
 //////////////////////////////////////////////////////////////////////////
