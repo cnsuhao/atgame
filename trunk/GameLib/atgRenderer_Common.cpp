@@ -487,13 +487,6 @@ void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], con
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
 
-    _drawFullQuads.push_back(point2[0]);
-    _drawFullQuads.push_back(point2[1]);
-    _drawFullQuads.push_back(point2[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
-
     _drawFullQuads.push_back(point3[0]);
     _drawFullQuads.push_back(point3[1]);
     _drawFullQuads.push_back(point3[2]);
@@ -501,11 +494,18 @@ void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], con
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
 
-#ifdef FULL_QUAD_USE_TRIANGLE_LIST
-
     _drawFullQuads.push_back(point2[0]);
     _drawFullQuads.push_back(point2[1]);
     _drawFullQuads.push_back(point2[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+#ifdef FULL_QUAD_USE_TRIANGLE_LIST
+
+    _drawFullQuads.push_back(point3[0]);
+    _drawFullQuads.push_back(point3[1]);
+    _drawFullQuads.push_back(point3[2]);
     _drawFullQuads.push_back(color[0]);
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
@@ -521,9 +521,9 @@ void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], con
 
 #ifdef FULL_QUAD_USE_TRIANGLE_LIST
 
-    _drawFullQuads.push_back(point3[0]);
-    _drawFullQuads.push_back(point3[1]);
-    _drawFullQuads.push_back(point3[2]);
+    _drawFullQuads.push_back(point2[0]);
+    _drawFullQuads.push_back(point2[1]);
+    _drawFullQuads.push_back(point2[2]);
     _drawFullQuads.push_back(color[0]);
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
@@ -622,10 +622,10 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
 
     atgMath::VecCopy(p1, &QuadData[0]);
     QuadData[3] = t1[0]; QuadData[4] = t1[1];
-    atgMath::VecCopy(p2, &QuadData[5]);
-    QuadData[8] = t2[0]; QuadData[9] = t2[1];
-    atgMath::VecCopy(p3, &QuadData[10]);
-    QuadData[13] = t3[0]; QuadData[14] = t3[1];
+    atgMath::VecCopy(p3, &QuadData[5]);
+    QuadData[8] = t3[0]; QuadData[9] = t3[1];
+    atgMath::VecCopy(p2, &QuadData[10]);
+    QuadData[13] = t2[0]; QuadData[14] = t2[1];
     atgMath::VecCopy(p4, &QuadData[15]);
     QuadData[18] = t4[0]; QuadData[19] = t4[1];
     // create pass

@@ -438,55 +438,87 @@ bool JPEG_Loader::LoadMemory( JPEG_Image* image, const int8* buffer, uint32 buff
         // Nr of channels must be 3 or 4!
         return FALSE;
     }
-
-    uint32 DestLen = Info.output_width * Info.output_height * 4;
-    int8* DecodeBuffer = new int8[DestLen];
-    image->imageData = DecodeBuffer;
-    image->width = Info.output_width;
-    image->height = Info.output_height;
-    image->bpp = 32;
-
-    pTargetBuffer = DecodeBuffer;
-    if(!pTargetBuffer) 
-        return FALSE;
-
-    Stride = Info.output_width * Info.output_components;
-    Offset = yReversed ? (Info.output_height - 1) * Stride : 0;
-    int32 moveStride = yReversed ? -Stride : Stride;
-
-    Pointer = (*Info.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&Info), JPOOL_IMAGE, Stride, 1);
-    while(Info.output_scanline < Info.output_height)
+    
+    if (0)
     {
-        jpeg_read_scanlines(&Info, Pointer, 1);
-        memcpy(&pTargetBuffer[Offset], Pointer[0], Stride);
-        Offset += moveStride;
-    }
+        //>默认生成32位的RGBA数据
+        uint32 DestLen = Info.output_width * Info.output_height * 4;
+        int8* DecodeBuffer = new int8[DestLen];
+        image->imageData = DecodeBuffer;
+        image->width = Info.output_width;
+        image->height = Info.output_height;
+        image->bpp = 32;
 
-    jpeg_finish_decompress(&Info);
+        pTargetBuffer = DecodeBuffer;
+        if(!pTargetBuffer) 
+            return FALSE;
 
-    (*reinterpret_cast<uint8*>(&Opaque)) = 255;
+        Stride = Info.output_width * Info.output_components;
+        Offset = yReversed ? (Info.output_height - 1) * Stride : 0;
+        int32 moveStride = yReversed ? -Stride : Stride;
 
-    if(Info.output_components == 3)
-    {
-        AASSERT(Info.out_color_space == JCS_RGB);
-        for(i = (Info.output_width * Info.output_height - 1); i >= 0; i--)
+        Pointer = (*Info.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&Info), JPOOL_IMAGE, Stride, 1);
+        while(Info.output_scanline < Info.output_height)
         {
-            if (co == CO_RGBA)
+            jpeg_read_scanlines(&Info, Pointer, 1);
+            memcpy(&pTargetBuffer[Offset], Pointer[0], Stride);
+            Offset += moveStride;
+        }
+
+        jpeg_finish_decompress(&Info);
+
+        (*reinterpret_cast<uint8*>(&Opaque)) = 255;
+
+        if(Info.output_components == 3)
+        {
+            AASSERT(Info.out_color_space == JCS_RGB);
+            for(i = (Info.output_width * Info.output_height - 1); i >= 0; i--)
             {
-                pTargetBuffer[(i * 4) + 3] = Opaque;
-                pTargetBuffer[(i * 4) + 2] = pTargetBuffer[(i * 3) + 2];
-                pTargetBuffer[(i * 4) + 1] = pTargetBuffer[(i * 3) + 1];
-                pTargetBuffer[(i * 4) + 0] = pTargetBuffer[(i * 3) + 0];
-            }else
-            {   // CO_ARGB
-                pTargetBuffer[(i * 4) + 3] = Opaque;
-                pTargetBuffer[(i * 4) + 2] = pTargetBuffer[(i * 3) + 0];
-                pTargetBuffer[(i * 4) + 1] = pTargetBuffer[(i * 3) + 1];
-                pTargetBuffer[(i * 4) + 0] = pTargetBuffer[(i * 3) + 2];
+                if (co == CO_RGBA)
+                {//>使用倒序复制,所以不会导致数据覆盖
+                    pTargetBuffer[(i * 4) + 3] = Opaque;
+                    pTargetBuffer[(i * 4) + 2] = pTargetBuffer[(i * 3) + 2];
+                    pTargetBuffer[(i * 4) + 1] = pTargetBuffer[(i * 3) + 1];
+                    pTargetBuffer[(i * 4) + 0] = pTargetBuffer[(i * 3) + 0];
+                }else
+                {   // CO_ARGB
+                    pTargetBuffer[(i * 4) + 3] = Opaque;
+                    pTargetBuffer[(i * 4) + 2] = pTargetBuffer[(i * 3) + 0];
+                    pTargetBuffer[(i * 4) + 1] = pTargetBuffer[(i * 3) + 1];
+                    pTargetBuffer[(i * 4) + 0] = pTargetBuffer[(i * 3) + 2];
+                }
             }
         }
     }
+    else
+    {
+        //>生成24位的RGB数据
+        uint32 DestLen = Info.output_width * Info.output_height * 3;
+        int8* DecodeBuffer = new int8[DestLen];
+        image->imageData = DecodeBuffer;
+        image->width = Info.output_width;
+        image->height = Info.output_height;
+        image->bpp = 24;
 
+        pTargetBuffer = DecodeBuffer;
+        if(!pTargetBuffer) 
+            return FALSE;
+
+        Stride = Info.output_width * Info.output_components;
+        Offset = yReversed ? (Info.output_height - 1) * Stride : 0;
+        int32 moveStride = yReversed ? -Stride : Stride;
+
+        Pointer = (*Info.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&Info), JPOOL_IMAGE, Stride, 1);
+        while(Info.output_scanline < Info.output_height)
+        {
+            jpeg_read_scanlines(&Info, Pointer, 1);
+            memcpy(&pTargetBuffer[Offset], Pointer[0], Stride);
+            Offset += moveStride;
+        }
+
+        jpeg_finish_decompress(&Info);
+    }
+   
     jpeg_destroy_decompress(&Info);
 
     return TRUE;

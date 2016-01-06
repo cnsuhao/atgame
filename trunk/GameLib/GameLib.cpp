@@ -30,7 +30,7 @@ public :
         //LoadConfig();
 
         g_Renderer->SetViewport(0, 0, GetWindowWidth(), GetWindowHeight());
-        g_Renderer->SetFaceCull(FCM_CW);
+        g_Renderer->SetFaceCull(FCM_CCW);
 
         Matrix world(MatrixIdentity);
         //world.RotationZXY(0.0f, -90.0f, -90.0f);
@@ -53,14 +53,14 @@ public :
             g_points[3*i + 2]   = Random(-500.0f, 500.f);
         }
 
-        JPEG_Loader::Load(&image, "ui/ui1.jpg", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
+        PNG_Loader::Load(&image, "ui/ui1.png", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
 
         if (image.width > 0)
         {
             if (g_Texture == NULL || g_Texture->IsLost())
             {
                 g_Texture = new atgTexture();
-                g_Texture->Create(image.width, image.height, image.bpp, image.imageData);
+                g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
             }
         }
 
@@ -97,9 +97,9 @@ public :
             g_Renderer->SetMatrix(MD_PROJECTION, _Camera->GetProj());
         }
 
-        g_Renderer->SetFaceCull(FCM_CW);
         g_Renderer->Clear();
         g_Renderer->BeginFrame();
+        g_Renderer->SetBlendFunction(BF_ONE, BF_ONE_MINUS_SRC_ALPHA);
         DrawAxis();
         g_Renderer->EndFrame();
         g_Renderer->Present();
@@ -225,20 +225,11 @@ public :
     void DrawAxis()
     {
         const float textureQuadData[] = {
-            -100.0f,  100.0f, 0.0f, 0.0f, 0.0f,
-            -100.0f, -100.0f, 0.0f, 0.0f, 1.0f,
-            100.0f,  100.0f, 0.0f, 1.0f, 0.0f,
-            100.0f, -100.0f, 0.0f, 1.0f, 1.0f,
+            -100.0f,  100.0f, 20.0f, 0.0f, 0.0f,
+            -100.0f, -100.0f, 20.0f, 0.0f, 1.0f,
+            100.0f,  100.0f, 20.0f, 1.0f, 0.0f,
+            100.0f, -100.0f, 20.0f, 1.0f, 1.0f,
         };
-
-        if (g_Texture)
-        {
-            if (g_Texture->IsLost())
-            {
-                g_Texture->Create(image.width, image.height, image.bpp, image.imageData);
-            }
-            g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
-        }
         
         //g_Renderer->BeginQuad();
         //g_Renderer->AddQuad(Vec3(0.f,0.0f,1.0f).m, Vec3(0.0f, 100.0f, 1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3Up.m);
@@ -282,6 +273,15 @@ public :
         }
         g_Renderer->EndPoint();
         */
+
+        if (g_Texture)
+        {
+            if (g_Texture->IsLost())
+            {
+                g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
+            }
+            g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
+        }
 
         uint32 oldVP[4];
         g_Renderer->GetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
@@ -334,7 +334,7 @@ public :
     class atgCamera* _Camera;
     class atgCamera* _Camera2;
     bool _down;
-    JPEG_Image image;
+    PNG_Image image;
     //atgPerfMonitor _monitor;
 };
 

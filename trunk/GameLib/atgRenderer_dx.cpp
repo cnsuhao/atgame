@@ -19,6 +19,81 @@ D3DPRESENT_PARAMETERS*  g_d3dpp = NULL;
 
 #define SAFE_RELEASE(x) { if(x) { x->Release(); x = NULL; } }
 
+
+/* >>>>> directx 9.0 的渲染状态初值表
+
+Render States               Default Value
+-----------------------------------------
+D3DRS_ZENABLE               D3DZB_FALSE 
+D3DRS_SPECULARENABLE        FALSE 
+D3DFILLMODE                 D3DFILL_SOLID 
+D3DSHADEMODE                D3DSHADE_GOURAUD 
+D3DRS_ZWRITEENABLE          TRUE 
+D3DRS_ALPHATESTENABLE       FALSE 
+D3DRS_LASTPIXEL             TRUE 
+D3DRS_SRCBLEND              D3DBLEND_ONE 
+D3DRS_DESTBLEND             D3DBLEND_ZERO 
+D3DRS_ZFUNC                 D3DCMP_LESSEQUAL 
+D3DRS_ALPHAREF              0 
+D3DRS_ALPHAFUNC             D3DCMP_ALWAYS 
+D3DRS_DITHERENABLE          FALSE 
+D3DRS_FOGSTART              0 
+D3DRS_FOGEND                1 
+D3DRS_FOGDENSITY            1 
+D3DRS_ALPHABLENDENABLE      FALSE 
+D3DRS_DEPTHBIAS             0 
+D3DRS_STENCILENABLE         FALSE 
+D3DRS_STENCILFAIL           D3DSTENCILOP_KEEP 
+D3DRS_STENCILZFAIL          D3DSTENCILOP_KEEP 
+D3DRS_STENCILPASS           D3DSTENCILOP_KEEP 
+D3DRS_STENCILFUNC           D3DCMP_ALWAYS 
+D3DRS_STENCILREF            0 
+D3DRS_STENCILMASK           0xffffffff 
+D3DRS_STENCILWRITEMASK      0xffffffff 
+D3DRS_TEXTUREFACTOR         0xffffffff 
+D3DRS_WRAP0                 0 
+D3DRS_WRAP1                 0 
+D3DRS_WRAP2                 0 
+D3DRS_WRAP3                 0 
+D3DRS_WRAP4                 0 
+D3DRS_WRAP5                 0 
+D3DRS_WRAP6                 0 
+D3DRS_WRAP7                 0 
+D3DRS_WRAP8                 0 
+D3DRS_WRAP9                 0 
+D3DRS_WRAP10                0 
+D3DRS_WRAP11                0 
+D3DRS_WRAP12                0 
+D3DRS_WRAP13                0 
+D3DRS_WRAP14                0 
+D3DRS_WRAP15                0 
+D3DRS_LOCALVIEWER           TRUE 
+D3DRS_EMISSIVEMATERIALSOURCE D3DMCS_MATERIAL 
+D3DRS_AMBIENTMATERIALSOURCE D3DMCS_MATERIAL 
+D3DRS_DIFFUSEMATERIALSOURCE D3DMCS_COLOR1 
+D3DRS_SPECULARMATERIALSOURCE D3DMCS_COLOR2 
+D3DRS_COLORWRITEENABLE      0x0000000f 
+D3DBLENDOP                  D3DBLENDOP_ADD 
+D3DRS_SCISSORTESTENABLE     FALSE 
+D3DRS_SLOPESCALEDEPTHBIAS   0 
+D3DRS_ANTIALIASEDLINEENABLE FALSE 
+D3DRS_TWOSIDEDSTENCILMODE   FALSE 
+D3DRS_CCW_STENCILFAIL       D3DSTENCILOP_KEEP 
+D3DRS_CCW_STENCILZFAIL      D3DSTENCILOP_KEEP 
+D3DRS_CCW_STENCILPASS       D3DSTENCILOP_KEEP 
+D3DRS_CCW_STENCILFUNC       D3DCMP_ALWAYS 
+D3DRS_COLORWRITEENABLE1     0x0000000f 
+D3DRS_COLORWRITEENABLE2     0x0000000f 
+D3DRS_COLORWRITEENABLE3     0x0000000f 
+D3DRS_BLENDFACTOR           0xffffffff 
+D3DRS_SRGBWRITEENABLE       0 
+D3DRS_SEPARATEALPHABLENDENABLE FALSE 
+D3DRS_SRCBLENDALPHA         D3DBLEND_ONE 
+D3DRS_DESTBLENDALPHA        D3DBLEND_ZERO 
+D3DRS_BLENDOPALPHA          D3DBLENDOP_ADD
+
+*/
+
 //////////////////////////////////////////////////////////////////////////
 
 // index buffer
@@ -557,7 +632,7 @@ bool atgTextureImpl::Unbind(uint8 index)
     return true;
 }
 
-atgTexture::atgTexture():_width(0),_height(0),_bbp(0),_impl(NULL)
+atgTexture::atgTexture():_width(0),_height(0),_format(TF_R8G8B8A8),_impl(NULL)
 {
 }
 
@@ -567,16 +642,53 @@ atgTexture::~atgTexture()
     g_Renderer->RemoveGpuResource(this);
 }
 
-bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pData/*=NULL*/ )
+bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, const void *pData/*=NULL*/ )
 {
     Destory();
 
     _width = width;
     _height = height;
-    _bbp = bbp / 8;
+    _format = format;
     char* pBegin = (char*)pData;
     
     _impl = new atgTextureImpl;
+
+    uint8 pixelSize = 0; 
+    D3DFORMAT _inputFormat = D3DFMT_UNKNOWN;
+    switch (_format)
+    {
+    case TF_R8G8B8:
+        _inputFormat = D3DFMT_R8G8B8; //directx don't support 24 bit format.
+        _inputFormat = D3DFMT_X8R8G8B8;
+        pixelSize = 3;
+        break;
+    case TF_R5G6B5:
+        _inputFormat = D3DFMT_R5G6B5;
+        pixelSize = 2;
+        break;
+    case TF_R8G8B8A8:
+        _inputFormat = D3DFMT_A8R8G8B8;
+        pixelSize = 4;
+        break;
+    case TF_R5G5B5A1:
+        _inputFormat = D3DFMT_A1R5G5B5;
+        pixelSize = 2;
+        break;
+    case TF_R4G4B4A4:
+        _inputFormat = D3DFMT_A4R4G4B4;
+        pixelSize = 2;
+        break;
+    case TF_R32F:
+        break;
+    case TF_R16F:
+        break;
+    case TF_D24S8:
+        break;
+    case TF_D16:
+        break;
+    default:
+        break;
+    }
 
     DWORD usage = 0;
     D3DPOOL pool = D3DPOOL_MANAGED;
@@ -593,11 +705,11 @@ bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pD
     //usage |= D3DUSAGE_RENDERTARGET; 或者 usage_ |= D3DUSAGE_DEPTHSTENCIL;
     //pool = D3DPOOL_DEFAULT;
 
-    if( FAILED( g_pd3dDevice->CreateTexture(width, height, usage, D3DUSAGE_AUTOGENMIPMAP, \
-            D3DFMT_A8R8G8B8,
-            pool,
-            &_impl->pDXTX,
-            NULL)) )
+    if( FAILED( g_pd3dDevice->CreateTexture(width, height, usage, D3DUSAGE_AUTOGENMIPMAP,
+                                            _inputFormat,
+                                            pool,
+                                            &_impl->pDXTX,
+                                            NULL)) )
     {
         LOG("create texture fail.\n");
         return false;
@@ -611,29 +723,50 @@ bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pD
             LOG("lock texture data fail.\n");
             return false;
         }
-        if (_bbp == 4)
+
+        if (_inputFormat == D3DFMT_X8R8G8B8 && pixelSize == 3)
         {
-            //int pitch = width * pTexture->_bbp;
-            //for (uint32 i= 0; i < height; ++i)
-            //{
-            //    memcpy( (uint8*)(rect.pBits) + rect.Pitch * i, pBegin + pitch * i, pitch);
-            //}
-            memcpy( (uint8*)(rect.pBits), pBegin, height * width * _bbp);
+            uint8 *pPtr = (uint8 *)pData;
+            for (uint32 i=0; i < _height; ++i)
+            {
+                uint8* dest = (uint8*)(rect.pBits) + rect.Pitch * i;
+                for (uint32 j = 0; j < _width; ++j)
+                {
+                    *((uint32*)dest) = D3DCOLOR_XRGB(*pPtr,*(pPtr+1),*(pPtr+2));
+                    pPtr += 3;
+                    dest += 4;
+                }
+            }
         }
         else
         {
-            return false;
-            //// else 
-            //// copy one by one, ca!
-            //for (uint32 i=0; i < _height; ++i)
-            //{
-            //    for (uint32 j=0; j < _width; ++j)
-            //    {
-            //        uint8* dest = (uint8*)(rect.pBits) + rect.Pitch * i + j * 4;
-            //        *((uint32*)dest) = uint8BGR_2_uint32(texture->getBuffer() + texture->getPitch() * i + texture->getBPP() * j);
-            //    }
-            //}
+            memcpy( (uint8*)(rect.pBits), pBegin, height * width * pixelSize);
         }
+
+        //if (_bbp == 4)
+        //{
+        //    //int pitch = width * pTexture->_bbp;
+        //    //for (uint32 i= 0; i < height; ++i)
+        //    //{
+        //    //    memcpy( (uint8*)(rect.pBits) + rect.Pitch * i, pBegin + pitch * i, pitch);
+        //    //}
+        //    memcpy( (uint8*)(rect.pBits), pBegin, height * width * _bbp);
+        //}
+        //else
+        //{
+        //    return false;
+        //    //// else 
+        //    //// copy one by one, ca!
+        //    //for (uint32 i=0; i < _height; ++i)
+        //    //{
+        //    //    for (uint32 j=0; j < _width; ++j)
+        //    //    {
+        //    //        uint8* dest = (uint8*)(rect.pBits) + rect.Pitch * i + j * 4;
+        //    //        *((uint32*)dest) = uint8BGR_2_uint32(texture->getBuffer() + texture->getPitch() * i + texture->getBPP() * j);
+        //    //    }
+        //    //}
+        //}
+        
         DX_ASSERT( _impl->pDXTX->UnlockRect(0) );
 
         DX_ASSERT( _impl->pDXTX->SetAutoGenFilterType(D3DTEXF_LINEAR) );
@@ -655,7 +788,7 @@ bool atgTexture::Destory()
     SAFE_DELETE(_impl);
     _width = 0;
     _height = 0;
-    _bbp = 0;
+    _format = TF_R8G8B8A8;
 
     return true;
 }
@@ -1436,32 +1569,32 @@ atgRenderTarget::~atgRenderTarget()
     Destroy();
 }
 
-bool atgRenderTarget::Create(uint16 width, uint16 height, RenderTargetFormat format)
+bool atgRenderTarget::Create(std::vector<atgTexture*>& colorBuffer, atgTexture* depthStencilBuffer)
 {
     Destroy();
     
-    bool rs;
-    _impl = new atgRenderTargetImpl();
-    if (_impl)
-    {
-        D3DFORMAT d3dFormat = D3DFMT_UNKNOWN;
-        switch (format)
-        {
-        case RBF_A8R8G8B8:
-            d3dFormat = D3DFMT_A8R8G8B8;
-            break;
-        case RBF_R32F:
-            d3dFormat = D3DFMT_R32F;
-            break;
-        default:
-            break;
-        }
+    bool rs = false;
+    //_impl = new atgRenderTargetImpl();
+    //if (_impl)
+    //{
+    //    D3DFORMAT d3dFormat = D3DFMT_UNKNOWN;
+    //    switch (format)
+    //    {
+    //    case RBF_A8R8G8B8:
+    //        d3dFormat = D3DFMT_A8R8G8B8;
+    //        break;
+    //    case RBF_R32F:
+    //        d3dFormat = D3DFMT_R32F;
+    //        break;
+    //    default:
+    //        break;
+    //    }
 
-        if (d3dFormat != D3DFMT_UNKNOWN)
-        {
-            rs = _impl->Create(width, height, d3dFormat);
-        }
-    }
+    //    if (d3dFormat != D3DFMT_UNKNOWN)
+    //    {
+    //        rs = _impl->Create(width, height, d3dFormat);
+    //    }
+    //}
 
     if (rs)
     {
@@ -1671,8 +1804,8 @@ void atgRenderer::SetAlphaTestEnable(bool enbale, float value)
 
 void atgRenderer::SetFaceCull(FaceCullMode mode)
 {
-    //> d3d9 reset 的时候会自动把cullmode变成D3DCULL_CCW, 
-    //> 所以建议每帧开始的时候设置SetFaceCull(FCM_CW);
+    //> d3d9 reset 的时候会自动把cullmode变成D3DCULL_CCW
+    //> 所以建议不要改变FaceCull,默认使用FCM_CCW,即逆时针顶点组成的面看不见;
     if (mode == FCM_NONE)
     {
         DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE) );
@@ -1754,7 +1887,7 @@ void atgRenderer::SetBlendFunction(BlendFunction SrcBlend, BlendFunction DestBle
 void atgRenderer::Clear()
 {
     ATG_PROFILE("atgRenderer::Clear");
-    DX_ASSERT( g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,0,0), 1.0f, 0) );
+    DX_ASSERT( g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,36,36), 1.0f, 0) );
 }
 
 void atgRenderer::BeginFrame()
