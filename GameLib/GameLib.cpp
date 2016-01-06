@@ -9,11 +9,99 @@
 #include "atgCamera.h"
 #include "atgIntersection.h"
 #include "atgMisc.h"
+#include "atgShaderLibrary.h"
 //#include "perfMonitor.h"
+
+class Water
+{
+public:
+    Water(int w, int h)
+    : Width(w), Height(h)
+    {
+        size = w * h * sizeof(float);
+        buf1 = (float*)malloc(size);
+        buf2 = (float*)malloc(size);
+
+        memset(buf1, 0, size);
+        memset(buf2, 0, size);
+    }
+   
+    ~Water(void)
+    {
+
+    }
+
+    void Updata()
+    {
+        for(int y = 0; y < Height; y++)
+        {
+            int n = y * Width;
+            for (int x = 0; x < Width; x++, n++)
+            {
+                float s = GetValue(buf1, x, y - 1) + GetValue(buf1, x, y + 1) + GetValue(buf1, x - 1, y) + GetValue(buf1, x + 1, y);
+                s = (s / 2 - buf2[n]);
+                s -= s / 32;
+                if (s > 2) s = 2;
+                if (s < -2) s = -2;
+                buf2[n] = s;
+            }
+        }
+        float* temp = buf1;
+        buf1 = buf2;
+        buf2 = temp;
+    }
+   
+    void Drop(float xi, float yi)
+    {
+        int px = (int)(xi * (Width - 1));
+        int py = (int)(yi * (Height - 1));
+        for (int j = py - r; j <= py + r; j++)
+        {
+            for (int i = px - r; i <= px + r; i++)
+            {
+                float dx = (float)i - px;
+                float dy = (float)j - py;
+                float a = (float)(1 - (dx * dx + dy * dy) / (r * r));
+                if (a > 0 && a <= 1)
+                {
+                    SetValue(buf1, i, j, a * h);
+                }
+            }
+        }
+    }
+
+    void CopyTo(void* buffer) { memcpy(buffer, buf2, size); }
+
+    const int Width;
+    const int Height;
+private:
+    static const int r = 5;
+    static const int h = -1;
+    int size;
+    float* buf1;
+    float* buf2;
+
+    float GetValue(float* buf, int x, int y)
+    {
+        x = atgMath::Clamp(x, 0, Width - 1);
+        y = atgMath::Clamp(y, 0, Height - 1);
+
+        return buf[y * Width + x];
+    }
+
+    void SetValue(float* buf, int x, int y, float value)
+    {
+        x = atgMath::Clamp(x, 0, Width - 1);
+        y = atgMath::Clamp(y, 0, Height - 1);
+
+        buf[y * Width + x] = value;
+    }
+};
 
 static const int g_pointNumber = 1000;
 static float g_points[3*g_pointNumber];
 static atgTexture* g_Texture = NULL;
+static float* g_WaterHeightData = NULL;
 
 class Game : public atgGame
 {
@@ -61,8 +149,31 @@ public :
             {
                 g_Texture = new atgTexture();
                 g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
+                g_Texture->SetFilterMode(TFM_FILTER_BILINEAR);
             }
         }
+
+        pWater = new Water(200, 160);
+
+        pRippleShader = static_cast<atgRippleShader*>(atgShaderLibFactory::FindOrCreatePass(RIPPLE_PASS_IDENTITY));
+        if (NULL == pRippleShader)
+            return false;
+
+        pRippleShader->SetDxDy(1.0f / float(pWater->Width - 1), 1.0f / float(pWater->Height - 1));
+
+        g_WaterHeightData = new float[pWater->Width * pWater->Height];
+        pWater->CopyTo(g_WaterHeightData);
+
+
+        pDyncTexture = new atgTexture();
+        if (pDyncTexture->Create(pWater->Width, pWater->Height, TF_R32F, g_WaterHeightData))
+        {
+            LOG("success create TF_R32F texture.");
+        }
+        pDyncTexture->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
+
+        pRippleShader->SetTex1(g_Texture);
+        pRippleShader->SetTex2(pDyncTexture);
 
         return true;
     }
@@ -164,6 +275,12 @@ public :
             _down = true;
         }
 
+        if (id == 0)
+        {
+            _down0 = true;
+            pWater->Drop(float(x*1.0f/GetWindowWidth()), float(y*1.0f/GetWindowHeight()));
+        }
+        
     }
 
     void OnPointerMove(uint8 id, int16 x, int16 y)
@@ -186,6 +303,11 @@ public :
                 _Camera->SetYaw(oYaw);
                 _Camera->SetPitch(oPitch);
             }
+        }
+
+        if(_down0)
+        {
+            pWater->Drop(float(x*1.0f/GetWindowWidth()), float(y*1.0f/GetWindowHeight()));
         }
 
         if (id == MBID_MIDDLE)
@@ -215,6 +337,11 @@ public :
 
     void OnPointerUp(uint8 id, int16 x, int16 y)
     {
+        if (id == 0)
+        {
+            _down0 = false;
+        }
+
         if(id == 1)
         {
             _down = false;
@@ -273,14 +400,47 @@ public :
         g_Renderer->EndPoint();
         */
 
-        if (g_Texture)
+        //if (g_Texture)
+        //{
+        //    if (g_Texture->IsLost())
+        //    {
+        //        g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
+        //    }
+
+        //    g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
+        //}
+
+
+        if (pWater)
         {
-            if (g_Texture->IsLost())
+            pWater->Updata();
+            pWater->CopyTo(g_WaterHeightData);
+
+            atgTexture::LockData lockData = pDyncTexture->Lock();
+            if (lockData.pAddr)
             {
-                g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
+                if (lockData.pitch > 0)
+                {
+                    char* pSrc = (char*)g_WaterHeightData;
+                    char* pDst = (char*)lockData.pAddr;
+                    int lineSize = pWater->Width * sizeof(float);
+                    for (int i = 0; i < pWater->Height; ++i)
+                    {
+                        memcpy(pDst, pSrc, lineSize);
+                        pDst += lockData.pitch;
+                        pSrc += lineSize;
+                    }
+                }
+                else
+                {
+                    memcpy(lockData.pAddr, g_WaterHeightData, pWater->Width * pWater->Height * sizeof(float));
+                }
+                
+                pDyncTexture->Unlock();
             }
-            g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
         }
+
+        g_Renderer->DrawQuadByPass(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], pRippleShader);
 
         uint32 oldVP[4];
         g_Renderer->GetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
@@ -333,7 +493,11 @@ public :
     class atgCamera* _Camera;
     class atgCamera* _Camera2;
     bool _down;
+    bool _down0;
     PNG_Image image;
+    Water* pWater;
+    atgRippleShader* pRippleShader;
+    atgTexture* pDyncTexture;
     //atgPerfMonitor _monitor;
 };
 

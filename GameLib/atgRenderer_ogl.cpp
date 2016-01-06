@@ -102,7 +102,7 @@ public:
     atgIndexBufferImpl():vbo_indicesID(0),accessMode(BAM_Static),locked(false),lockOffset(0),lockSize(0),pLockMemory(0) {}
     ~atgIndexBufferImpl() 
     {
-        SAFE_DELETE(pLockMemory); 
+        SAFE_DELETE_ARRAY(pLockMemory); 
         if(vbo_indicesID)
         {
             GL_ASSERT( glDeleteBuffers(1, &vbo_indicesID) );
@@ -335,7 +335,7 @@ public:
     atgVertexBufferImpl():vbo_vertexbufferID(0),accessMode(BAM_Static),locked(false),lockOffset(0),lockSize(0),pLockMemory(0) {}
     ~atgVertexBufferImpl()
     {
-        SAFE_DELETE(pLockMemory); 
+        SAFE_DELETE_ARRAY(pLockMemory); 
         if(vbo_vertexbufferID) 
         { 
             GL_ASSERT( glDeleteBuffers(1, &vbo_vertexbufferID) ); 
@@ -584,9 +584,10 @@ bool atgVertexBuffer::IsLocked() const
 class atgTextureImpl
 {
 public:
-    atgTextureImpl():TextureID(0),locked(false) {}
+    atgTextureImpl():TextureID(0),internalFormat(0),inFormat(0),type(0),locked(false),isFloatData(0),pixelSize(0),pLockMemory(0) {}
     ~atgTextureImpl() 
     {
+        SAFE_DELETE_ARRAY(pLockMemory);
         if(TextureID)
         {
             GL_ASSERT( glDeleteTextures(1, &TextureID) );
@@ -597,7 +598,16 @@ public:
     static void Unbind(uint8 index);
 public:
     GLuint TextureID;
+    GLint internalFormat;
+    GLenum inFormat;
+    GLenum type;
+
     bool locked;
+    bool isFloatData;
+    uint8 pixelSize;
+    char* pLockMemory;
+
+
 };
 
 void atgTextureImpl::Bind(uint8 index)
@@ -620,6 +630,11 @@ void atgTextureImpl::Unbind(uint8 index)
 
 atgTexture::atgTexture():_width(0),_height(0),_format(TF_R8G8B8A8),_impl(NULL)
 {
+    _filter = MAX_FILTERMODES;
+    for (int i = 0; i < MAX_COORDS; ++i)
+    {
+        _address[i] = MAX_ADDRESSMODES;
+    }
 }
 
 atgTexture::~atgTexture()
@@ -683,6 +698,8 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     GLenum inFormat;
     GLenum type;
     bool isColorFormat = true;
+    uint8 pixelSize = 0; 
+    bool isFloatData = false; 
 
     switch (_format)
     {
@@ -690,43 +707,52 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         inFormat = GL_RGB;
         internalFormat = GL_RGB;
         type = GL_UNSIGNED_BYTE;
+        pixelSize = 3;
         isColorFormat = true;
         break;
     case TF_R5G6B5:
         inFormat = GL_RGB;
         internalFormat = GL_RGB;
         type = GL_UNSIGNED_SHORT_5_6_5;
+        pixelSize = 2;
         isColorFormat = true;
         break;
     case TF_R8G8B8A8:
         inFormat = GL_RGBA;
         internalFormat = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
+        pixelSize = 4;
         isColorFormat = true;
         break;
     case TF_R5G5B5A1:
         inFormat = GL_RGBA;
         internalFormat = GL_RGBA;
         type = GL_UNSIGNED_SHORT_5_5_5_1;
+        pixelSize = 2;
         isColorFormat = true;
         break;
     case TF_R4G4B4A4:
         inFormat = GL_RGBA;
         internalFormat = GL_RGBA;
         type = GL_UNSIGNED_SHORT_4_4_4_4;
+        pixelSize = 2;
         isColorFormat = true;
         break;
     case TF_R32F:
         inFormat = GL_LUMINANCE;
         internalFormat = GL_LUMINANCE;
         type = GL_FLOAT;
-        isColorFormat = false;
+        pixelSize = 1;
+        isColorFormat = true;
+        isFloatData = true;
         break;
     case TF_R16F:
         inFormat = GL_LUMINANCE;
         internalFormat = GL_LUMINANCE;
         type = GL_FLOAT;
-        isColorFormat = false;
+        pixelSize = 1;
+        isColorFormat = true;
+        isFloatData = true;
         break;
     case TF_D24S8:
 #ifndef GL_ES_VERSION_2_0
@@ -736,29 +762,40 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
 #endif // USE_OPENGLES
         
         isColorFormat = false;
+        isFloatData = true;
         break;
     case TF_D16:
         internalFormat = GL_DEPTH_COMPONENT16;
         isColorFormat = false;
+        isFloatData = true;
         break;
     default:
         break;
     }
 
     _impl = new atgTextureImpl;
+    _impl->pixelSize = pixelSize;
+    _impl->isFloatData = isFloatData;
+    _impl->internalFormat = internalFormat;
+    _impl->inFormat = inFormat;
+    _impl->type = type;
 
     if (isColorFormat)
     {
         GL_ASSERT( glGenTextures(1, &_impl->TextureID) );
         GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _impl->TextureID) );
-        GL_ASSERT( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, inFormat, type, pData) );
 
-        //GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE) );
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
-        GL_ASSERT( glGenerateMipmap(GL_TEXTURE_2D) ); // 生产mipmap,这个代码要放后面
+
+        GL_ASSERT( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, inFormat, type, pData) );
+
+        if (!_impl->isFloatData)
+        {
+            GL_ASSERT( glGenerateMipmap(GL_TEXTURE_2D) ); // 生产mipmap,这个代码要放后面
+        }
     }
     else
     {
@@ -783,13 +820,43 @@ bool atgTexture::Destory()
     return true;
 }
 
-void* atgTexture::Lock()
+atgTexture::LockData atgTexture::Lock()
 {
-    return NULL;
+    AASSERT(_impl);
+    LockData lookData;
+    lookData.pAddr = NULL;
+    lookData.pitch = 0;
+    if (!IsLost() && _impl)
+    {
+        if (_impl->pLockMemory == NULL)
+        {
+            if (_impl->isFloatData)
+            {
+                _impl->pLockMemory = (char*)(new float[_width * _height * _impl->pixelSize]);
+            }
+            else
+            {
+                _impl->pLockMemory = (char*)(new uint8[_width * _height * _impl->pixelSize]);
+            }
+        }
+
+        lookData.pAddr = _impl->pLockMemory;
+        _impl->locked = true;
+    }
+
+    return lookData;
 }
 
 void atgTexture::Unlock()
 {
+    if(_impl->locked)
+    {
+        GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _impl->TextureID) );
+        GL_ASSERT( glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _width, _height, _impl->inFormat, _impl->type, _impl->pLockMemory) );
+        GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+        _impl->locked = false;
+    }
 }
 
 bool atgTexture::IsLocked() const
@@ -799,6 +866,9 @@ bool atgTexture::IsLocked() const
 
 void atgTexture::SetFilterMode(TextureFilterMode filter)
 {
+    AASSERT(_impl);
+    _filter = filter;
+    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _impl->TextureID) );
     switch (filter)
     {
     case TFM_FILTER_NEAREST:
@@ -807,13 +877,17 @@ void atgTexture::SetFilterMode(TextureFilterMode filter)
         break;
     case TFM_FILTER_BILINEAR:
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
         break;
     case TFM_FILTER_TRILINEAR:
     case TFM_FILTER_ANISOTROPIC:
 #ifdef GL_TEXTURE_MAX_ANISOTROPY_EXT
         GL_ASSERT( glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, (float)1.0f) ); // 1.0f, 2.0f, 4.0f ?
 #endif // GL_TEXTURE_MAX_ANISOTROPY_EXT
+        break;
+    case TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR:
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
         break;
     case TFM_FILTER_DEFAULT:
         break;
@@ -822,9 +896,13 @@ void atgTexture::SetFilterMode(TextureFilterMode filter)
     default:
         break;
     }
+    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
 }
 void atgTexture::SetAddressMode(TextureCoordinate coordinate, TextureAddressMode address)
 {
+    AASSERT(_impl);
+    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _impl->TextureID) );
+    _address[coordinate] = address;
     GLenum uv = coordinate == TC_COORD_U ? GL_TEXTURE_WRAP_S : GL_TEXTURE_WRAP_T;
     switch (address)
     {
@@ -845,6 +923,7 @@ void atgTexture::SetAddressMode(TextureCoordinate coordinate, TextureAddressMode
     default:
         break;
     }
+    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
 }
 
 atgResourceShader::atgResourceShader(ResourceShaderType Type):compiled(false)

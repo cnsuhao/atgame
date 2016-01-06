@@ -199,6 +199,7 @@ enum TextureFilterMode
     TFM_FILTER_BILINEAR,
     TFM_FILTER_TRILINEAR,
     TFM_FILTER_ANISOTROPIC,
+    TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR,  //>适用于不产生mipmap的float纹理.
     TFM_FILTER_DEFAULT,
     MAX_FILTERMODES
 };
@@ -240,13 +241,19 @@ class atgTexture : public atgGpuResource
 {
     friend class atgRenderer;
 public:
+    struct LockData
+    {
+        void* pAddr;
+        uint32 pitch; // if value == 0 pitch是无效的.
+    };
+
     atgTexture();
     ~atgTexture();
 
     bool                    Create(uint32 width, uint32 height, TextureFormat inputFormat, const void *pData=NULL);
     bool                    Destory();
 
-    void                    *Lock();
+    LockData                Lock();
     void                    Unlock();
     bool                    IsLocked() const;
 
@@ -255,13 +262,18 @@ public:
     TextureFormat           GetTextureFormat() const { return _format; }
 
     void                    SetFilterMode(TextureFilterMode filter);
+    TextureFilterMode       GetFilterMode() const { return _filter; }
     void                    SetAddressMode(TextureCoordinate coordinate, TextureAddressMode address);
+    TextureAddressMode      GetAddressMode(TextureCoordinate coordinate) const { return _address[coordinate]; }
 
     const char*             GetTypeName() const { return "atgTexture"; }
 private:
     uint32 _width;
     uint32 _height;
     TextureFormat _format;
+    TextureFilterMode _filter;
+    TextureAddressMode _address[MAX_COORDS];
+
     class atgTextureImpl* _impl;
 };
 
@@ -616,7 +628,7 @@ public:
 
     //> 绘制纹理多边形
     bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
-    bool                    DrawTexureQuadPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture, atgPass* pPass);
+    bool                    DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgPass* pPass);
     
     //> 轴对其盒子
     bool                    BeginAABBoxLine();

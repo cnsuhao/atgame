@@ -1276,7 +1276,7 @@ void atgGame::Shutdown()
     if (g_Renderer)
     {
         g_Renderer->Shutdown();
-        delete g_Renderer;
+        SAFE_DELETE(g_Renderer);
     }
 #ifdef _WIN32
     win32_shutdown(this);

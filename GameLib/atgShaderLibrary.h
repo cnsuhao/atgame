@@ -86,3 +86,33 @@ protected:
 
 #define LIGHT_TEXTURE_PASS_IDENTITY "LightTextureShader"
 EXPOSE_INTERFACE(atgShaderLightTexture, atgPass, LIGHT_TEXTURE_PASS_IDENTITY);
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//>¡Ÿ ±≤‚ ‘ÀÆ≤®shader
+class atgRippleShader : public atgShaderLibPass
+{
+public:
+    atgRippleShader();
+    ~atgRippleShader();
+
+    virtual bool			ConfingAndCreate();
+
+    void					SetDxDy(float dx, float dy) { _dx = dx; _dy = dy; }
+
+    void                    SetTex1(atgTexture* pTex) { _t1 = pTex; }
+    void                    SetTex2(atgTexture* pTex) { _t2 = pTex; }
+
+protected:
+    virtual void			BeginContext(void* data);
+protected:
+    float                   _dx;
+    float                   _dy;
+
+    atgTexture*             _t1;
+    atgTexture*             _t2;
+};
+
+#define RIPPLE_PASS_IDENTITY "RippleShader"
+EXPOSE_INTERFACE(atgRippleShader, atgPass, RIPPLE_PASS_IDENTITY);
