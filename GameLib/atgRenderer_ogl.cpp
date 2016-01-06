@@ -618,7 +618,7 @@ void atgTextureImpl::Unbind(uint8 index)
     GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
 }
 
-atgTexture::atgTexture():_width(0),_height(0),_bbp(0),_impl(NULL)
+atgTexture::atgTexture():_width(0),_height(0),_format(TF_R8G8B8A8),_impl(NULL)
 {
 }
 
@@ -628,26 +628,144 @@ atgTexture::~atgTexture()
     g_Renderer->RemoveGpuResource(this);
 }
 
-bool atgTexture::Create( uint32 width, uint32 height, uint32 bbp, const void *pData/*=NULL*/ )
+bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, const void *pData/*=NULL*/ )
 {
+    /*
+    OpenGL ES 2.0
+
+    void glTexImage2D(	GLenum target,
+                        GLint level,
+                        GLint internalformat,
+                        GLsizei width,
+                        GLsizei height,
+                        GLint border,
+                        GLenum format,
+                        GLenum type,
+                        const GLvoid * data);
+
+    Parameters
+
+    target
+        Specifies the target texture of the active texture unit. Must be GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, or GL_TEXTURE_CUBE_MAP_NEGATIVE_Z.
+
+    level
+        Specifies the level-of-detail number. Level 0 is the base image level. Level n is the nth mipmap reduction image.
+
+    internalformat
+        Specifies the internal format of the texture. Must be one of the following symbolic constants: GL_ALPHA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_RGB, GL_RGBA.
+
+    width
+        Specifies the width of the texture image. All implementations support 2D texture images that are at least 64 texels wide and cube-mapped texture images that are at least 16 texels wide.
+
+    height
+        Specifies the height of the texture image All implementations support 2D texture images that are at least 64 texels high and cube-mapped texture images that are at least 16 texels high.
+
+    border
+        Specifies the width of the border. Must be 0.
+
+    format
+        Specifies the format of the texel data. Must match internalformat. The following symbolic values are accepted: GL_ALPHA, GL_RGB, GL_RGBA, GL_LUMINANCE, and GL_LUMINANCE_ALPHA.
+
+    type
+        Specifies the data type of the texel data. The following symbolic values are accepted: GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT_5_6_5, GL_UNSIGNED_SHORT_4_4_4_4, and GL_UNSIGNED_SHORT_5_5_5_1.
+
+    data
+        Specifies a pointer to the image data in memory.
+    */
+
     Destory();
 
     _width = width;
     _height = height;
-    _bbp = bbp / 8;
+    _format = format;
+
+    GLint internalFormat;
+    GLenum inFormat;
+    GLenum type;
+    bool isColorFormat = true;
+
+    switch (_format)
+    {
+    case TF_R8G8B8:
+        inFormat = GL_RGB;
+        internalFormat = GL_RGB;
+        type = GL_UNSIGNED_BYTE;
+        isColorFormat = true;
+        break;
+    case TF_R5G6B5:
+        inFormat = GL_RGB;
+        internalFormat = GL_RGB;
+        type = GL_UNSIGNED_SHORT_5_6_5;
+        isColorFormat = true;
+        break;
+    case TF_R8G8B8A8:
+        inFormat = GL_RGBA;
+        internalFormat = GL_RGBA;
+        type = GL_UNSIGNED_BYTE;
+        isColorFormat = true;
+        break;
+    case TF_R5G5B5A1:
+        inFormat = GL_RGBA;
+        internalFormat = GL_RGBA;
+        type = GL_UNSIGNED_SHORT_5_5_5_1;
+        isColorFormat = true;
+        break;
+    case TF_R4G4B4A4:
+        inFormat = GL_RGBA;
+        internalFormat = GL_RGBA;
+        type = GL_UNSIGNED_SHORT_4_4_4_4;
+        isColorFormat = true;
+        break;
+    case TF_R32F:
+        inFormat = GL_LUMINANCE;
+        internalFormat = GL_LUMINANCE;
+        type = GL_FLOAT;
+        isColorFormat = false;
+        break;
+    case TF_R16F:
+        inFormat = GL_LUMINANCE;
+        internalFormat = GL_LUMINANCE;
+        type = GL_FLOAT;
+        isColorFormat = false;
+        break;
+    case TF_D24S8:
+#ifndef GL_ES_VERSION_2_0
+        internalFormat = GL_DEPTH24_STENCIL8;
+#else
+        internalFormat = GL_DEPTH24_STENCIL8_OES;
+#endif // USE_OPENGLES
+        
+        isColorFormat = false;
+        break;
+    case TF_D16:
+        internalFormat = GL_DEPTH_COMPONENT16;
+        isColorFormat = false;
+        break;
+    default:
+        break;
+    }
 
     _impl = new atgTextureImpl;
 
-    GL_ASSERT( glGenTextures(1, &_impl->TextureID) );
-    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _impl->TextureID) );
-    GL_ASSERT( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pData) );
+    if (isColorFormat)
+    {
+        GL_ASSERT( glGenTextures(1, &_impl->TextureID) );
+        GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _impl->TextureID) );
+        GL_ASSERT( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, inFormat, type, pData) );
 
-    //GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE) );
-    GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
-    GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-    GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
-    GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
-    GL_ASSERT( glGenerateMipmap(GL_TEXTURE_2D) ); // 生产mipmap,这个代码要放后面
+        //GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
+        GL_ASSERT( glGenerateMipmap(GL_TEXTURE_2D) ); // 生产mipmap,这个代码要放后面
+    }
+    else
+    {
+        GL_ASSERT( glGenRenderbuffers(1, &_impl->TextureID) );  
+        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, _impl->TextureID) );  
+        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _width, _height) );
+    }
 
     atgGpuResource::ReSet();
     g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgTexture::Destory));
@@ -660,7 +778,7 @@ bool atgTexture::Destory()
     SAFE_DELETE(_impl);
     _width = 0;
     _height = 0;
-    _bbp = 0;
+    _format = TF_R8G8B8A8;
     
     return true;
 }
@@ -1235,22 +1353,26 @@ atgRenderTarget::~atgRenderTarget()
     Destroy();
 }
 
-bool atgRenderTarget::Create( uint16 width, uint16 height, RenderTargetFormat format )
+bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture* depthStencilBuffer )
 {
     //if (_impl == NULL)
     //{
     //    _impl = new atgRenderTargetImpl();
     //}
-    //glGenRenderbuffers(1, &_impl->renderBufferId);
-    //glBindRenderbuffer(GL_RENDERBUFFER, _impl->renderBufferId);
+    glGenRenderbuffers(1, &_impl->renderBufferId);
+    glBindRenderbuffer(GL_RENDERBUFFER, _impl->renderBufferId);
     ////uint32 offsetX, offsetY, width, height;
     ////g_Renderer->GetViewPort(offsetX, offsetY, width, height);
     //glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4 /* 4 samples */, GL_RGBA8,  width, height);
 
-    //GLuint fbID;
-    //glGenFramebuffers(1, &fbID);
-    //glBindFramebuffer(GL_FRAMEBUFFER, fbID);
-    //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _impl->renderBufferId);
+    GLuint depthbuffer;
+    glGenRenderbuffers(1, &depthbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
+
+    GLuint fbID;
+    glGenFramebuffers(1, &fbID);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbID);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _impl->renderBufferId);
 
     ////glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
@@ -1320,7 +1442,14 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Really Nice Perspective Calculations
 #endif // OPENGL_FIX_PIPELINE
     GL_ASSERT( glEnable(GL_DEPTH_TEST) );                            // Enables Depth Testing
-    GL_ASSERT( glDepthFunc(GL_LEQUAL) );                             // The Type Of Depth Testing To Do
+
+    //>The Type Of Depth Testing To Do
+    //>默认是小于(GL_LESS). 使用小于等于.也是和directx保持一致.
+    GL_ASSERT( glDepthFunc(GL_LEQUAL) );                             
+                  
+    //>opengl 默认使用逆时针(counter-clockwise)的顶点组成的面作为前面.
+    //>directx 默认剔除逆时针的顶点组成的面.即认为ccw作为后面.
+    //>所以这里opengl设置剔除前面.就保证了调用SetFaceCull的统一.
     GL_ASSERT( glCullFace(GL_FRONT) );
 
     LOG("|||| Graphic Driver ===> Using %s!\n", atgRenderer::getName());
@@ -1533,7 +1662,7 @@ void atgRenderer::SetBlendFunction(BlendFunction SrcBlend, BlendFunction DestBle
 void atgRenderer::Clear()
 {
     ATG_PROFILE("atgRenderer::Clear");
-    GL_ASSERT( glClearColor(0.0f, 0.0f, 0.0f, 1.0f) );              // Set Black Background
+    GL_ASSERT( glClearColor(0.0f, 0.141f, 0.141f, 1.0f) );              // Set Black Background
     GL_ASSERT( glClearDepth(1.0f) );                                // Set Depth Buffer Setup
     GL_ASSERT( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );// Clear Screen And Depth Buffer
 }

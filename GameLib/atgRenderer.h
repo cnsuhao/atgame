@@ -223,6 +223,19 @@ enum TextureCoordinate
     MAX_COORDS
 };
 
+enum TextureFormat
+{
+    TF_R8G8B8,          //>color
+    TF_R5G6B5,          //>color
+    TF_R8G8B8A8,        //>color (虽然这里使用的数据的顺序是RGBA,但是在Directx中必须提供ARGB顺序的数据)
+    TF_R5G5B5A1,        //>color (虽然这里使用的数据的顺序是RGBA,但是在Directx中必须提供ARGB顺序的数据)
+    TF_R4G4B4A4,        //>color (虽然这里使用的数据的顺序是RGBA,但是在Directx中必须提供ARGB顺序的数据)
+    TF_R32F,            //>color
+    TF_R16F,            //>color
+    TF_D24S8,           //>depth/stencil
+    TF_D16,             //>depth/stencil
+};
+
 class atgTexture : public atgGpuResource
 {
     friend class atgRenderer;
@@ -230,7 +243,7 @@ public:
     atgTexture();
     ~atgTexture();
 
-    bool                    Create(uint32 width, uint32 height, uint32 bbp, const void *pData=NULL);
+    bool                    Create(uint32 width, uint32 height, TextureFormat inputFormat, const void *pData=NULL);
     bool                    Destory();
 
     void                    *Lock();
@@ -239,7 +252,7 @@ public:
 
     uint32                  GetWidth()  const { return _width; }
     uint32                  GetHeight() const { return _height; }
-    uint32                  GetBBP()    const { return _bbp; }
+    TextureFormat           GetTextureFormat() const { return _format; }
 
     void                    SetFilterMode(TextureFilterMode filter);
     void                    SetAddressMode(TextureCoordinate coordinate, TextureAddressMode address);
@@ -248,7 +261,7 @@ public:
 private:
     uint32 _width;
     uint32 _height;
-    uint32 _bbp;
+    TextureFormat _format;
     class atgTextureImpl* _impl;
 };
 
@@ -390,7 +403,7 @@ private:
     std::string _name;
     class atgPassImpl* _impl;
 };
-
+/*
 class atgTechnique
 {
     atgTechnique();
@@ -429,7 +442,7 @@ class atgEffect
     // set render targets
 
 };
-
+*/
 
 //enum RenderTargetType
 //{
@@ -438,29 +451,27 @@ class atgEffect
 //    RTT_Stencil
 //};
 
-enum RenderTargetFormat
-{
-    RBF_A8R8G8B8,       // color
-    RBF_R32F,           // color
-    RBF_R16F,           // color
-    RBF_D24S8,          // depth/stencil
-    RBF_D16,            // depth/stencil
-};
-
 class atgRenderTarget : public atgGpuResource
 {
 public:
     atgRenderTarget();
     ~atgRenderTarget();
 
-    bool                    Create(uint16 width, uint16 height, RenderTargetFormat format);
+    bool                    Create(std::vector<atgTexture*>& colorBuffer, atgTexture* depthStencilBuffer);
     bool                    Destroy();
 
 
     bool                    Active(uint8 index);
     void                    Deactive();
+
+    const std::vector<atgTexture*>& GetColorBuffer() const { return _colorBuffer; }
+    atgTexture*             GetDepthStencilBuffer() const { return _depthStencilBuffer; }
+
 private:
     class atgRenderTargetImpl* _impl;
+
+    std::vector<atgTexture*> _colorBuffer;
+    atgTexture*              _depthStencilBuffer;
 };
 
 
@@ -592,8 +603,8 @@ public:
     void                    AddLine(const float point1[3], const float point2[3], const float color[3]);
     void                    EndLine();
     
-    //                        1  3
-    //                        2  4
+    //                        1  2
+    //                        3  4
     bool                    BeginQuad();
     void                    AddQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float color[3]);
     void                    EndQuad();
