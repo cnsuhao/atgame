@@ -1251,7 +1251,6 @@ void atgPass::BeginContext(void* data)
         Proj.Concatenate(WVP, WVP);
         SetMatrix4x4(UNF_M_WVP, WVP);
     }
-    g_Renderer->SetBlendFunction(BF_NONE, BF_NONE);
 }
 
 void atgPass::EndContext(void* data)

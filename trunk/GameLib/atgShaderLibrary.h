@@ -59,10 +59,11 @@ public:
     ~atgShaderNotLighteTexture();
 
     virtual bool            ConfingAndCreate();
+
+    void                    SetTexture(atgTexture* texture);
 protected:
     virtual void            BeginContext(void* data);
 
-    void                    SetTexture(atgTexture* texture);
 protected:
     atgTexture*             m_Texture;
 };
