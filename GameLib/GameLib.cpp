@@ -99,7 +99,6 @@ public :
 
         g_Renderer->Clear();
         g_Renderer->BeginFrame();
-        g_Renderer->SetBlendFunction(BF_ONE, BF_ONE_MINUS_SRC_ALPHA);
         DrawAxis();
         g_Renderer->EndFrame();
         g_Renderer->Present();

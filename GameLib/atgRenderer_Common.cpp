@@ -634,6 +634,7 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
         pTexturePass = atgShaderLibFactory::FindOrCreatePass(NOT_LIGNTE_TEXTURE_PASS_IDENTITY);
         if (NULL == pTexturePass)
             return false;
+        ((atgShaderNotLighteTexture*)pTexturePass)->SetTexture(pTexture);
     }
 
     // create vertex buffer

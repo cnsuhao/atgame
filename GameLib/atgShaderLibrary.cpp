@@ -131,10 +131,24 @@ void atgShaderNotLighteTexture::BeginContext( void* data )
 {
     atgPass::BeginContext(data);
     // set texture Uniform 
-    //if (m_Texture)
-    //{
-    //    atgPass::SetTexture("ssss", m_Texture);
-    //}
+    if (m_Texture)
+    {
+        atgPass::SetTexture("textureSampler", 0);
+
+        TextureFormat format = m_Texture->GetTextureFormat();
+        if (format == TF_R4G4B4A4 || 
+            format == TF_R8G8B8A8 ||
+            format == TF_R5G5B5A1)
+        {//>含有aplha通道,开启混合
+            g_Renderer->SetBlendFunction(BF_SRC_ALPHA, BF_ONE_MINUS_SRC_ALPHA);
+        }
+
+        //> 以后修改为
+        //> SamplerIndex idx = atgPass::GetTextureSamplerIndex("textureSampler");
+        //> g_Renderer->BindTexture(idx, pTexture);
+
+
+    }
 }
 
 void atgShaderNotLighteTexture::SetTexture( atgTexture* texture )
