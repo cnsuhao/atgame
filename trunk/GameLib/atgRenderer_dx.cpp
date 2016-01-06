@@ -153,7 +153,8 @@ bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexForma
     DWORD d3dUsage = D3DUSAGE_WRITEONLY;
     D3DPOOL d3dPool = D3DPOOL_DEFAULT;
     _impl->accessMode = accessMode;
-    if(accessMode == BAM_Dynamic){
+    if(accessMode == BAM_Dynamic)
+    {
         d3dUsage = d3dUsage | D3DUSAGE_DYNAMIC;
     }
     uint32 buffSize = numIndices * indexSize;
@@ -161,21 +162,30 @@ bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexForma
     if( FAILED(g_pd3dDevice->CreateIndexBuffer( buffSize, 
         d3dUsage, d3dFormat, d3dPool, &_impl->pDXIB, NULL)))
     {
-            return false;
-    }
-
-    // upload data
-    void* pLockedBuffer = 0;
-    pLockedBuffer = Lock(0, buffSize);
-    if(pLockedBuffer == NULL)
         return false;
-
-    memcpy(pLockedBuffer, pIndices, buffSize);
-    Unlock();
+    }
 
     atgGpuResource::ReSet();
     g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgIndexBuffer::Destory));
-    return false;
+
+    if (pIndices)
+    {
+        // upload data
+        void* pLockedBuffer = 0;
+        pLockedBuffer = Lock(0, buffSize);
+        if(pLockedBuffer)
+        {
+            memcpy(pLockedBuffer, pIndices, buffSize);
+            Unlock();
+        }
+        else
+        {
+            LOG("lock index buffer data fail.\n");
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool atgIndexBuffer::Destory()
@@ -546,15 +556,24 @@ bool atgVertexBuffer::Create( atgVertexDecl* decl, const void *pData, uint32 siz
         return false;
     }
 
-    void *pLockData = Lock(0, size);
-    if(pLockData == NULL)
-        return false;
-
-    memcpy(pLockData, pData, size);
-    Unlock();
-
     atgGpuResource::ReSet();
     g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgVertexBuffer::Destory));
+
+    if (pData)
+    {
+        void *pLockData = Lock(0, size);
+        if(pLockData)
+        {
+            memcpy(pLockData, pData, size);
+            Unlock();
+        }
+        else
+        {
+            LOG("lock vertex buffer data fail.\n");
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -568,15 +587,21 @@ bool atgVertexBuffer::Destory()
 
 void* atgVertexBuffer::Lock( uint32 offset, uint32 size )
 {
+    AASSERT(_impl);
     void *pData =  NULL;
-    if(_impl->locked)
+    if(_impl->locked || IsLost())
     {
         return NULL;
     }
     
-    if ( FAILED(_impl->pDXVB->Lock(offset, size, &pData, 0)) ) {
+    if ( FAILED(_impl->pDXVB->Lock(offset, 
+                                   size, 
+                                   &pData, 
+                                   _impl->accessMode == BAM_Dynamic ? D3DLOCK_DISCARD : 0)) )
+    {
         return NULL;
     }
+
     _impl->locked = true;
 
     return pData;
@@ -584,7 +609,7 @@ void* atgVertexBuffer::Lock( uint32 offset, uint32 size )
 
 void atgVertexBuffer::Unlock()
 {
-    if(!_impl->locked)
+    if(!_impl->locked || IsLost())
     {
         return;
     }
@@ -605,13 +630,14 @@ bool atgVertexBuffer::IsLocked() const
 class atgTextureImpl
 {
 public:
-    atgTextureImpl():pDXTX(NULL),locked(false) {}
+    atgTextureImpl():pDXTX(NULL),locked(false),accessMode(BAM_Static) {}
     ~atgTextureImpl() { locked = false; SAFE_RELEASE(pDXTX); }
     bool Bind(uint8 index);
     static bool Unbind(uint8 index);
 public:
     IDirect3DTexture9* pDXTX;
     bool locked;
+    BufferAccessMode accessMode;
 };
 
 bool atgTextureImpl::Bind(uint8 index)
@@ -620,9 +646,6 @@ bool atgTextureImpl::Bind(uint8 index)
         return false;
 
     DX_ASSERT( g_pd3dDevice->SetTexture(index, pDXTX) );
-    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR) );
-    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
-    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_POINT) );
     return true;
 }
 
@@ -634,6 +657,11 @@ bool atgTextureImpl::Unbind(uint8 index)
 
 atgTexture::atgTexture():_width(0),_height(0),_format(TF_R8G8B8A8),_impl(NULL)
 {
+    _filter = TFM_FILTER_DEFAULT;
+    for (int i = 0; i < MAX_COORDS; ++i)
+    {
+        _address[i] = MAX_ADDRESSMODES;
+    }
 }
 
 atgTexture::~atgTexture()
@@ -649,11 +677,12 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     _width = width;
     _height = height;
     _format = format;
-    char* pBegin = (char*)pData;
-    
     _impl = new atgTextureImpl;
 
     uint8 pixelSize = 0; 
+    bool isDyncmic = false;
+    bool isFloatData = false;
+    bool isDepthStencil = false;
     D3DFORMAT _inputFormat = D3DFMT_UNKNOWN;
     switch (_format)
     {
@@ -679,12 +708,28 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         pixelSize = 2;
         break;
     case TF_R32F:
+        _inputFormat = D3DFMT_R32F;
+        isDyncmic = true;
+        isFloatData = true;
+        pixelSize = 4;
         break;
     case TF_R16F:
+        _inputFormat = D3DFMT_R16F;
+        isDyncmic = true;
+        isFloatData = true;
+        pixelSize = 4;
         break;
     case TF_D24S8:
+        _inputFormat = D3DFMT_D24S8;
+        isDyncmic = true;
+        isFloatData = true;
+        isDepthStencil = true;
         break;
     case TF_D16:
+        _inputFormat = D3DFMT_D16;
+        isDyncmic = true;
+        isFloatData = true;
+        isDepthStencil = true;
         break;
     default:
         break;
@@ -705,7 +750,21 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     //usage |= D3DUSAGE_RENDERTARGET; 或者 usage_ |= D3DUSAGE_DEPTHSTENCIL;
     //pool = D3DPOOL_DEFAULT;
 
-    if( FAILED( g_pd3dDevice->CreateTexture(width, height, usage, D3DUSAGE_AUTOGENMIPMAP,
+    if (isDyncmic)
+    {
+        usage |= D3DUSAGE_DYNAMIC;
+        _impl->accessMode = BAM_Dynamic;
+        pool = D3DPOOL_DEFAULT;
+    }
+    
+    if(!isFloatData)
+    {
+        usage |= D3DUSAGE_AUTOGENMIPMAP;
+    }
+
+    if( FAILED( g_pd3dDevice->CreateTexture(width, height,
+                                            0, 
+                                            usage,
                                             _inputFormat,
                                             pool,
                                             &_impl->pDXTX,
@@ -715,70 +774,69 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         return false;
     }
 
-    if (pData)
-    {
-        D3DLOCKED_RECT rect;
-        if( FAILED( _impl->pDXTX->LockRect(0, &rect, NULL, NULL) )  )
-        {
-            LOG("lock texture data fail.\n");
-            return false;
-        }
-
-        if (_inputFormat == D3DFMT_X8R8G8B8 && pixelSize == 3)
-        {
-            uint8 *pPtr = (uint8 *)pData;
-            for (uint32 i=0; i < _height; ++i)
-            {
-                uint8* dest = (uint8*)(rect.pBits) + rect.Pitch * i;
-                for (uint32 j = 0; j < _width; ++j)
-                {
-                    *((uint32*)dest) = D3DCOLOR_XRGB(*pPtr,*(pPtr+1),*(pPtr+2));
-                    pPtr += 3;
-                    dest += 4;
-                }
-            }
-        }
-        else
-        {
-            memcpy( (uint8*)(rect.pBits), pBegin, height * width * pixelSize);
-        }
-
-        //if (_bbp == 4)
-        //{
-        //    //int pitch = width * pTexture->_bbp;
-        //    //for (uint32 i= 0; i < height; ++i)
-        //    //{
-        //    //    memcpy( (uint8*)(rect.pBits) + rect.Pitch * i, pBegin + pitch * i, pitch);
-        //    //}
-        //    memcpy( (uint8*)(rect.pBits), pBegin, height * width * _bbp);
-        //}
-        //else
-        //{
-        //    return false;
-        //    //// else 
-        //    //// copy one by one, ca!
-        //    //for (uint32 i=0; i < _height; ++i)
-        //    //{
-        //    //    for (uint32 j=0; j < _width; ++j)
-        //    //    {
-        //    //        uint8* dest = (uint8*)(rect.pBits) + rect.Pitch * i + j * 4;
-        //    //        *((uint32*)dest) = uint8BGR_2_uint32(texture->getBuffer() + texture->getPitch() * i + texture->getBPP() * j);
-        //    //    }
-        //    //}
-        //}
-        
-        DX_ASSERT( _impl->pDXTX->UnlockRect(0) );
-
-        DX_ASSERT( _impl->pDXTX->SetAutoGenFilterType(D3DTEXF_LINEAR) );
-        _impl->pDXTX->GenerateMipSubLevels();
-    }
-
     atgGpuResource::ReSet();
 
     if (pool != D3DPOOL_MANAGED)
     {
         g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgTexture::Destory));
     }
+
+    if (!isDepthStencil && pData)
+    {
+        LockData lockData;
+
+        lockData = Lock();
+        if (lockData.pAddr)
+        {
+            if (_inputFormat == D3DFMT_X8R8G8B8 && pixelSize == 3)
+            {
+                uint8 *pPtr = (uint8 *)pData;
+                for (uint32 i=0; i < _height; ++i)
+                {
+                    uint8* dest = (uint8*)(lockData.pAddr) + lockData.pitch * i;
+                    for (uint32 j = 0; j < _width; ++j)
+                    {
+                        *((uint32*)dest) = D3DCOLOR_XRGB(*pPtr,*(pPtr+1),*(pPtr+2));
+                        pPtr += 3;
+                        dest += 4;
+                    }
+                }
+            }
+            else
+            {
+                if (lockData.pitch == width * pixelSize)
+                {
+                    memcpy( (uint8*)(lockData.pAddr), pData, height * width * pixelSize);
+                }
+                else
+                {
+                    char* pSrc = (char*)pData;
+                    char* pDst = (char*)lockData.pAddr;
+                    int lineSize = width * pixelSize;
+                    for (uint32 i = 0; i < height; ++i)
+                    {
+                        memcpy(pDst, pSrc, lineSize);
+                        pDst += lockData.pitch;
+                        pSrc += lineSize;
+                    }
+                }
+            }
+
+            Unlock();
+        }
+        else
+        {
+            LOG("lock texture data fail.\n");
+            return false;
+        }
+    }
+
+    if (!isFloatData)
+    {
+        DX_ASSERT( _impl->pDXTX->SetAutoGenFilterType(D3DTEXF_LINEAR) );
+        _impl->pDXTX->GenerateMipSubLevels();
+    }
+
     return true;
 }
 
@@ -793,18 +851,59 @@ bool atgTexture::Destory()
     return true;
 }
 
-void* atgTexture::Lock()
+atgTexture::LockData atgTexture::Lock()
 {
-    return NULL;
+    AASSERT(_impl);
+    LockData lockData;
+    lockData.pAddr = NULL;
+    lockData.pitch = 0;
+
+    if(_impl->locked || IsLost())
+    {
+        return lockData;
+    }
+
+    D3DLOCKED_RECT rect;
+    if( FAILED( _impl->pDXTX->LockRect(0, 
+                                       &rect, 
+                                       NULL, 
+                                       _impl->accessMode == BAM_Dynamic ? D3DLOCK_DISCARD : 0) )  )
+    {
+        return lockData;
+    }
+
+    _impl->locked = true;
+    lockData.pAddr = rect.pBits;
+    lockData.pitch = rect.Pitch;
+
+    return lockData;
 }
 
 void atgTexture::Unlock()
 {
+    if(!_impl->locked || IsLost())
+    {
+        return;
+    }
+
+    DX_ASSERT( _impl->pDXTX->UnlockRect(0) );
+
+    _impl->locked = false;
 }
 
 bool atgTexture::IsLocked() const
 {
     return _impl->locked;
+}
+
+void atgTexture::SetFilterMode(TextureFilterMode filter)
+{
+    _filter = filter;
+}
+
+void atgTexture::SetAddressMode(TextureCoordinate coordinate, TextureAddressMode address)
+{
+    _address[coordinate] = address;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -2087,6 +2186,97 @@ void atgRenderer::BindTexture( uint8 index, atgTexture* texture )
         if (texture)
         {
             DX_ASSERT( texture->_impl->Bind(index) );
+            switch (texture->_filter)
+            {
+            case TFM_FILTER_NEAREST:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_POINT) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_POINT) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_POINT) );
+                }break;
+            case TFM_FILTER_BILINEAR:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_POINT) );
+                }break;
+            case TFM_FILTER_TRILINEAR:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_PYRAMIDALQUAD) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_PYRAMIDALQUAD) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
+                }break;
+            case TFM_FILTER_ANISOTROPIC:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
+                }break;
+            case TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
+                }break;
+            case TFM_FILTER_DEFAULT:
+                {
+                    //>什么也不做
+                    break;
+                }
+            default:
+                break;
+            }
+
+            if (texture->_address[TC_COORD_U] != MAX_ADDRESSMODES)
+            {
+                switch (texture->_address[TC_COORD_U])
+                {
+                case TAM_ADDRESS_WRAP:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP) );
+                    }break;
+                case TAM_ADDRESS_MIRROR:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_MIRROR) );
+                    }break;
+                case TAM_ADDRESS_CLAMP:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP) );
+                    }break;
+                case TAM_ADDRESS_BORDER:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER) );
+                    }break;
+                default:
+                    break;
+                }
+            }
+
+            if (texture->_address[TC_COORD_V] != MAX_ADDRESSMODES)
+            {
+                switch (texture->_address[TC_COORD_V])
+                {
+                case TAM_ADDRESS_WRAP:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP) );
+                    }break;
+                case TAM_ADDRESS_MIRROR:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_MIRROR) );
+                    }break;
+                case TAM_ADDRESS_CLAMP:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP) );
+                    }break;
+                case TAM_ADDRESS_BORDER:
+                    {
+                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER) );
+                    }break;
+                default:
+                    break;
+                }
+            }
+
         }else
         {
             atgTextureImpl::Unbind(index);

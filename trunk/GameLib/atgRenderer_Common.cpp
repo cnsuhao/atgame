@@ -81,7 +81,7 @@ void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
             decl.AppendElement(0, atgVertexDecl::VA_Pos3);
             decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
             pVB = new atgVertexBuffer();
-            pVB->Create(&decl, &lines[0], sizeOfLineData, BAM_Static);
+            pVB->Create(&decl, &lines[0], sizeOfLineData, BAM_Dynamic);
         }else
         {
             // only update vertex buffer
@@ -277,7 +277,7 @@ void atgRenderer::EndPoint()
             decl.AppendElement(0, atgVertexDecl::VA_Pos3);
             decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
             pVB = new atgVertexBuffer();
-            pVB->Create(&decl, &points[0], sizeOfPointData, BAM_Static);
+            pVB->Create(&decl, &points[0], sizeOfPointData, BAM_Dynamic);
         }else
         {
             // only update vertex buffer
@@ -438,7 +438,7 @@ void atgRenderer::EndQuad()
             decl.AppendElement(0, atgVertexDecl::VA_Pos3);
             decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
             pVB = new atgVertexBuffer();
-            pVB->Create(&decl, &quads[0], sizeOfQuadData, BAM_Static);
+            pVB->Create(&decl, &quads[0], sizeOfQuadData, BAM_Dynamic);
         }else
         {
             // only update vertex buffer
@@ -575,7 +575,7 @@ void   atgRenderer::EndFullQuad()
             decl.AppendElement(0, atgVertexDecl::VA_Pos3);
             decl.AppendElement(0, atgVertexDecl::VA_Diffuse);
             pVB = new atgVertexBuffer();
-            pVB->Create(&decl, &quads[0], sizeOfQuadData, BAM_Static);
+            pVB->Create(&decl, &quads[0], sizeOfQuadData, BAM_Dynamic);
         }else
         {
             // only update vertex buffer
@@ -650,7 +650,7 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
         decl.AppendElement(0, atgVertexDecl::VA_Texture0);
 
         pVB = new atgVertexBuffer();
-        pVB->Create(&decl, QuadData, sizeOfQuadData, BAM_Static);
+        pVB->Create(&decl, QuadData, sizeOfQuadData, BAM_Dynamic);
     }else
     {
         // only update vertex buffer
@@ -671,9 +671,9 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
     return true;
 }
 
-bool atgRenderer::DrawTexureQuadPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture, atgPass* pPass)
+bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgPass* pPass)
 {
-    AASSERT(pTexture != NULL && pPass != NULL);
+    AASSERT(pPass != NULL);
 
     static float QuadData[] = {
         -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
@@ -683,17 +683,17 @@ bool atgRenderer::DrawTexureQuadPass(const float p1[3], const float p2[3], const
 
     };
     static const int sizeOfQuadData = sizeof(QuadData);
-    static atgPass* pTexturePass = NULL;
     static atgVertexBuffer* pVB = NULL;
 
     atgMath::VecCopy(p1, &QuadData[0]);
     QuadData[3] = t1[0]; QuadData[4] = t1[1];
-    atgMath::VecCopy(p2, &QuadData[5]);
-    QuadData[8] = t2[0]; QuadData[9] = t2[1];
-    atgMath::VecCopy(p3, &QuadData[10]);
-    QuadData[13] = t3[0]; QuadData[14] = t3[1];
+    atgMath::VecCopy(p3, &QuadData[5]);
+    QuadData[8] = t3[0]; QuadData[9] = t3[1];
+    atgMath::VecCopy(p2, &QuadData[10]);
+    QuadData[13] = t2[0]; QuadData[14] = t2[1];
     atgMath::VecCopy(p4, &QuadData[15]);
     QuadData[18] = t4[0]; QuadData[19] = t4[1];
+
 
     // create vertex buffer
     if (!pVB || pVB->IsLost())
@@ -708,7 +708,7 @@ bool atgRenderer::DrawTexureQuadPass(const float p1[3], const float p2[3], const
         decl.AppendElement(0, atgVertexDecl::VA_Texture0);
 
         pVB = new atgVertexBuffer();
-        pVB->Create(&decl, QuadData, sizeOfQuadData, BAM_Static);
+        pVB->Create(&decl, QuadData, sizeOfQuadData, BAM_Dynamic);
     }else
     {
         // only update vertex buffer
@@ -719,12 +719,12 @@ bool atgRenderer::DrawTexureQuadPass(const float p1[3], const float p2[3], const
             pVB->Unlock();
         }
     }
-    g_Renderer->SetDepthTestEnable(false);
+    //g_Renderer->SetDepthTestEnable(false);
     g_Renderer->BindPass(pPass);
     g_Renderer->BindVertexBuffer(pVB);
 
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
-    g_Renderer->SetDepthTestEnable(true);
+    //g_Renderer->SetDepthTestEnable(true);
     return true;
 }
 
