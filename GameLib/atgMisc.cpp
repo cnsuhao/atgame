@@ -1030,6 +1030,76 @@ void Properties::setString(const std::string &key, const std::string &value){
     propertyMap.insert(PropertyPair(key, value));
 }
 
+Water::Water(int w, int h): Width(w), Height(h)
+{
+    size = w * h * sizeof(float);
+    buf1 = (float*)malloc(size);
+    buf2 = (float*)malloc(size);
+
+    memset(buf1, 0, size);
+    memset(buf2, 0, size);
+}
+
+Water::~Water(void)
+{
+    SAFE_DELETE_ARRAY(buf1);
+    SAFE_DELETE_ARRAY(buf2);
+}
+
+void Water::Updata()
+{
+    for(int y = 0; y < Height; y++)
+    {
+        int n = y * Width;
+        for (int x = 0; x < Width; x++, n++)
+        {
+            float s = GetValue(buf1, x, y - 1) + GetValue(buf1, x, y + 1) + GetValue(buf1, x - 1, y) + GetValue(buf1, x + 1, y);
+            s = (s / 2 - buf2[n]);
+            s -= s / 32;
+            if (s > 2) s = 2;
+            if (s < -2) s = -2;
+            buf2[n] = s;
+        }
+    }
+    float* temp = buf1;
+    buf1 = buf2;
+    buf2 = temp;
+}
+
+void Water::Drop(float xi, float yi)
+{
+    int px = (int)(xi * (Width - 1));
+    int py = (int)(yi * (Height - 1));
+    for (int j = py - r; j <= py + r; j++)
+    {
+        for (int i = px - r; i <= px + r; i++)
+        {
+            float dx = (float)i - px;
+            float dy = (float)j - py;
+            float a = (float)(1 - (dx * dx + dy * dy) / (r * r));
+            if (a > 0 && a <= 1)
+            {
+                SetValue(buf1, i, j, a * h);
+            }
+        }
+    }
+}
+
+float Water::GetValue(float* buf, int x, int y)
+{
+    x = atgMath::Clamp(x, 0, Width - 1);
+    y = atgMath::Clamp(y, 0, Height - 1);
+
+    return buf[y * Width + x];
+}
+
+void Water::SetValue(float* buf, int x, int y, float value)
+{
+    x = atgMath::Clamp(x, 0, Width - 1);
+    y = atgMath::Clamp(y, 0, Height - 1);
+
+    buf[y * Width + x] = value;
+}
 
 namespace MdxSizeOf_Ns
 {

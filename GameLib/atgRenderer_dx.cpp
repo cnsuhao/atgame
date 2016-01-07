@@ -19,6 +19,30 @@ D3DPRESENT_PARAMETERS*  g_d3dpp = NULL;
 
 #define SAFE_RELEASE(x) { if(x) { x->Release(); x = NULL; } }
 
+// 开启和关闭垂直同步
+void __atgSetVSyncState(bool enable)
+{
+    HRESULT hr;
+    do
+    {
+        do
+        {
+            g_Renderer->ReleaseAllGpuResource();
+
+            if (enable)
+                g_d3dpp->PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+            else
+                g_d3dpp->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+
+            hr = g_pd3dDevice->Reset(g_d3dpp);
+
+        } while (FAILED(hr) );
+
+        hr = g_pd3dDevice->TestCooperativeLevel();
+
+    } while ( FAILED(hr) );
+}
+
 
 /* >>>>> directx 9.0 的渲染状态初值表
 
@@ -864,11 +888,13 @@ atgTexture::LockData atgTexture::Lock()
     }
 
     D3DLOCKED_RECT rect;
-    if( FAILED( _impl->pDXTX->LockRect(0, 
+    HRESULT rs;
+    if( FAILED(rs = _impl->pDXTX->LockRect(0, 
                                        &rect, 
                                        NULL, 
                                        _impl->accessMode == BAM_Dynamic ? D3DLOCK_DISCARD : 0) )  )
     {
+        LOG("lock texture data fail. code[%d]\n", rs);
         return lockData;
     }
 
@@ -1741,11 +1767,19 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
     g_d3dpp->BackBufferHeight = height;
     g_d3dpp->BackBufferCount = 1;
     g_d3dpp->hDeviceWindow = g_hWnd;
-    g_d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD;
+    g_d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD; //> 全屏使用D3DSWAPEFFECT_FLIP ?
     g_d3dpp->EnableAutoDepthStencil = TRUE;
     g_d3dpp->AutoDepthStencilFormat = D3DFMT_D24S8;
     g_d3dpp->BackBufferFormat = D3DFMT_A8R8G8B8;
     g_d3dpp->MultiSampleType = D3DMULTISAMPLE_16_SAMPLES;
+    if (0 /*&& isVsync*/) 
+    {//>dx9默认开启垂直同步(D3DPRESENT_INTERVAL_ONE || D3DPRESENT_INTERVAL_DEFAULT)
+        g_d3dpp->PresentationInterval = D3DPRESENT_INTERVAL_ONE;    
+    }
+    else
+    {//>我们这里默认不开启不垂直同步
+        g_d3dpp->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;  
+    }
 
     while (g_d3dpp->MultiSampleType)
     {
