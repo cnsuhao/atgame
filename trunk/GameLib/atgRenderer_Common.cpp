@@ -3,6 +3,8 @@
 #include "atgShaderLibrary.h"
 #include "atgProfile.h"
 
+extern void __atgSetVSyncState(bool enable);
+
 atgRenderer* g_Renderer = NULL;
 
 const char* StringOpenGLIdentity = "OpenGL Renderer";
@@ -176,6 +178,19 @@ const char* atgRenderer::getName()
 
 #endif
 
+void atgRenderer::SetVSyncState(bool sync)
+{
+    if (sync)
+    {
+        LOG("-----vsync on-----\n");
+    }
+    else
+    {
+        LOG("-----vsync off-----\n");
+    }
+    ::__atgSetVSyncState(sync);
+}
+
 void atgRenderer::AddBindLight(atgLight* light)
 {
 #ifdef _DEBUG
@@ -255,11 +270,6 @@ void atgRenderer::EndPoint()
         // create pass
         if (!pColorPass || pColorPass->IsLost())
         {
-            if (pColorPass)
-            {
-                SAFE_DELETE(pColorPass);
-            }
-
             pColorPass = atgShaderLibFactory::FindOrCreatePass(VERTEXCOLOR_PASS_IDENTITY);
             if (NULL == pColorPass)
                 return;

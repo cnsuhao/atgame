@@ -10,93 +10,8 @@
 #include "atgIntersection.h"
 #include "atgMisc.h"
 #include "atgShaderLibrary.h"
+#include "atgUtility.h"
 //#include "perfMonitor.h"
-
-class Water
-{
-public:
-    Water(int w, int h)
-    : Width(w), Height(h)
-    {
-        size = w * h * sizeof(float);
-        buf1 = (float*)malloc(size);
-        buf2 = (float*)malloc(size);
-
-        memset(buf1, 0, size);
-        memset(buf2, 0, size);
-    }
-   
-    ~Water(void)
-    {
-
-    }
-
-    void Updata()
-    {
-        for(int y = 0; y < Height; y++)
-        {
-            int n = y * Width;
-            for (int x = 0; x < Width; x++, n++)
-            {
-                float s = GetValue(buf1, x, y - 1) + GetValue(buf1, x, y + 1) + GetValue(buf1, x - 1, y) + GetValue(buf1, x + 1, y);
-                s = (s / 2 - buf2[n]);
-                s -= s / 32;
-                if (s > 2) s = 2;
-                if (s < -2) s = -2;
-                buf2[n] = s;
-            }
-        }
-        float* temp = buf1;
-        buf1 = buf2;
-        buf2 = temp;
-    }
-   
-    void Drop(float xi, float yi)
-    {
-        int px = (int)(xi * (Width - 1));
-        int py = (int)(yi * (Height - 1));
-        for (int j = py - r; j <= py + r; j++)
-        {
-            for (int i = px - r; i <= px + r; i++)
-            {
-                float dx = (float)i - px;
-                float dy = (float)j - py;
-                float a = (float)(1 - (dx * dx + dy * dy) / (r * r));
-                if (a > 0 && a <= 1)
-                {
-                    SetValue(buf1, i, j, a * h);
-                }
-            }
-        }
-    }
-
-    void CopyTo(void* buffer) { memcpy(buffer, buf2, size); }
-
-    const int Width;
-    const int Height;
-private:
-    static const int r = 5;
-    static const int h = -1;
-    int size;
-    float* buf1;
-    float* buf2;
-
-    float GetValue(float* buf, int x, int y)
-    {
-        x = atgMath::Clamp(x, 0, Width - 1);
-        y = atgMath::Clamp(y, 0, Height - 1);
-
-        return buf[y * Width + x];
-    }
-
-    void SetValue(float* buf, int x, int y, float value)
-    {
-        x = atgMath::Clamp(x, 0, Width - 1);
-        y = atgMath::Clamp(y, 0, Height - 1);
-
-        buf[y * Width + x] = value;
-    }
-};
 
 static const int g_pointNumber = 1000;
 static float g_points[3*g_pointNumber];
@@ -116,7 +31,6 @@ public :
 
         //SetRandomSeed((uint32)GetAbsoluteMsecTime());
         //LoadConfig();
-
         g_Renderer->SetViewport(0, 0, GetWindowWidth(), GetWindowHeight());
         g_Renderer->SetFaceCull(FCM_CCW);
 
@@ -153,29 +67,21 @@ public :
             }
         }
 
-        pWater = new Water(200, 160);
-
-        pRippleShader = static_cast<atgRippleShader*>(atgShaderLibFactory::FindOrCreatePass(RIPPLE_PASS_IDENTITY));
-        if (NULL == pRippleShader)
-            return false;
-
-        pRippleShader->SetDxDy(1.0f / float(pWater->Width - 1), 1.0f / float(pWater->Height - 1));
-
-        g_WaterHeightData = new float[pWater->Width * pWater->Height];
-        pWater->CopyTo(g_WaterHeightData);
-
-
-        pDyncTexture = new atgTexture();
-        if (pDyncTexture->Create(pWater->Width, pWater->Height, TF_R32F, g_WaterHeightData))
+        pWater = new atgSampleWater();
+        if(!pWater->Create(200, 160))
         {
-            LOG("success create TF_R32F texture.");
+            return false;
         }
-        pDyncTexture->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
-
-        pRippleShader->SetTex1(g_Texture);
-        pRippleShader->SetTex2(pDyncTexture);
 
         return true;
+    }
+
+    virtual void OnShutdown()
+    {
+        SAFE_DELETE(_Camera);
+        SAFE_DELETE(_Camera2);
+        SAFE_DELETE(pWater);
+        SAFE_DELETE(g_Texture);
     }
 
     virtual void OnFrame()
@@ -259,6 +165,14 @@ public :
                 _Camera->SetPosition(pos.m);
             }
             break;
+        case Key::F1:
+            {
+                g_Renderer->SetVSyncState(false);
+            }break;
+        case Key::F2:
+            {
+                g_Renderer->SetVSyncState(true);
+            }break;
         default:
             break;
         }
@@ -376,118 +290,94 @@ public :
         f.BuildFrustumPlanes(_Camera2->GetView().m,_Camera2->GetProj().m);
         f.DebugRender();
         
-        /*
-        g_Renderer->SetPointSize(5.0f);
-        g_Renderer->BeginPoint();
-        float point[3];
-        for (int i = 0; i < g_pointNumber; i+=3)
-        {
-            point[0] = g_points[3*i];
-            point[1] = g_points[3*i+1];
-            point[2] = g_points[3*i+2];
-
-            if (f.IsPointInFrustum(point))
-            {
-                //g_Renderer->SetPointSize(10.0f);
-                g_Renderer->AddPoint(point, Vec3Up.m);
-            }
-            else
-            {
-                //g_Renderer->SetPointSize(5.0f);
-                g_Renderer->AddPoint(point, Vec3Right.m);
-            }
-        }
-        g_Renderer->EndPoint();
-        */
-
-        //if (g_Texture)
+        
+        //g_Renderer->SetPointSize(5.0f);
+        //g_Renderer->BeginPoint();
+        //float point[3];
+        //for (int i = 0; i < g_pointNumber; i+=3)
         //{
-        //    if (g_Texture->IsLost())
-        //    {
-        //        g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
-        //    }
+        //    point[0] = g_points[3*i];
+        //    point[1] = g_points[3*i+1];
+        //    point[2] = g_points[3*i+2];
 
-        //    g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
+        //    if (f.IsPointInFrustum(point))
+        //    {
+        //        //g_Renderer->SetPointSize(10.0f);
+        //        g_Renderer->AddPoint(point, Vec3Up.m);
+        //    }
+        //    else
+        //    {
+        //        //g_Renderer->SetPointSize(5.0f);
+        //        g_Renderer->AddPoint(point, Vec3Right.m);
+        //    }
         //}
+        //g_Renderer->EndPoint();
+        
+
+        if (g_Texture)
+        {
+            if (g_Texture->IsLost())
+            {
+                g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
+            }
+
+            //g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
+        }
 
 
         if (pWater)
         {
             pWater->Updata();
-            pWater->CopyTo(g_WaterHeightData);
-
-            atgTexture::LockData lockData = pDyncTexture->Lock();
-            if (lockData.pAddr)
-            {
-                if (lockData.pitch > 0)
-                {
-                    char* pSrc = (char*)g_WaterHeightData;
-                    char* pDst = (char*)lockData.pAddr;
-                    int lineSize = pWater->Width * sizeof(float);
-                    for (int i = 0; i < pWater->Height; ++i)
-                    {
-                        memcpy(pDst, pSrc, lineSize);
-                        pDst += lockData.pitch;
-                        pSrc += lineSize;
-                    }
-                }
-                else
-                {
-                    memcpy(lockData.pAddr, g_WaterHeightData, pWater->Width * pWater->Height * sizeof(float));
-                }
-                
-                pDyncTexture->Unlock();
-            }
+            pWater->Render(g_Texture);
         }
 
-        g_Renderer->DrawQuadByPass(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], pRippleShader);
+        //uint32 oldVP[4];
+        //g_Renderer->GetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
 
-        uint32 oldVP[4];
-        g_Renderer->GetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
+        //uint32 newVP[4] = {0, IsOpenGLGraph() ? 0 : oldVP[3] - 100, 100, 100 };
 
-        uint32 newVP[4] = {0, IsOpenGLGraph() ? 0 : oldVP[3] - 100, 100, 100 };
+        //g_Renderer->SetViewport(newVP[0], newVP[1], newVP[2], newVP[3]);
 
-        g_Renderer->SetViewport(newVP[0], newVP[1], newVP[2], newVP[3]);
+        //Matrix oldWorld;
+        //g_Renderer->GetMatrix(oldWorld, MD_WORLD);
+        //Matrix newWorld(MatrixIdentity);
+        //g_Renderer->SetMatrix(MD_WORLD, newWorld);
 
-        Matrix oldWorld;
-        g_Renderer->GetMatrix(oldWorld, MD_WORLD);
-        Matrix newWorld(MatrixIdentity);
-        g_Renderer->SetMatrix(MD_WORLD, newWorld);
+        //Matrix oldView;
+        //g_Renderer->GetMatrix(oldView, MD_VIEW);
+        //Matrix newView(MatrixIdentity);
+        //Vec3 p(0.0f, 0.0f, 3.5f);
+        //if (_Camera)
+        //{
+        //    newView.SetColumn3(0, _Camera->GetRight());
+        //    newView.SetColumn3(1, _Camera->GetUp());
+        //    newView.SetColumn3(2, _Camera->GetForward());
+        //    newView.Transpose();
+        //    newView.SetColumn3(3, p*-1.0f);
+        //}
+        //else
+        //{
+        //    atgMath::LookAt(p.m, Vec3Zero.m, Vec3Up.m, newView.m);
+        //}
+        //g_Renderer->SetMatrix(MD_VIEW, newView);
 
-        Matrix oldView;
-        g_Renderer->GetMatrix(oldView, MD_VIEW);
-        Matrix newView(MatrixIdentity);
-        Vec3 p(0.0f, 0.0f, 3.5f);
-        if (_Camera)
-        {
-            newView.SetColumn3(0, _Camera->GetRight());
-            newView.SetColumn3(1, _Camera->GetUp());
-            newView.SetColumn3(2, _Camera->GetForward());
-            newView.Transpose();
-            newView.SetColumn3(3, p*-1.0f);
-        }
-        else
-        {
-            atgMath::LookAt(p.m, Vec3Zero.m, Vec3Up.m, newView.m);
-        }
-        g_Renderer->SetMatrix(MD_VIEW, newView);
+        //Matrix oldProj;
+        //g_Renderer->GetMatrix(oldProj, MD_PROJECTION);
+        //Matrix newProj;
+        //atgMath::Perspective(37.5f,1.f,0.1f,500.0f,newProj.m);
+        //g_Renderer->SetMatrix(MD_PROJECTION, newProj);
 
-        Matrix oldProj;
-        g_Renderer->GetMatrix(oldProj, MD_PROJECTION);
-        Matrix newProj;
-        atgMath::Perspective(37.5f,1.f,0.1f,500.0f,newProj.m);
-        g_Renderer->SetMatrix(MD_PROJECTION, newProj);
+        //g_Renderer->BeginLine();
+        //g_Renderer->AddLine(Vec3Zero.m, Vec3Up.m, Vec3Up.m);
+        //g_Renderer->AddLine(Vec3Zero.m, Vec3Right.m, Vec3Right.m);
+        //g_Renderer->AddLine(Vec3Zero.m, Vec3Forward.m, Vec3Forward.m);
+        //g_Renderer->EndLine();
 
-        g_Renderer->BeginLine();
-        g_Renderer->AddLine(Vec3Zero.m, Vec3Up.m, Vec3Up.m);
-        g_Renderer->AddLine(Vec3Zero.m, Vec3Right.m, Vec3Right.m);
-        g_Renderer->AddLine(Vec3Zero.m, Vec3Forward.m, Vec3Forward.m);
-        g_Renderer->EndLine();
+        //g_Renderer->SetMatrix(MD_WORLD, oldWorld);
+        //g_Renderer->SetMatrix(MD_VIEW, oldView);
+        //g_Renderer->SetMatrix(MD_PROJECTION, oldProj);
+        //g_Renderer->SetViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
 
-        g_Renderer->SetMatrix(MD_WORLD, oldWorld);
-        g_Renderer->SetMatrix(MD_VIEW, oldView);
-        g_Renderer->SetMatrix(MD_PROJECTION, oldProj);
-        g_Renderer->SetViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
     }
 
     class atgCamera* _Camera;
@@ -495,9 +385,7 @@ public :
     bool _down;
     bool _down0;
     PNG_Image image;
-    Water* pWater;
-    atgRippleShader* pRippleShader;
-    atgTexture* pDyncTexture;
+    atgSampleWater* pWater;
     //atgPerfMonitor _monitor;
 };
 
@@ -511,7 +399,6 @@ int _tmain(int argc, _TCHAR* argv[])
         game.Run();
         game.Shutdown();
     }
-
 
 	return 0;
 }

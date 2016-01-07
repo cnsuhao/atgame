@@ -367,6 +367,32 @@ public:
     void setString(const std::string &key, const std::string &value);
 };
 
+class Water
+{
+public:
+    Water(int w, int h);
+    ~Water(void);
+
+    void                Updata();
+    void                Drop(float xi, float yi);   //>xi,yi为百分比位置
+    void                CopyTo(void* buffer) { memcpy(buffer, buf2, size); }
+    int                 GetBuffSize() const { return size; }
+    void*               GetBuff() { return buf2; }
+
+    const int Width;
+    const int Height;
+
+private:
+    static const int r = 5;     //>水波范围半径
+    static const int h = -1;    //>dorp点的水波深度
+    int size;
+    float* buf1;
+    float* buf2;
+
+    float               GetValue(float* buf, int x, int y);
+    void                SetValue(float* buf, int x, int y, float value);
+};
+
 // 通过R,G,B生成一整数表示颜色
 #define YD_RGB(r,g,b)                                   \
 ( (uint32) ( (uint8)(b) |                               \

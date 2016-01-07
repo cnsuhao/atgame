@@ -60,6 +60,9 @@
     <ClInclude Include="atgIntersection.h">
       <Filter>Lib</Filter>
     </ClInclude>
+    <ClInclude Include="atgUtility.h">
+      <Filter>Lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -102,6 +105,9 @@
       <Filter>Lib</Filter>
     </ClCompile>
     <ClCompile Include="atgIntersection.cpp">
+      <Filter>Lib</Filter>
+    </ClCompile>
+    <ClCompile Include="atgUtility.cpp">
       <Filter>Lib</Filter>
     </ClCompile>
   </ItemGroup>

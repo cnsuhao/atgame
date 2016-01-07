@@ -2,8 +2,6 @@
 #include "atgGame.h"
 #include "atgRenderer.h"
 
-#define WINDOW_VSYNC 1
-
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <Windows.h>
@@ -119,7 +117,7 @@
             }
             else{
                 game->OnFrame();
-                ::Sleep(15);
+                //::Sleep(15);
             }
         }
     }
@@ -367,7 +365,6 @@
                 return false;                               // Return FALSE
             }
 
-            SetVSyncState(WINDOW_VSYNC ? true : false);
             return true;
         #else
             int samples = 8;
@@ -502,11 +499,7 @@
             //eglQuerySurface(__eglDisplay, __eglSurface, EGL_WIDTH, &__width);
             //eglQuerySurface(__eglDisplay, __eglSurface, EGL_HEIGHT, &__height);
             LOG("atgRenderer::Initialize end!\n");
-            //__orientationAngle = getRotation() * 90;
 
-            // Set vsync.
-
-            //LOG("|||| Graphic Driver ===> Using OpenGL ES2.0!\n");
             return true;
 
         #endif // !USE_OPENGLES
@@ -516,23 +509,27 @@
         return false;
     }
 
-    #if defined (USE_OPENGL) 
+#if defined (USE_OPENGL) 
     // 开启和关闭垂直同步
-    void SetVSyncState(bool enable)
+    void __atgSetVSyncState(bool enable)
     {
-#ifndef USE_OPENGLES
-        if (enable)
-            wglSwapIntervalEXT(1);
-        else 
-            wglSwapIntervalEXT(0);  
-#else
-        if (enable)
-            eglSwapInterval(__eglDisplay, 1);
-        else
-            eglSwapInterval(__eglDisplay, 0);
-#endif // !USE_OPENGLES
+
+    #ifndef USE_OPENGLES
+            if (enable)
+                wglSwapIntervalEXT(1);
+            else 
+                wglSwapIntervalEXT(0);  
+    #else
+            if (__eglDisplay)
+            {
+                if (enable)
+                    eglSwapInterval(__eglDisplay, 1);
+                else
+                    eglSwapInterval(__eglDisplay, 0);
+            }
+    #endif // !USE_OPENGLES
     }
-    #endif
+#endif
 
     void win32_shutdown_ogl()
     {
@@ -1214,10 +1211,6 @@
         LOG("atgRenderer::Initialize end!\n");
         //__orientationAngle = getRotation() * 90;
 
-        // Set vsync.
-        eglSwapInterval(__eglDisplay, WINDOW_VSYNC ? 1 : 0);
-
-        //LOG("|||| Graphic Driver ===> Using OpenGL ES2.0!\n");
         return true;
     }
 
@@ -1229,6 +1222,18 @@
     bool android_ogl_present()
     {
         return eglSwapBuffers(__eglDisplay, __eglSurface);
+    }
+
+    // 开启和关闭垂直同步
+    void __atgSetVSyncState(bool enable)
+    {
+        if (__eglDisplay)
+        {
+            if (enable)
+                eglSwapInterval(__eglDisplay, 1);
+            else
+                eglSwapInterval(__eglDisplay, 0);
+        }
     }
 
 #endif
@@ -1256,7 +1261,7 @@ bool atgGame::Initialize(void* initData)
 #endif
     if(rt){
         g_Renderer = new atgRenderer(this);
-#ifndef _ANDROID
+#ifndef _ANDROID //>android原生自己实现renderder Init 和 OnInit
         if (g_Renderer)
         {
             rt = g_Renderer->Initialize(GetWindowWidth(), GetWindowHeight(), 32);
@@ -1273,6 +1278,7 @@ bool atgGame::Initialize(void* initData)
 
 void atgGame::Shutdown()
 {
+    OnShutdown();
     if (g_Renderer)
     {
         g_Renderer->Shutdown();
@@ -1283,7 +1289,6 @@ void atgGame::Shutdown()
 #elif defined(_ANDROID)
     android_shutdown(this);
 #endif // _WIN32
-    OnShutdown();
 }
 
 void atgGame::Run()

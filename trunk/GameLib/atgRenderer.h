@@ -549,6 +549,7 @@ public:
     const char*             getName();
     bool                    Initialize(uint32 width, uint32 height, uint8 bpp);
     void                    Shutdown();
+    void                    SetVSyncState(bool sync);
     bool                    Resize(uint32 width, uint32 height);
 
     void                    SetViewport(uint32 offsetX, uint32 offsetY, uint32 width, uint32 height);
