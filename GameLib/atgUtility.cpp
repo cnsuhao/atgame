@@ -176,9 +176,9 @@ void atgSampleWater::Render(atgTexture* pTexture /* = 0 */)
 {
     const float textureQuadData[] = {
         -100.0f,  100.0f, 20.0f, 0.0f, 0.0f,
+         100.0f,  100.0f, 20.0f, 1.0f, 0.0f,
         -100.0f, -100.0f, 20.0f, 0.0f, 1.0f,
-        100.0f,  100.0f, 20.0f, 1.0f, 0.0f,
-        100.0f, -100.0f, 20.0f, 1.0f, 1.0f,
+         100.0f, -100.0f, 20.0f, 1.0f, 1.0f,
     };
 
     if (_pRippleShader->IsLost())

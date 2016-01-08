@@ -341,18 +341,18 @@ void atgRenderer::AddQuad(const float point1[3], const float point2[3], const fl
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
 
-    _drawQuads.push_back(point3[0]);
-    _drawQuads.push_back(point3[1]);
-    _drawQuads.push_back(point3[2]);
+    _drawQuads.push_back(point2[0]);
+    _drawQuads.push_back(point2[1]);
+    _drawQuads.push_back(point2[2]);
     _drawQuads.push_back(color[0]);
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
 
 #ifdef DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point3[0]);
-    _drawQuads.push_back(point3[1]);
-    _drawQuads.push_back(point3[2]);
+    _drawQuads.push_back(point2[0]);
+    _drawQuads.push_back(point2[1]);
+    _drawQuads.push_back(point2[2]);
     _drawQuads.push_back(color[0]);
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
@@ -378,18 +378,18 @@ void atgRenderer::AddQuad(const float point1[3], const float point2[3], const fl
 
 #endif // DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point2[0]);
-    _drawQuads.push_back(point2[1]);
-    _drawQuads.push_back(point2[2]);
+    _drawQuads.push_back(point3[0]);
+    _drawQuads.push_back(point3[1]);
+    _drawQuads.push_back(point3[2]);
     _drawQuads.push_back(color[0]);
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
 
 #ifdef DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point2[0]);
-    _drawQuads.push_back(point2[1]);
-    _drawQuads.push_back(point2[2]);
+    _drawQuads.push_back(point3[0]);
+    _drawQuads.push_back(point3[1]);
+    _drawQuads.push_back(point3[2]);
     _drawQuads.push_back(color[0]);
     _drawQuads.push_back(color[1]);
     _drawQuads.push_back(color[2]);
@@ -497,13 +497,6 @@ void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], con
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
 
-    _drawFullQuads.push_back(point3[0]);
-    _drawFullQuads.push_back(point3[1]);
-    _drawFullQuads.push_back(point3[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
-
     _drawFullQuads.push_back(point2[0]);
     _drawFullQuads.push_back(point2[1]);
     _drawFullQuads.push_back(point2[2]);
@@ -511,11 +504,18 @@ void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], con
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
 
-#ifdef FULL_QUAD_USE_TRIANGLE_LIST
-
     _drawFullQuads.push_back(point3[0]);
     _drawFullQuads.push_back(point3[1]);
     _drawFullQuads.push_back(point3[2]);
+    _drawFullQuads.push_back(color[0]);
+    _drawFullQuads.push_back(color[1]);
+    _drawFullQuads.push_back(color[2]);
+
+#ifdef FULL_QUAD_USE_TRIANGLE_LIST
+
+    _drawFullQuads.push_back(point2[0]);
+    _drawFullQuads.push_back(point2[1]);
+    _drawFullQuads.push_back(point2[2]);
     _drawFullQuads.push_back(color[0]);
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
@@ -531,9 +531,9 @@ void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], con
 
 #ifdef FULL_QUAD_USE_TRIANGLE_LIST
 
-    _drawFullQuads.push_back(point2[0]);
-    _drawFullQuads.push_back(point2[1]);
-    _drawFullQuads.push_back(point2[2]);
+    _drawFullQuads.push_back(point3[0]);
+    _drawFullQuads.push_back(point3[1]);
+    _drawFullQuads.push_back(point3[2]);
     _drawFullQuads.push_back(color[0]);
     _drawFullQuads.push_back(color[1]);
     _drawFullQuads.push_back(color[2]);
@@ -621,8 +621,8 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
 
     static float QuadData[] = {
         -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
          1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
          1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
 
     };
@@ -681,26 +681,105 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
     return true;
 }
 
+bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture)
+{
+    AASSERT(pTexture != NULL);
+
+    static float QuadData[] = {
+        -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+         1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+         1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+    };
+
+    static const int sizeOfQuadData = sizeof(QuadData);
+    static atgPass* pTexturePass = NULL;
+    static atgVertexBuffer* pVB = NULL;
+
+    // create pass
+    if (!pTexturePass || pTexturePass->IsLost())
+    {
+        pTexturePass = atgShaderLibFactory::FindOrCreatePass(NOT_LIGNTE_TEXTURE_PASS_IDENTITY);
+        if (NULL == pTexturePass)
+            return false;
+        ((atgShaderNotLighteTexture*)pTexturePass)->SetTexture(pTexture);
+    }
+
+    // create vertex buffer
+    if (!pVB || pVB->IsLost())
+    {
+        if (pVB)
+        {
+            SAFE_DELETE(pVB);
+        }
+
+        atgVertexDecl decl;
+        decl.AppendElement(0, atgVertexDecl::VA_Pos3);
+        decl.AppendElement(0, atgVertexDecl::VA_Texture0);
+
+        pVB = new atgVertexBuffer();
+        pVB->Create(&decl, QuadData, sizeOfQuadData, BAM_Dynamic);
+    }else
+    {
+        // only update vertex buffer
+        void *pLockData = pVB->Lock(0, sizeOfQuadData);
+        if(pLockData)
+        {
+            memcpy(pLockData, QuadData, sizeOfQuadData);
+            pVB->Unlock();
+        }
+    }
+
+    Matrix oldWorld;
+    g_Renderer->GetMatrix(oldWorld, MD_WORLD);
+    g_Renderer->SetMatrix(MD_WORLD, MatrixIdentity);
+
+    Matrix oldView;
+    g_Renderer->GetMatrix(oldView, MD_VIEW);
+    g_Renderer->SetMatrix(MD_VIEW, MatrixIdentity);
+
+    Matrix oldProj;
+    g_Renderer->GetMatrix(oldProj, MD_PROJECTION);
+    //uint32 data[4];
+    //g_Renderer->GetViewPort(data[0], data[1], data[2], data[3]);
+    //Matrix newProj;
+    //atgMath::OrthoProject(data[2], data[3], 0.1f, 100.f, newProj.m);
+    //g_Renderer->SetMatrix(MD_PROJECTION, newProj)
+    g_Renderer->SetMatrix(MD_PROJECTION, MatrixIdentity);
+
+    //g_Renderer->SetDepthTestEnable(false);
+    g_Renderer->BindTexture(0, pTexture);
+    g_Renderer->BindPass(pTexturePass);
+    g_Renderer->BindVertexBuffer(pVB);
+    g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
+    //g_Renderer->SetDepthTestEnable(true);
+
+    g_Renderer->SetMatrix(MD_WORLD, oldWorld);
+    g_Renderer->SetMatrix(MD_VIEW, oldView);
+    g_Renderer->SetMatrix(MD_PROJECTION, oldProj);
+
+    return true;
+}
+
 bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgPass* pPass)
 {
     AASSERT(pPass != NULL);
 
     static float QuadData[] = {
         -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+         1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
         -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
-
+         1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
     };
     static const int sizeOfQuadData = sizeof(QuadData);
     static atgVertexBuffer* pVB = NULL;
 
     atgMath::VecCopy(p1, &QuadData[0]);
     QuadData[3] = t1[0]; QuadData[4] = t1[1];
-    atgMath::VecCopy(p3, &QuadData[5]);
-    QuadData[8] = t3[0]; QuadData[9] = t3[1];
-    atgMath::VecCopy(p2, &QuadData[10]);
-    QuadData[13] = t2[0]; QuadData[14] = t2[1];
+    atgMath::VecCopy(p2, &QuadData[5]);
+    QuadData[8] = t2[0]; QuadData[9] = t2[1];
+    atgMath::VecCopy(p3, &QuadData[10]);
+    QuadData[13] = t3[0]; QuadData[14] = t3[1];
     atgMath::VecCopy(p4, &QuadData[15]);
     QuadData[18] = t4[0]; QuadData[19] = t4[1];
 
