@@ -73,6 +73,29 @@ public :
             return false;
         }
 
+        pDepthTex = new atgTexture();
+        if (!pDepthTex->Create(512,512, TF_D24S8, NULL, true))
+        {
+            return false;
+        }
+
+        pColorTex = new atgTexture();
+        if (!pColorTex->Create(512,512, TF_R8G8B8A8, NULL, true))
+        {
+            return false;
+        }
+        pColorTex->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
+        //pColorTex->SetAddressMode(TC_COORD_U, TAM_ADDRESS_CLAMP);
+        //pColorTex->SetAddressMode(TC_COORD_V, TAM_ADDRESS_CLAMP);
+
+        pRT = new atgRenderTarget();
+        std::vector<atgTexture*> colorBuffer; colorBuffer.push_back(pColorTex);
+        if (!pRT->Create(colorBuffer, pDepthTex))
+        {
+            SAFE_DELETE(pRT);
+            return false;
+        }
+
         return true;
     }
 
@@ -116,7 +139,27 @@ public :
 
         g_Renderer->Clear();
         g_Renderer->BeginFrame();
-        DrawAxis();
+        if (pRT)
+        {
+            if (pColorTex->IsLost())
+            {
+                pColorTex->Create(512,512, TF_R8G8B8A8, NULL, true);
+            }
+
+            if (pDepthTex->IsLost())
+            {
+                pDepthTex->Create(512,512, TF_D24S8, NULL, true);
+            }
+
+            g_Renderer->PushRenderTarget(0, pRT);
+
+            g_Renderer->Clear();
+            DrawAxis();
+
+            g_Renderer->PopRenderTarget(0);
+        }
+
+        g_Renderer->DrawFullScreenQuad(pColorTex);
         g_Renderer->EndFrame();
         g_Renderer->Present();
     }
@@ -277,13 +320,13 @@ public :
         //g_Renderer->EndQuad();
 
         g_Renderer->BeginFullQuad();
-        g_Renderer->AddFullQuad(Vec3(0.0f, 100.0f, 1.0f).m, Vec3(0.f,0.0f,1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3Up.m);
-        g_Renderer->AddFullQuad(Vec3(0.0f, 60.0f, 0.0f).m, Vec3(-10.f,-10.0f,0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3Right.m);
+        g_Renderer->AddFullQuad(Vec3(0.0f, 100.0f, 1.0f).m, Vec3(100.0f, 100.0f, 1.0f).m, Vec3(0.f,0.0f,1.0f).m, Vec3(100.0f, 0.0f, 1.0f).m, Vec3Up.m);
+        g_Renderer->AddFullQuad(Vec3(0.0f, 60.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3(-10.f,-10.0f,0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3Right.m);
         g_Renderer->EndFullQuad();
 
         g_Renderer->BeginAABBoxLine();
         g_Renderer->AddAABBoxLine(Vec3(-100.f,-100.0f,-100.0f).m, Vec3(0.0f, 0.0f, 0.0f).m, Vec3Right.m);
-        //g_Renderer->AddFullQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
+        g_Renderer->AddFullQuad(Vec3(-10.f,-10.0f,0.0f).m, Vec3(0.0f, 60.0f, 0.0f).m, Vec3(60.0f, 0.0f, 0.0f).m, Vec3(150.0f, 150.0f, 0.0f).m, Vec3Right.m);
         g_Renderer->EndAABBoxLine();
 
         atgFrustum f;
@@ -373,11 +416,12 @@ public :
         //g_Renderer->AddLine(Vec3Zero.m, Vec3Forward.m, Vec3Forward.m);
         //g_Renderer->EndLine();
 
+        //g_Renderer->DrawTexureQuad(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], g_Texture);
+
         //g_Renderer->SetMatrix(MD_WORLD, oldWorld);
         //g_Renderer->SetMatrix(MD_VIEW, oldView);
         //g_Renderer->SetMatrix(MD_PROJECTION, oldProj);
         //g_Renderer->SetViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
-
     }
 
     class atgCamera* _Camera;
@@ -387,6 +431,10 @@ public :
     PNG_Image image;
     atgSampleWater* pWater;
     //atgPerfMonitor _monitor;
+
+    atgTexture* pDepthTex;
+    atgTexture* pColorTex;
+    atgRenderTarget* pRT;
 };
 
 #ifdef _WIN32

@@ -240,6 +240,7 @@ enum TextureFormat
 class atgTexture : public atgGpuResource
 {
     friend class atgRenderer;
+    friend class atgRenderTarget;
 public:
     struct LockData
     {
@@ -250,7 +251,7 @@ public:
     atgTexture();
     ~atgTexture();
 
-    bool                    Create(uint32 width, uint32 height, TextureFormat inputFormat, const void *pData=NULL);
+    bool                    Create(uint32 width, uint32 height, TextureFormat inputFormat, const void *pData=NULL, bool useToRenderTarget = false);
     bool                    Destory();
 
     LockData                Lock();
@@ -470,7 +471,7 @@ public:
     ~atgRenderTarget();
 
     bool                    Create(std::vector<atgTexture*>& colorBuffer, atgTexture* depthStencilBuffer);
-    bool                    Destroy();
+    bool                    Destory();
 
 
     bool                    Active(uint8 index);
@@ -479,6 +480,7 @@ public:
     const std::vector<atgTexture*>& GetColorBuffer() const { return _colorBuffer; }
     atgTexture*             GetDepthStencilBuffer() const { return _depthStencilBuffer; }
 
+    const char*             GetTypeName() const { return "atgRenderTarget"; }
 private:
     class atgRenderTargetImpl* _impl;
 
@@ -629,6 +631,7 @@ public:
 
     //> 绘制纹理多边形
     bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
+    bool                    DrawFullScreenQuad(atgTexture* pTexture);
     bool                    DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgPass* pPass);
     
     //> 轴对其盒子

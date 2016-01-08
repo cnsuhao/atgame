@@ -643,7 +643,7 @@ atgTexture::~atgTexture()
     g_Renderer->RemoveGpuResource(this);
 }
 
-bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, const void *pData/*=NULL*/ )
+bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, const void *pData/*=NULL*/, bool useToRenderTarget/*=false*/ )
 {
     /*
     OpenGL ES 2.0
@@ -755,17 +755,21 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         isFloatData = true;
         break;
     case TF_D24S8:
+        inFormat = GL_LUMINANCE;
 #ifndef GL_ES_VERSION_2_0
-        internalFormat = GL_DEPTH24_STENCIL8;
+        internalFormat = GL_DEPTH_COMPONENT16;
+        LOG("using depth is 24 but OpenGL ES 2.0 only support depth 16\n");
 #else
         internalFormat = GL_DEPTH24_STENCIL8_OES;
 #endif // USE_OPENGLES
-        
+        type = GL_FLOAT;
         isColorFormat = false;
         isFloatData = true;
         break;
     case TF_D16:
+        inFormat = GL_LUMINANCE;
         internalFormat = GL_DEPTH_COMPONENT16;
+        type = GL_FLOAT;
         isColorFormat = false;
         isFloatData = true;
         break;
@@ -792,16 +796,21 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
 
         GL_ASSERT( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, inFormat, type, pData) );
 
-        if (!_impl->isFloatData)
+        if (!_impl->isFloatData && !useToRenderTarget)
         {
             GL_ASSERT( glGenerateMipmap(GL_TEXTURE_2D) ); // 生产mipmap,这个代码要放后面
         }
+
+         GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
     }
-    else
+    else if(!isColorFormat && useToRenderTarget)
     {
         GL_ASSERT( glGenRenderbuffers(1, &_impl->TextureID) );  
-        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, _impl->TextureID) );  
-        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _width, _height) );
+        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, _impl->TextureID) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+        GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, _width, _height) );
+        GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
     }
 
     atgGpuResource::ReSet();
@@ -907,16 +916,16 @@ void atgTexture::SetAddressMode(TextureCoordinate coordinate, TextureAddressMode
     switch (address)
     {
     case TAM_ADDRESS_WRAP:
-        glTexParameteri(coordinate, uv, GL_REPEAT);
+        GL_ASSERT( glTexParameteri(coordinate, uv, GL_REPEAT) );
         break;
     case TAM_ADDRESS_MIRROR:
-        glTexParameteri(coordinate, uv, GL_MIRRORED_REPEAT);
+        GL_ASSERT( glTexParameteri(coordinate, uv, GL_MIRRORED_REPEAT) );
         break;
     case TAM_ADDRESS_CLAMP:
-        glTexParameteri(coordinate, uv, GL_CLAMP_TO_EDGE);
+        GL_ASSERT( glTexParameteri(coordinate, uv, GL_CLAMP_TO_EDGE) );
         break;
     case TAM_ADDRESS_BORDER:
-        glTexParameteri(coordinate, uv, GL_CLAMP_TO_EDGE);
+        GL_ASSERT( glTexParameteri(coordinate, uv, GL_CLAMP_TO_EDGE) );
         break;
     case MAX_ADDRESSMODES:
         break;
@@ -1417,9 +1426,10 @@ bool atgPass::SetTexture(const char* var_name, uint8 index)
 class atgRenderTargetImpl
 {
 public:
-    atgRenderTargetImpl() {}
+    atgRenderTargetImpl():FrameBufferId(0) {}
+    ~atgRenderTargetImpl() { glDeleteFramebuffers(1, &FrameBufferId); }
 
-    GLuint renderBufferId;
+    GLuint FrameBufferId;
 };
 
 atgRenderTarget::atgRenderTarget():_impl(NULL)
@@ -1428,49 +1438,76 @@ atgRenderTarget::atgRenderTarget():_impl(NULL)
 
 atgRenderTarget::~atgRenderTarget()
 {
-    Destroy();
+    Destory();
 }
 
 bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture* depthStencilBuffer )
 {
-    //if (_impl == NULL)
-    //{
-    //    _impl = new atgRenderTargetImpl();
-    //}
-    glGenRenderbuffers(1, &_impl->renderBufferId);
-    glBindRenderbuffer(GL_RENDERBUFFER, _impl->renderBufferId);
-    ////uint32 offsetX, offsetY, width, height;
-    ////g_Renderer->GetViewPort(offsetX, offsetY, width, height);
-    //glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4 /* 4 samples */, GL_RGBA8,  width, height);
+    if (colorBuffer.empty())
+    {
+        LOG("atgRenderTarget create failture. color buffer is empty.\n");
+        return false;
+    }
 
-    GLuint depthbuffer;
-    glGenRenderbuffers(1, &depthbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer);
+    if (NULL == depthStencilBuffer)
+    {
+        LOG("atgRenderTarget create failture. depthStencil buffer is NULL.\n");
+        return false;
+    }
+    
+    if (colorBuffer[0]->GetWidth() != depthStencilBuffer->GetWidth() ||
+        colorBuffer[0]->GetHeight() != depthStencilBuffer->GetHeight() )
+    {
+        LOG("atgRenderTarget create failture. colorBuffer buffer and depthStencil Buffer size must same.\n");
+        return false;
+    }
 
-    GLuint fbID;
-    glGenFramebuffers(1, &fbID);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbID);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _impl->renderBufferId);
+    Destory();
 
-    ////glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+    _impl = new atgRenderTargetImpl();
+
+    GL_ASSERT( glGenFramebuffers(1, &_impl->FrameBufferId) );
+    GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
+
+    GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer[0]->_impl->TextureID, 0) );
+    GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthStencilBuffer->_impl->TextureID) );
+
+    GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+
+    atgGpuResource::ReSet();
+    g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgRenderTarget::Destory));
 
     return true;
 }
 
-bool atgRenderTarget::Destroy()
+bool atgRenderTarget::Destory()
 {
+    atgGpuResource::Lost();
+    SAFE_DELETE(_impl);
+
     return true;
 }
 
 bool atgRenderTarget::Active(uint8 index)
 {
+    if (_impl)
+    {
+        if (IsLost())
+        {
+            Create(_colorBuffer, _depthStencilBuffer);
+        }
+
+        GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
+        
+        return true;
+    }
 
     return false;
 }
 
 void atgRenderTarget::Deactive()
 {
-
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
@@ -1481,6 +1518,23 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
 #elif defined _ANDROID
         rt = android_init_ogl();
 #endif
+
+
+#ifndef GL_ES_VERSION_2_0
+    std::string vendorName("OpenGL ");
+#else
+    std::string vendorName;
+#endif // !GL_ES_VERSION_2_0
+
+    vendorName += (const char*)glGetString(GL_VERSION);
+    vendorName += "\n\t\t";
+    vendorName += (const char*)glGetString(GL_VENDOR);
+    vendorName += "\n\t\t";
+    vendorName += (const char*)glGetString(GL_RENDERER);
+    vendorName += "\n\t\t";
+    vendorName += (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);  
+
+    LOG("%s\n", vendorName.c_str());
 
     if (!rt)
     {

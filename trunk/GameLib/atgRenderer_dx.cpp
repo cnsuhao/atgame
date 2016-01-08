@@ -694,7 +694,7 @@ atgTexture::~atgTexture()
     g_Renderer->RemoveGpuResource(this);
 }
 
-bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, const void *pData/*=NULL*/ )
+bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, const void *pData/*=NULL*/ , bool useToRenderTarget/*=false*/)
 {
     Destory();
 
@@ -704,14 +704,15 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     _impl = new atgTextureImpl;
 
     uint8 pixelSize = 0; 
-    bool isDyncmic = false;
+    bool isDyncmic = useToRenderTarget ? true : false;
     bool isFloatData = false;
     bool isDepthStencil = false;
+    UINT levels = 0; //>number of mipmaplevels (0 = automatic all)
     D3DFORMAT _inputFormat = D3DFMT_UNKNOWN;
     switch (_format)
     {
     case TF_R8G8B8:
-        _inputFormat = D3DFMT_R8G8B8; //directx don't support 24 bit format.
+        _inputFormat = D3DFMT_R8G8B8; //> directx9 don't support 24 bit format.
         _inputFormat = D3DFMT_X8R8G8B8;
         pixelSize = 3;
         break;
@@ -736,24 +737,28 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         isDyncmic = true;
         isFloatData = true;
         pixelSize = 4;
+        levels = 1;
         break;
     case TF_R16F:
         _inputFormat = D3DFMT_R16F;
         isDyncmic = true;
         isFloatData = true;
         pixelSize = 4;
+        levels = 1;
         break;
     case TF_D24S8:
         _inputFormat = D3DFMT_D24S8;
         isDyncmic = true;
         isFloatData = true;
         isDepthStencil = true;
+        levels = 1;
         break;
     case TF_D16:
         _inputFormat = D3DFMT_D16;
         isDyncmic = true;
         isFloatData = true;
         isDepthStencil = true;
+        levels = 1;
         break;
     default:
         break;
@@ -786,8 +791,21 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         usage |= D3DUSAGE_AUTOGENMIPMAP;
     }
 
+    if (useToRenderTarget)
+    {
+        usage &=~D3DUSAGE_DYNAMIC;
+        if (!isDepthStencil)
+        {
+            usage |= D3DUSAGE_RENDERTARGET;
+        }
+        else
+        {
+            usage |= D3DUSAGE_DEPTHSTENCIL;
+        }
+    }
+   
     if( FAILED( g_pd3dDevice->CreateTexture(width, height,
-                                            0, 
+                                            levels, 
                                             usage,
                                             _inputFormat,
                                             pool,
@@ -805,7 +823,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgTexture::Destory));
     }
 
-    if (!isDepthStencil && pData)
+    if (!useToRenderTarget && pData)
     {
         LockData lockData;
 
@@ -1626,38 +1644,52 @@ void atgPass::EndContext(void* data)
 class atgRenderTargetImpl
 {
 public:
-    atgRenderTargetImpl():pRenderTexture(0),pDepthStencilSurface(0),pOldRT(0),pOldDS(0) {}
-    ~atgRenderTargetImpl() { SAFE_RELEASE(pRenderTexture); SAFE_RELEASE(pDepthStencilSurface); SAFE_RELEASE(pOldRT); SAFE_RELEASE(pOldDS); }
+    atgRenderTargetImpl():pOldRT(0),pOldDS(0) {}
+    ~atgRenderTargetImpl() { SAFE_RELEASE(pOldRT); SAFE_RELEASE(pOldDS); }
 
-    bool Create(uint16 width, uint16 height, D3DFORMAT d3dFormat)
+    //bool Create(uint16 width, uint16 height, D3DFORMAT d3dFormat)
+    //{
+    //    //> level为1, 渲染到纹理不需要做minmap采样. 
+    //    DX_ASSERT( g_pd3dDevice->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, d3dFormat, D3DPOOL_DEFAULT, &pRenderTexture, NULL) );
+    //    //> 必然需要一块深度缓存来满足绘制图元所需要的基本需求.
+    //    DX_ASSERT( g_pd3dDevice->CreateDepthStencilSurface(width, height, g_d3dpp->AutoDepthStencilFormat, D3DMULTISAMPLE_NONE, 0, TRUE, &pDepthStencilSurface, NULL) );
+    //
+    //    return true;
+    //}
+
+    bool Bind(uint8 index_, IDirect3DTexture9* pRenderTexture, IDirect3DTexture9* pDepthStencil)
     {
-        //> level为1, 渲染到纹理不需要做minmap采样. 
-        DX_ASSERT( g_pd3dDevice->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, d3dFormat, D3DPOOL_DEFAULT, &pRenderTexture, NULL) );
-        //> 必然需要一块深度缓存来满足绘制图元所需要的基本需求.
-        DX_ASSERT( g_pd3dDevice->CreateDepthStencilSurface(width, height, g_d3dpp->AutoDepthStencilFormat, D3DMULTISAMPLE_NONE, 0, TRUE, &pDepthStencilSurface, NULL) );
+        if (pRenderTexture == NULL)
+        {
+            return false;
+        }
 
-        return true;
-    }
+        if (pDepthStencil == NULL)
+        {
+            return false;
+        }
 
-    void Bind(uint8 index_)
-    {
         index = index_;
         IDirect3DSurface9* pSurface;
         DX_ASSERT( pRenderTexture->GetSurfaceLevel(0, &pSurface) );
 
-        IDirect3DSurface9* pOldRT = NULL;
         if( SUCCEEDED( g_pd3dDevice->GetRenderTarget(index, &pOldRT)) )
         {
             DX_ASSERT( g_pd3dDevice->SetRenderTarget(index, pSurface) );
 
-            IDirect3DSurface9* pOldDS = NULL;
             if ( SUCCEEDED(g_pd3dDevice->GetDepthStencilSurface(&pOldDS)) )
             {
-                DX_ASSERT( g_pd3dDevice->SetDepthStencilSurface(pDepthStencilSurface) );
+                IDirect3DSurface9* pSurfaceDepthStencil;
+                DX_ASSERT( pDepthStencil->GetSurfaceLevel(0, &pSurfaceDepthStencil) );
+                DX_ASSERT( g_pd3dDevice->SetDepthStencilSurface(pSurfaceDepthStencil) );
+
+                SAFE_RELEASE(pSurfaceDepthStencil);
             }
         }
 
         SAFE_RELEASE( pSurface );
+
+        return true;
     }
 
     void Unbind()
@@ -1675,8 +1707,6 @@ public:
         }
     }
 
-    IDirect3DTexture9* pRenderTexture;
-    IDirect3DSurface9* pDepthStencilSurface;
     IDirect3DSurface9* pOldRT;
     IDirect3DSurface9* pOldDS;
 
@@ -1691,46 +1721,46 @@ atgRenderTarget::atgRenderTarget():_impl(NULL)
 
 atgRenderTarget::~atgRenderTarget()
 {
-    Destroy();
+    Destory();
 }
 
 bool atgRenderTarget::Create(std::vector<atgTexture*>& colorBuffer, atgTexture* depthStencilBuffer)
 {
-    Destroy();
-    
-    bool rs = false;
-    //_impl = new atgRenderTargetImpl();
-    //if (_impl)
-    //{
-    //    D3DFORMAT d3dFormat = D3DFMT_UNKNOWN;
-    //    switch (format)
-    //    {
-    //    case RBF_A8R8G8B8:
-    //        d3dFormat = D3DFMT_A8R8G8B8;
-    //        break;
-    //    case RBF_R32F:
-    //        d3dFormat = D3DFMT_R32F;
-    //        break;
-    //    default:
-    //        break;
-    //    }
-
-    //    if (d3dFormat != D3DFMT_UNKNOWN)
-    //    {
-    //        rs = _impl->Create(width, height, d3dFormat);
-    //    }
-    //}
-
-    if (rs)
+    if (colorBuffer.empty())
     {
-        atgGpuResource::ReSet();
-        g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgRenderTarget::Destroy));
+        LOG("atgRenderTarget create failture. color buffer is empty.\n");
+        return false;
     }
 
-    return rs;
+    if (NULL == depthStencilBuffer)
+    {
+        LOG("atgRenderTarget create failture. depthStencil buffer is NULL.\n");
+        return false;
+    }
+
+    if (colorBuffer[0]->GetWidth() != depthStencilBuffer->GetWidth() ||
+        colorBuffer[0]->GetHeight() != depthStencilBuffer->GetHeight() )
+    {
+        LOG("atgRenderTarget create failture. colorBuffer buffer and depthStencil Buffer size must same.\n");
+        return false;
+    }
+
+    Destory();
+
+    _impl = new atgRenderTargetImpl();
+    _colorBuffer.resize(colorBuffer.size());
+    std::copy(colorBuffer.begin(), colorBuffer.end(), _colorBuffer.begin());
+
+    _depthStencilBuffer = depthStencilBuffer;
+
+    atgGpuResource::ReSet();
+    //g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgRenderTarget::Destroy));
+    
+
+    return true;
 }
 
-bool atgRenderTarget::Destroy()
+bool atgRenderTarget::Destory()
 {
     atgGpuResource::Lost();
     SAFE_DELETE( _impl );
@@ -1742,7 +1772,17 @@ bool atgRenderTarget::Active(uint8 index)
 {
     if (_impl)
     {
-        _impl->Bind(index);
+        if (_colorBuffer.empty())
+        {
+            return false;
+        }
+
+        if (NULL == _depthStencilBuffer)
+        {
+            return false;
+        }
+
+        return _impl->Bind(index, _colorBuffer[0]->_impl->pDXTX, _depthStencilBuffer->_impl->pDXTX);
     }
     return false;
 }
@@ -1759,6 +1799,34 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
     // Create DirectX 9 Device Interface.
     if(NULL == (g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)))
         return FALSE;
+
+    D3DADAPTER_IDENTIFIER9 dai;
+    if (!FAILED(g_pD3D->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &dai)))
+    {
+        int32 Product = HIWORD(dai.DriverVersion.HighPart);
+        int32 Version = LOWORD(dai.DriverVersion.HighPart);
+        int32 SubVersion = HIWORD(dai.DriverVersion.LowPart);
+        int32 Build = LOWORD(dai.DriverVersion.LowPart);
+
+        LOG("%s %s %d.%d.%d.%d\n", dai.Description, dai.Driver, Product, Version,
+            SubVersion, Build);
+
+        // Assign vendor name based on vendor id.
+        std::string VendorName;
+        switch(dai.VendorId)
+        {
+        case 0x1002 : VendorName = "ATI Technologies Inc."; break;
+        case 0x10DE : VendorName = "NVIDIA Corporation"; break;
+        case 0x102B : VendorName = "Matrox Electronic Systems Ltd."; break;
+        case 0x121A : VendorName = "3dfx Interactive Inc"; break;
+        case 0x5333 : VendorName = "S3 Graphics Co., Ltd."; break;
+        case 0x8086 : VendorName = "Intel Corporation"; break;
+        default: VendorName = "Unknown VendorId: ";VendorName += (uint32)dai.VendorId; break;
+        }
+
+        LOG("%s\n", VendorName.c_str());
+    }
+
     // Set Render Parameter
     g_d3dpp = new D3DPRESENT_PARAMETERS();
     ZeroMemory( g_d3dpp, sizeof(D3DPRESENT_PARAMETERS) );
