@@ -18,8 +18,12 @@ public:
     const Vec3&         GetUp() const { return _up; }
 
     void                SetYaw(float Yaw);
+    float               GetYaw() const { return _eulerAngle.y; }
     void                SetPitch(float Pitch);
+    float               GetPitch() const { return _eulerAngle.x; }
     void                SetRoll(float Roll);
+    float               GetRoll() const { return _eulerAngle.z; }
+
 
     void                SetRotation(const Quat& rotation);
     const Quat&         GetRotation() const;

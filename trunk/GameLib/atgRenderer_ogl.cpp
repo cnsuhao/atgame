@@ -757,8 +757,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     case TF_D24S8:
         inFormat = GL_LUMINANCE;
 #ifndef GL_ES_VERSION_2_0
-        internalFormat = GL_DEPTH_COMPONENT16;
-        LOG("using depth is 24 but OpenGL ES 2.0 only support depth 16\n");
+        internalFormat = GL_DEPTH24_STENCIL8;
 #else
         internalFormat = GL_DEPTH24_STENCIL8_OES;
 #endif // USE_OPENGLES
@@ -916,16 +915,20 @@ void atgTexture::SetAddressMode(TextureCoordinate coordinate, TextureAddressMode
     switch (address)
     {
     case TAM_ADDRESS_WRAP:
-        GL_ASSERT( glTexParameteri(coordinate, uv, GL_REPEAT) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, uv, GL_REPEAT) );
         break;
     case TAM_ADDRESS_MIRROR:
-        GL_ASSERT( glTexParameteri(coordinate, uv, GL_MIRRORED_REPEAT) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, uv, GL_MIRRORED_REPEAT) );
         break;
     case TAM_ADDRESS_CLAMP:
-        GL_ASSERT( glTexParameteri(coordinate, uv, GL_CLAMP_TO_EDGE) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, uv, GL_CLAMP_TO_EDGE) );
         break;
     case TAM_ADDRESS_BORDER:
-        GL_ASSERT( glTexParameteri(coordinate, uv, GL_CLAMP_TO_EDGE) );
+#ifdef GL_ES_VERSION_2_0
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, uv, GL_CLAMP_TO_EDGE) );
+#else
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, uv, GL_CLAMP_TO_BORDER) );
+#endif // GL_ES_VERSION_2_0
         break;
     case MAX_ADDRESSMODES:
         break;
@@ -1430,6 +1433,8 @@ public:
     ~atgRenderTargetImpl() { glDeleteFramebuffers(1, &FrameBufferId); }
 
     GLuint FrameBufferId;
+    uint32 viewPort[4];
+
 };
 
 atgRenderTarget::atgRenderTarget():_impl(NULL)
@@ -1439,6 +1444,7 @@ atgRenderTarget::atgRenderTarget():_impl(NULL)
 atgRenderTarget::~atgRenderTarget()
 {
     Destory();
+    g_Renderer->RemoveGpuResource(this);
 }
 
 bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture* depthStencilBuffer )
@@ -1465,6 +1471,10 @@ bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture*
     Destory();
 
     _impl = new atgRenderTargetImpl();
+    _colorBuffer.resize(colorBuffer.size());
+    std::copy(colorBuffer.begin(), colorBuffer.end(), _colorBuffer.begin());
+
+    _depthStencilBuffer = depthStencilBuffer;
 
     GL_ASSERT( glGenFramebuffers(1, &_impl->FrameBufferId) );
     GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
@@ -1490,15 +1500,21 @@ bool atgRenderTarget::Destory()
 
 bool atgRenderTarget::Active(uint8 index)
 {
+    if (IsLost() && !_colorBuffer.empty())
+    {
+        if(!Create(_colorBuffer, _depthStencilBuffer))
+        {
+            return false;
+        }
+    }
+
     if (_impl)
     {
-        if (IsLost())
-        {
-            Create(_colorBuffer, _depthStencilBuffer);
-        }
-
         GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
-        
+
+        g_Renderer->GetViewPort(_impl->viewPort[0], _impl->viewPort[1], _impl->viewPort[2], _impl->viewPort[3]);
+        g_Renderer->SetViewPort(0, 0, _depthStencilBuffer->_width, _depthStencilBuffer->_height);
+
         return true;
     }
 
@@ -1508,6 +1524,11 @@ bool atgRenderTarget::Active(uint8 index)
 void atgRenderTarget::Deactive()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    if (_impl)
+    {
+        g_Renderer->SetViewPort(_impl->viewPort[0], _impl->viewPort[1], _impl->viewPort[2], _impl->viewPort[3]);
+    }
 }
 
 bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
@@ -1601,7 +1622,7 @@ bool atgRenderer::Resize( uint32 width, uint32 height )
     return true;
 }
 
-void atgRenderer::SetViewport( uint32 offsetX, uint32 offsetY, uint32 width, uint32 height )
+void atgRenderer::SetViewPort( uint32 offsetX, uint32 offsetY, uint32 width, uint32 height )
 {
     glViewport(offsetX,offsetY,width,height);                       // Reset The Current Viewport
 

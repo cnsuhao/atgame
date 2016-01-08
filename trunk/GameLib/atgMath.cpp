@@ -66,31 +66,36 @@ void atgMath::QuatNormalize( const float quatSrc[4], float quatDst[4] )
     quatDst[3] = quatSrc[3] * invLenghtRT;
 }
 
-void atgMath::QuatFromEulers( const float vec[3], float quat[4] )
+void atgMath::QuatFromEulerAngle( const float vec[3], float quat[4] )
 {
+    //////////////////////////////////////////////////////////////////////////
+    //>copy from lrrlitch.
+    //////////////////////////////////////////////////////////////////////////
+
     float angle;
 
     angle = vec[0] * 0.5f;
-    const float sr = sin(angle);
-    const float cr = cos(angle);
+    const float sx = sin(angle);
+    const float cx = cos(angle);
 
     angle = vec[1] * 0.5f;
-    const float sp = sin(angle);
-    const float cp = cos(angle);
-
-    angle = vec[2] * 0.5f;
     const float sy = sin(angle);
     const float cy = cos(angle);
 
-    const float cpcy = cp * cy;
-    const float spcy = sp * cy;
-    const float cpsy = cp * sy;
-    const float spsy = sp * sy;
+    angle = vec[2] * 0.5f;
+    const float sz = sin(angle);
+    const float cz = cos(angle);
 
-    quat[0] = (sr * cpcy - cr * spsy);
-    quat[1] = (cr * spcy + sr * cpsy);
-    quat[2] = (cr * cpsy - sr * spcy);
-    quat[3] = (cr * cpcy + sr * spsy);
+    const float cycz = cy * cz;
+    const float sycz = sy * cz;
+    const float cysz = cy * sz;
+    const float sysz = sy * sz;
+
+    quat[0] = (sx * cycz - cx * sysz);
+    quat[1] = (cx * sycz + sx * cysz);
+    quat[2] = (cx * cysz - sx * sycz);
+
+    quat[3] = (cx * cycz + sx * sysz);
 }
 
 void atgMath::QuatFromAxisAngle( const float axis[3], float angle, float quat[4] )
@@ -179,6 +184,52 @@ void atgMath::QuatToMat( const float quat[4], float matrix[4][4] )
 
     matrix[3][3] = 1.0f;
 }
+
+void atgMath::QuatToEulerAngle(const float quat[4], float euler[3])
+{
+    float X = quat[0];
+    float Y = quat[1];
+    float Z = quat[2];
+    float W = quat[3];
+    
+    //////////////////////////////////////////////////////////////////////////
+    //>copy from lrrlitch.
+    //////////////////////////////////////////////////////////////////////////
+
+    const double sqw = W*W;
+    const double sqx = X*X;
+    const double sqy = Y*Y;
+    const double sqz = Z*Z;
+    const double test = 2.0 * (Y*W - X*Z);
+
+    if (DoubleEqual(test, 1.0, 0.000001))
+    {
+        // heading = rotation about z-axis
+        euler[2] = (float) (-2.0*atan2(X, W));
+        // bank = rotation about x-axis
+        euler[0] = 0;
+        // attitude = rotation about y-axis
+        euler[1] = PI_DIV_2;
+    }
+    else if (DoubleEqual(test, -1.0, 0.000001))
+    {
+        // heading = rotation about z-axis
+        euler[2] = (float) (2.0*atan2(X, W));
+        // bank = rotation about x-axis
+        euler[0] = 0;
+        // attitude = rotation about y-axis
+        euler[1] = -PI_DIV_2;
+    }
+    else
+    {
+        // heading = rotation about z-axis
+        euler[2] = (float) atan2(2.0 * (X*Y +Z*W),(sqx - sqy - sqz + sqw));
+        // bank = rotation about x-axis
+        euler[0] = (float) atan2(2.0 * (Y*Z +X*W),(-sqx - sqy + sqz + sqw));
+        // attitude = rotation about y-axis
+        euler[1] = (float) asin( atgMath::Clamp(test, -1.0, 1.0) );
+    }
+};
 
 void atgMath::QuatSlerp( const float quat1[4], const float quat2[4], float interpTime, float result[4] )
 {

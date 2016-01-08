@@ -1905,7 +1905,7 @@ bool atgRenderer::Resize( uint32 width, uint32 height )
     return true;
 }
 
-void atgRenderer::SetViewport(uint32 offsetX, uint32 offsetY, uint32 width, uint32 height)
+void atgRenderer::SetViewPort(uint32 offsetX, uint32 offsetY, uint32 width, uint32 height)
 {
     if (NULL == g_hWnd)
         return;

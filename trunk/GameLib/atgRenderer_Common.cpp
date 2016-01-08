@@ -98,10 +98,12 @@ void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
         //g_Renderer->SetDepthTestEnable(false);
         g_Renderer->BindPass(pColorPass);
         g_Renderer->BindVertexBuffer(pVB);
-
         g_Renderer->DrawPrimitive(PT_LINES, lineCount, lineCount*2);
+        g_Renderer->BindVertexBuffer(NULL);
+        g_Renderer->BindPass(NULL);
         //g_Renderer->SetDepthTestEnable(true);
         g_Renderer->SetLightEnable(true);
+
     }
 }
 
@@ -304,6 +306,8 @@ void atgRenderer::EndPoint()
         g_Renderer->BindVertexBuffer(pVB);
 
         g_Renderer->DrawPrimitive(PT_POINTS, pointCount, pointCount);
+        g_Renderer->BindVertexBuffer(NULL);
+        g_Renderer->BindPass(NULL);
         //g_Renderer->SetDepthTestEnable(true);
     }
 }
@@ -474,6 +478,8 @@ void atgRenderer::EndQuad()
         }
 #endif // DRAW_QUAD_USE_LINE_LIST
 
+        g_Renderer->BindVertexBuffer(NULL);
+        g_Renderer->BindPass(NULL);
         //g_Renderer->SetDepthTestEnable(true);
         g_Renderer->SetLightEnable(true);
     }
@@ -610,6 +616,8 @@ void   atgRenderer::EndFullQuad()
         }
 #endif // FULL_QUAD_USE_TRIANGLE_LIST
 
+        g_Renderer->BindVertexBuffer(NULL);
+        g_Renderer->BindPass(NULL);
         g_Renderer->SetLightEnable(true);
     }
 }
@@ -677,19 +685,28 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
     g_Renderer->BindVertexBuffer(pVB);
 
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
+    g_Renderer->BindVertexBuffer(NULL);
+    g_Renderer->BindPass(NULL);
     //g_Renderer->SetDepthTestEnable(true);
     return true;
 }
 
-bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture)
+bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert/*=flase*/)
 {
     AASSERT(pTexture != NULL);
-
+    
     static float QuadData[] = {
         -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
          1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
         -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
          1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+    };
+    
+    static float QuadDataUVConvert[] = {
+        -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+         1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+         1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
     };
 
     static const int sizeOfQuadData = sizeof(QuadData);
@@ -718,14 +735,14 @@ bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture)
         decl.AppendElement(0, atgVertexDecl::VA_Texture0);
 
         pVB = new atgVertexBuffer();
-        pVB->Create(&decl, QuadData, sizeOfQuadData, BAM_Dynamic);
+        pVB->Create(&decl, uvConvert ? QuadDataUVConvert : QuadData, sizeOfQuadData, BAM_Dynamic);
     }else
     {
         // only update vertex buffer
         void *pLockData = pVB->Lock(0, sizeOfQuadData);
         if(pLockData)
         {
-            memcpy(pLockData, QuadData, sizeOfQuadData);
+            memcpy(pLockData, uvConvert ? QuadDataUVConvert : QuadData, sizeOfQuadData);
             pVB->Unlock();
         }
     }
@@ -813,6 +830,9 @@ bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const flo
     g_Renderer->BindVertexBuffer(pVB);
 
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
+
+    g_Renderer->BindVertexBuffer(NULL);
+    g_Renderer->BindPass(NULL);
     //g_Renderer->SetDepthTestEnable(true);
     return true;
 }
