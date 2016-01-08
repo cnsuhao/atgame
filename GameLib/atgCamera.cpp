@@ -16,7 +16,13 @@ atgCamera::atgCamera(void)
     _up.Set(0.0f, 1.0f, 0.0f);
     SetForward(_forward.m);
 
-    _eulerAngle.Set(0.0f, 0.0, 0.0f);
+    Quat q;
+    Matrix mat(MatrixIdentity);
+    mat.SetColumn3(0, GetRight().m);
+    mat.SetColumn3(1, _up.m);
+    mat.SetColumn3(2, _forward.m);
+    atgMath::MatToQuat(mat.m, q.m);
+    atgMath::QuatToEulerAngle(q.m, _eulerAngle.m);
 
     _fov_y = 90.0f;
     _aspect = 4.0f / 3.0f;
@@ -162,7 +168,7 @@ void atgCamera::_UpdateView()
     if (_updateViewByAngle)
     {
         Quat q;
-        atgMath::QuatFromEulers(_eulerAngle.m, q.m);
+        atgMath::QuatFromEulerAngle(_eulerAngle.m, q.m);
 
         _up      = q.GetColumn1();
         _forward = q.GetColumn2();

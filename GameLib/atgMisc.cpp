@@ -2452,7 +2452,7 @@ void SmdModel::ParseSkeleton( std::istringstream & is, SmdAnimation & animation)
 
         float rotation[3];
         is>>rotation[0]>>rotation[1]>>rotation[2];
-        atgMath::QuatFromEulers(rotation, jointkey.rotation);
+        atgMath::QuatFromEulerAngle(rotation, jointkey.rotation);
     }
 }
 

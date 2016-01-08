@@ -224,5 +224,13 @@ struct Key
 
 };
 
+enum MouseButtonId
+{
+    MBID_LEFT = 0,
+    MBID_RIGHT,
+    MBID_MIDDLE,
+    MBID_UNKNOWN
+};
+
 #include "atgTypeDef.h"
 

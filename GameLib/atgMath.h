@@ -64,6 +64,8 @@ public:
 
     static inline bool      FloatEqual(float a, float b, float deviation=EPSILON);
 
+    static inline bool      DoubleEqual(double a, float b, double deviation=0.000000001);
+
     static inline bool      FloatEqualArray(const float* a, const float* b, int size);
 
     static inline bool      IsFloatZero(float value);
@@ -128,7 +130,7 @@ public:
     // quaternion or vector4, plane { x , y, z, w }
     static void             QuatNormalize(const float quatSrc[4], float quatDst[4]);
 
-    static void             QuatFromEulers(const float vec[3], float quat[4]);
+    static void             QuatFromEulerAngle(const float vec[3], float quat[4]);
 
     static void             QuatFromAxisAngle(const float axis[3], float angle, float quat[4]);
 
@@ -137,6 +139,8 @@ public:
     static void             QuatMultiply(const float quat1[4], const float quat2[4], float result[4]);
 
     static void             QuatToMat(const float quat[4], float matrix[4][4]);
+
+    static void             QuatToEulerAngle(const float quat[4], float vec[3]);
 
     static void             QuatSlerp(const float quat1[4], const float quat2[4], float interpTime, float result[4]);
 
@@ -247,6 +251,16 @@ T atgMath::Clamp( T v, T min, T max )
 inline bool atgMath::FloatEqual(float a, float b, float deviation/*=EPSILON*/)
 {
     float dif = a >= b ? a - b : b - a;
+    if(dif < deviation)
+    {
+        return true;
+    }
+    return false;
+}
+
+inline bool atgMath::DoubleEqual(double a, float b, double deviation/*=0.000000001*/)
+{
+    double dif = a >= b ? a - b : b - a;
     if(dif < deviation)
     {
         return true;

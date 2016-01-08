@@ -51,14 +51,6 @@ public:
     void                    SetTitle(const char* title);
 };
 
-enum MouseButtonId
-{
-    MBID_LEFT = 0,
-    MBID_RIGHT,
-    MBID_MIDDLE,
-    MBID_UNKNOWN
-};
-
 
 #ifdef _WIN32
     #include <Windows.h>

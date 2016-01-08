@@ -554,7 +554,7 @@ public:
     void                    SetVSyncState(bool sync);
     bool                    Resize(uint32 width, uint32 height);
 
-    void                    SetViewport(uint32 offsetX, uint32 offsetY, uint32 width, uint32 height);
+    void                    SetViewPort(uint32 offsetX, uint32 offsetY, uint32 width, uint32 height);
     void                    GetViewPort(uint32& offsetX, uint32& offsetY, uint32& width, uint32& height) const;
 
     void                    SetMatrix(MatrixDefine index, const Matrix& mat);
@@ -631,7 +631,7 @@ public:
 
     //> 绘制纹理多边形
     bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
-    bool                    DrawFullScreenQuad(atgTexture* pTexture);
+    bool                    DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert = false);
     bool                    DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgPass* pPass);
     
     //> 轴对其盒子
