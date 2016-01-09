@@ -974,6 +974,7 @@ public:
 
     inline bool             SetInt(const char* var_name, int value);
     inline bool             SetFloat(const char* var_name, float value);
+    inline bool             SetFloat2(const char* var_name, const float f[2]);
     inline bool             SetFloat3(const char* var_name, const float f[3]);
     inline bool             SetFloat4(const char* var_name, const float f[4]);
     inline bool             SetMatrix4x4(const char* var_name, const float mat[4][4]);
@@ -1009,6 +1010,20 @@ inline bool atgVertexShaderImpl::SetFloat(const char* var_name, float value)
         if (h)
         {
             pTable->SetFloat(g_pd3dDevice, h, value);
+            return true;
+        }
+    }
+    return false;
+}
+
+inline bool atgVertexShaderImpl::SetFloat2(const char* var_name, const float f[2])
+{
+    if (pTable)
+    {
+        D3DXHANDLE h = pTable->GetConstantByName(0, var_name);
+        if (h)
+        {
+            pTable->SetFloatArray(g_pd3dDevice, h, f, 2);
             return true;
         }
     }
@@ -1164,6 +1179,7 @@ public:
 
     inline bool             SetInt(const char* var_name, int value);
     inline bool             SetFloat(const char* var_name, float value);
+    inline bool             SetFloat2(const char* var_name, const float f[2]);
     inline bool             SetFloat3(const char* var_name, const float f[3]);
     inline bool             SetFloat4(const char* var_name, const float f[4]);
     inline bool             SetMatrix4x4(const char* var_name, const float mat[4][4]);
@@ -1199,6 +1215,20 @@ bool atgFragmentShaderImpl::SetFloat(const char* var_name, float value)
         if (h)
         {
             pTable->SetFloat(g_pd3dDevice, h, value);
+            return true;
+        }
+    }
+    return false;
+}
+
+inline bool atgFragmentShaderImpl::SetFloat2(const char* var_name, const float f[2])
+{
+    if (pTable)
+    {
+        D3DXHANDLE h = pTable->GetConstantByName(0, var_name);
+        if (h)
+        {
+            pTable->SetFloatArray(g_pd3dDevice, h, f, 2);
             return true;
         }
     }
@@ -1465,6 +1495,22 @@ bool atgPass::SetFloat(const char* var_name, float value)
     return rt;
 }
 
+bool atgPass::SetFloat2(const char* var_name, const float f[2])
+{
+    bool rt = SetVsFloat2(var_name, f);
+    if (!rt)
+    {
+        rt = SetPsFloat2(var_name, f);
+    }
+
+    if (!rt)
+    {
+        LOG("shader SetFloat2 name=[%s] is invliad.\n", var_name);
+    }
+
+    return rt;
+}
+
 bool atgPass::SetFloat3(const char* var_name, const float f[3])
 {
     bool rt = SetVsFloat3(var_name, f);
@@ -1511,7 +1557,7 @@ bool atgPass::SetMatrix4x4(const char* var_name, const Matrix& mat)
 
     if (!rt)
     {
-        LOG("shader SetMatrix4x4 name=[%s] is invliad.\n", var_name);
+        //LOG("shader SetMatrix4x4 name=[%s] is invliad.\n", var_name);
     }
 
     return rt;
@@ -1532,6 +1578,16 @@ bool atgPass::SetVsFloat(const char* var_name, float value)
     if (_impl->pVS->_impl)
     {
         return _impl->pVS->_impl->SetFloat(var_name, value);
+    }
+
+    return false;
+}
+
+bool  atgPass::SetVsFloat2(const char* var_name, const float f[2])
+{
+    if (_impl->pVS->_impl)
+    {
+        return _impl->pVS->_impl->SetFloat2(var_name, f);
     }
 
     return false;
@@ -1582,6 +1638,16 @@ bool atgPass::SetPsFloat(const char* var_name, float value)
     if (_impl->pPS->_impl)
     {
         return _impl->pPS->_impl->SetFloat(var_name, value);
+    }
+
+    return false;
+}
+
+bool atgPass::SetPsFloat2(const char* var_name, const float f[2])
+{
+    if (_impl->pPS->_impl)
+    {
+        return _impl->pPS->_impl->SetFloat2(var_name, f);
     }
 
     return false;

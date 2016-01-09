@@ -386,6 +386,7 @@ public:
 
     bool                    SetInt(const char* var_name, int value);
     bool                    SetFloat(const char* var_name, float value);
+    bool                    SetFloat2(const char* var_name, const float f[2]);
     bool                    SetFloat3(const char* var_name, const float f[3]);
     bool                    SetFloat4(const char* var_name, const float f[4]);
     bool                    SetMatrix4x4(const char* var_name, const Matrix& mat);
@@ -395,12 +396,14 @@ public:
 
     bool                    SetVsInt(const char* var_name, int value);
     bool                    SetVsFloat(const char* var_name, float value);
+    bool                    SetVsFloat2(const char* var_name, const float f[2]);
     bool                    SetVsFloat3(const char* var_name, const float f[3]);
     bool                    SetVsFloat4(const char* var_name, const float f[4]);
     bool                    SetVsMatrix4x4(const char* var_name, const float mat[4][4]);
 
     bool                    SetPsInt(const char* var_name, int value);
     bool                    SetPsFloat(const char* var_name, float value);
+    bool                    SetPsFloat2(const char* var_name, const float f[2]);
     bool                    SetPsFloat3(const char* var_name, const float f[3]);
     bool                    SetPsFloat4(const char* var_name, const float f[4]);
     bool                    SetPsMatrix4x4(const char* var_name, const float mat[4][4]);
@@ -609,7 +612,7 @@ public:
     bool                    DrawPrimitive(PrimitveType pt, uint32 primitveCount, uint32 verticesCount, uint32 offset = 0);
     bool                    DrawIndexedPrimitive(PrimitveType pt, uint32 primitveCount, uint32 indicesCount, uint32 verticesCount);
 
-    //> mobile phone 不是支持得很好.所以没啥用
+    //> draw point mobile phone 不是支持得很好.所以没啥用
     bool                    BeginPoint();
     void                    AddPoint(const float center[3], const float color[3]);
     void                    EndPoint();
@@ -627,12 +630,12 @@ public:
     //> 绘制实四边形
     bool                    BeginFullQuad();
     void                    AddFullQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float color[3]);
-    void                    EndFullQuad();
+    void                    EndFullQuad(const char* pPassIdentity = NULL);
 
     //> 绘制纹理多边形
     bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
     bool                    DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert = false);
-    bool                    DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgPass* pPass);
+    bool                    DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], const char* pPassIdentity);
     
     //> 轴对其盒子
     bool                    BeginAABBoxLine();

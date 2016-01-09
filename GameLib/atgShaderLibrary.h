@@ -29,7 +29,7 @@ public:
     virtual bool            ConfingAndCreate();
 };
 
-#define VERTEXCOLOR_PASS_IDENTITY "VertexColorShader"
+#define VERTEXCOLOR_PASS_IDENTITY "atgVertexColorShader"
 EXPOSE_INTERFACE(atgShaderVertexColor, atgPass, VERTEXCOLOR_PASS_IDENTITY);
 
 //////////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ protected:
     Vec3                    m_SolidColor;
 };
 
-#define SOLIDCOLOR_PASS_IDENTITY "SolidColorShader"
+#define SOLIDCOLOR_PASS_IDENTITY "atgSolidColorShader"
 EXPOSE_INTERFACE(atgShaderSolidColor, atgPass, SOLIDCOLOR_PASS_IDENTITY);
 
 //////////////////////////////////////////////////////////////////////////
@@ -68,7 +68,7 @@ protected:
     atgTexture*             m_Texture;
 };
 
-#define NOT_LIGNTE_TEXTURE_PASS_IDENTITY "NotLightTextureShader"
+#define NOT_LIGNTE_TEXTURE_PASS_IDENTITY "atgNotLightTextureShader"
 EXPOSE_INTERFACE(atgShaderNotLighteTexture, atgPass, NOT_LIGNTE_TEXTURE_PASS_IDENTITY);
 
 
@@ -84,6 +84,6 @@ protected:
     virtual void            BeginContext(void* data);
 };
 
-#define LIGHT_TEXTURE_PASS_IDENTITY "LightTextureShader"
+#define LIGHT_TEXTURE_PASS_IDENTITY "atgLightTextureShader"
 EXPOSE_INTERFACE(atgShaderLightTexture, atgPass, LIGHT_TEXTURE_PASS_IDENTITY);
 

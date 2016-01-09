@@ -1101,6 +1101,26 @@ void Water::SetValue(float* buf, int x, int y, float value)
     buf[y * Width + x] = value;
 }
 
+Vec3 GetVec3Color(uint32 YD_COOLOR)
+{
+    uint8 a = (YD_COOLOR & 0xff000000) >> 24;
+    uint8 r = (YD_COOLOR & 0x00ff0000) >> 16;
+    uint8 g = (YD_COOLOR & 0x0000ff00) >> 8;
+    uint8 b = YD_COOLOR & 0x000000ff;
+
+    return Vec3(r / 255.0f, g / 255.0f, b / 255.0f);
+}
+
+Vec4 GetVec4Color(uint32 YD_COOLOR)
+{
+    uint8 a = (YD_COOLOR & 0xff000000) >> 24;
+    uint8 r = (YD_COOLOR & 0x00ff0000) >> 16;
+    uint8 g = (YD_COOLOR & 0x0000ff00) >> 8;
+    uint8 b = YD_COOLOR & 0x000000ff;
+
+    return Vec4(r / 255.0f, g / 255.0f, b / 255.0f, 255.0f);
+}
+
 namespace MdxSizeOf_Ns
 {
     const uint32 sizeOfuint8   = sizeof(uint8);
