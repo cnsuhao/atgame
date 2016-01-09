@@ -972,6 +972,13 @@ typedef struct Vec3_t
         return *this;
     }
 
+    Vec3_t operator +(const Vec3_t& v) const
+    {
+        Vec3_t t;
+        t = Add(v);
+        return t;
+    }
+
     Vec3_t operator *(float s) const
     {
         Vec3_t t;
@@ -1046,8 +1053,8 @@ inline bool operator != (const Vec4& v1, const Vec4& v2)
     return !atgMath::FloatEqualArray(v1.m, v2.m, 4);
 }
 
-extern const Vec4 Vec4_One;
-extern const Vec4 Vec4_Zero;
+extern const Vec4 Vec4One;
+extern const Vec4 Vec4Zero;
 
 typedef struct Quat_t
 {

@@ -4,7 +4,7 @@
 //> 此工具库和引擎依赖很强
 
 #include "atgBase.h"
-
+#include "atgMath.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,6 @@ public:
 
 private:
     class Water* _pWater;
-    class atgRippleShader* _pRippleShader;
     class atgTexture* _pDyncTexture;
     class atgCamera* _pCamera;
     bool  btn[2];
@@ -95,12 +94,31 @@ private:
 };
 
 //> 影子
-class atgSimpleShowMapping
+class atgSimpleShadowMapping
 {
-    atgSimpleShowMapping();
-    ~atgSimpleShowMapping();
+public:
+    atgSimpleShadowMapping();
+    ~atgSimpleShadowMapping();
 
+    bool                Create();
 
+    void                Render(class atgCamera* sceneCamera);
+
+    void                OnKeyScanDown(Key::Scan keyscan);
+
+protected:
+    void                DrawDepthTex(class atgCamera* sceneCamera);
+    void                DrawSceen(class atgCamera* sceneCamera);
+
+    void                DrawBox(const char* pPassIdentity = NULL);
+    void                DrawPlane(const char* pPassIdentity = NULL);
 private:
+    class atgRenderTarget* pRT;
+    class atgTexture* pPixelDepthTex;     //>作为渲染纹理使用
+    class atgTexture* pNormalDepthTex;    //>默认的深度缓存
 
+    Vec3  lightPos;
+    Vec3  lightDir;
+    Matrix lightViewMatrix;
+    float  bias;
 };

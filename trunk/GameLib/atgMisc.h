@@ -401,6 +401,9 @@ private:
              0xff000000 )                               \
 )
 
+struct Vec3_t GetVec3Color(uint32 YD_COOLOR);
+struct Vec4_t GetVec4Color(uint32 YD_COOLOR);
+
 // --------------------------------------------------------------------------------------
 
 #define YD_COLOR_LIGHT_PINK             YD_RGB(255, 182, 193)        // 0  浅粉红
@@ -545,7 +548,6 @@ private:
 #define YD_COLOR_BLACK                  YD_RGB(  0,   0,   0)        // 139 纯黑 
 
 // --------------------------------------------------------------------------------------
-
 
 // 支持魔兽争霸mdx模型
 

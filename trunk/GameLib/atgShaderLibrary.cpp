@@ -36,6 +36,7 @@ atgPass* atgShaderLibFactory::FindOrCreatePass(const char* Identity, int *pRetur
             return NULL;
         }
     }
+
     return pass;
 }
 

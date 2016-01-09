@@ -94,7 +94,8 @@ void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
                 pVB->Unlock();
             }
         }
-        g_Renderer->SetLightEnable(false);
+        
+        //g_Renderer->SetLightEnable(false);
         //g_Renderer->SetDepthTestEnable(false);
         g_Renderer->BindPass(pColorPass);
         g_Renderer->BindVertexBuffer(pVB);
@@ -102,7 +103,7 @@ void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
         g_Renderer->BindVertexBuffer(NULL);
         g_Renderer->BindPass(NULL);
         //g_Renderer->SetDepthTestEnable(true);
-        g_Renderer->SetLightEnable(true);
+        //g_Renderer->SetLightEnable(true);
 
     }
 }
@@ -464,7 +465,7 @@ void atgRenderer::EndQuad()
             }
         }
 
-        g_Renderer->SetLightEnable(false);
+        //g_Renderer->SetLightEnable(false);
         //g_Renderer->SetDepthTestEnable(false);
         g_Renderer->BindPass(pColorPass);
         g_Renderer->BindVertexBuffer(pVB);
@@ -481,7 +482,7 @@ void atgRenderer::EndQuad()
         g_Renderer->BindVertexBuffer(NULL);
         g_Renderer->BindPass(NULL);
         //g_Renderer->SetDepthTestEnable(true);
-        g_Renderer->SetLightEnable(true);
+        //g_Renderer->SetLightEnable(true);
     }
 }
 
@@ -547,7 +548,7 @@ void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], con
 #endif // FULL_QUAD_USE_TRIANGLE_LIST
 }
 
-void   atgRenderer::EndFullQuad()
+void   atgRenderer::EndFullQuad(const char* pPassIdentity /* = NULL */)
 {
     if (!_drawFullQuads.empty())
     {
@@ -561,7 +562,6 @@ void   atgRenderer::EndFullQuad()
 
         
         static const int dataCount = 6 * numVertex;
-        static atgPass* pColorPass = NULL;
         static atgVertexBuffer* pVB = NULL;
 
         const std::vector<float>& quads = _drawFullQuads;
@@ -571,12 +571,20 @@ void   atgRenderer::EndFullQuad()
         int quadCount = quads.size() / dataCount;
         size_t sizeOfQuadData = quads.size() * sizeof(float);
 
+        static atgPass* pPass = NULL;
         // create pass
-        if (!pColorPass || pColorPass->IsLost())
+        if (pPassIdentity != NULL)
         {
-            pColorPass = atgShaderLibFactory::FindOrCreatePass(VERTEXCOLOR_PASS_IDENTITY);
-            if (NULL == pColorPass)
-                return;
+            pPass = atgShaderLibFactory::FindOrCreatePass(pPassIdentity);
+        }else
+        {
+            pPass = atgShaderLibFactory::FindOrCreatePass(VERTEXCOLOR_PASS_IDENTITY);
+        }
+
+        if (pPass == NULL)
+        {
+            LOG("can't find pass[%s]\n", pPassIdentity ? pPassIdentity : VERTEXCOLOR_PASS_IDENTITY);
+            return;
         }
 
         // create vertex buffer
@@ -603,8 +611,8 @@ void   atgRenderer::EndFullQuad()
             }
         }
 
-        g_Renderer->SetLightEnable(false);
-        g_Renderer->BindPass(pColorPass);
+        //g_Renderer->SetLightEnable(false);
+        g_Renderer->BindPass(pPass);
         g_Renderer->BindVertexBuffer(pVB);
 
 #ifdef FULL_QUAD_USE_TRIANGLE_LIST
@@ -618,7 +626,7 @@ void   atgRenderer::EndFullQuad()
 
         g_Renderer->BindVertexBuffer(NULL);
         g_Renderer->BindPass(NULL);
-        g_Renderer->SetLightEnable(true);
+        //g_Renderer->SetLightEnable(true);
     }
 }
 
@@ -778,9 +786,16 @@ bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert/*=flas
     return true;
 }
 
-bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgPass* pPass)
+bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], const char* pPassIdentity)
 {
-    AASSERT(pPass != NULL);
+    AASSERT(pPassIdentity != NULL);
+
+    atgPass* pPass = atgShaderLibFactory::FindOrCreatePass(pPassIdentity);
+    if (pPass == NULL)
+    {
+        LOG("can't find pass[%s]\n", pPassIdentity);
+        return false;
+    }
 
     static float QuadData[] = {
         -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,

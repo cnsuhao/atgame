@@ -739,9 +739,17 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         isColorFormat = true;
         break;
     case TF_R32F:
-        inFormat = GL_LUMINANCE;
-        internalFormat = GL_LUMINANCE;
-        type = GL_FLOAT;
+        if (useToRenderTarget)
+        {
+            inFormat = GL_DEPTH_COMPONENT;
+            internalFormat = GL_DEPTH_COMPONENT;
+            type = GL_UNSIGNED_INT;
+        }else
+        {
+            inFormat = GL_LUMINANCE;
+            internalFormat = GL_LUMINANCE;
+            type = GL_FLOAT;
+        }
         pixelSize = 1;
         isColorFormat = true;
         isFloatData = true;
@@ -800,7 +808,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
             GL_ASSERT( glGenerateMipmap(GL_TEXTURE_2D) ); // 生产mipmap,这个代码要放后面
         }
 
-         GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
+        GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
     }
     else if(!isColorFormat && useToRenderTarget)
     {
@@ -1355,7 +1363,7 @@ bool atgPass::SetInt(const char* var_name, int value)
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        glUniform1i(identityID, value);
+        GL_ASSERT( glUniform1i(identityID, value) );
         return true;
     }
     return false;
@@ -1367,11 +1375,24 @@ bool atgPass::SetFloat(const char* var_name, float value)
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        glUniform1f(identityID, value);
+        GL_ASSERT( glUniform1f(identityID, value) );
         return true;
     }
     return false;
 }
+
+bool atgPass:: SetFloat2(const char* var_name, const float f[2])
+{
+    GLint identityID = 0;
+    GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
+    if(identityID != -1)
+    {
+        GL_ASSERT( glUniform2f(identityID, f[0], f[1]) );
+        return true;
+    }
+    return false;
+}
+
 
 bool atgPass::SetFloat3(const char* var_name, const float f[3])
 {
@@ -1379,7 +1400,7 @@ bool atgPass::SetFloat3(const char* var_name, const float f[3])
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        glUniform3f(identityID, f[0], f[1], f[2]);
+        GL_ASSERT( glUniform3f(identityID, f[0], f[1], f[2]) );
         return true;
     }
     return false;
@@ -1391,7 +1412,7 @@ bool atgPass::SetFloat4(const char* var_name, const float f[4])
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        glUniform4f(identityID, f[0], f[1], f[2], f[3]);
+        GL_ASSERT( glUniform4f(identityID, f[0], f[1], f[2], f[3]) );
         return true;
     }
     return false;
@@ -1479,8 +1500,15 @@ bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture*
     GL_ASSERT( glGenFramebuffers(1, &_impl->FrameBufferId) );
     GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
 
-    GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer[0]->_impl->TextureID, 0) );
-    GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthStencilBuffer->_impl->TextureID) );
+    if (colorBuffer[0]->_impl->internalFormat == GL_DEPTH_COMPONENT)
+    {
+        GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, colorBuffer[0]->_impl->TextureID, 0) );
+    }
+    else
+    {
+        GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer[0]->_impl->TextureID, 0) );
+        GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthStencilBuffer->_impl->TextureID) );
+    }
 
     GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
 
@@ -1553,7 +1581,9 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
     vendorName += "\n\t\t";
     vendorName += (const char*)glGetString(GL_RENDERER);
     vendorName += "\n\t\t";
-    vendorName += (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);  
+    vendorName += (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION); 
+    vendorName += "\n\t\t";
+    vendorName += (const char*)glGetString(GL_EXTENSIONS);
 
     LOG("%s\n", vendorName.c_str());
 

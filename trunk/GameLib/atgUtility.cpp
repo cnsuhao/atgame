@@ -115,7 +115,7 @@ protected:
     atgTexture*             _rippleTex;
 };
 
-#define RIPPLE_PASS_IDENTITY "RippleShader"
+#define RIPPLE_PASS_IDENTITY "atgRippleShader"
 EXPOSE_INTERFACE(atgRippleShader, atgPass, RIPPLE_PASS_IDENTITY);
 
 atgRippleShader::atgRippleShader()
@@ -169,7 +169,7 @@ void atgRippleShader::BeginContext(void* data)
     SetFloat4("u_d", d.m);
 }
 
-atgSampleWater::atgSampleWater(void):_pWater(0),_pRippleShader(0),_pDyncTexture(0),_pCamera(0)
+atgSampleWater::atgSampleWater(void):_pWater(0),_pDyncTexture(0),_pCamera(0)
 {
 
 }
@@ -177,7 +177,6 @@ atgSampleWater::atgSampleWater(void):_pWater(0),_pRippleShader(0),_pDyncTexture(
 atgSampleWater::~atgSampleWater(void)
 {
     SAFE_DELETE(_pWater);
-    SAFE_DELETE(_pRippleShader);
     SAFE_DELETE(_pDyncTexture);
     SAFE_DELETE(_pCamera);
 }
@@ -191,14 +190,6 @@ bool atgSampleWater::Create( int w, int h )
     }
 
     _pWater = new Water(200, 160);
-    _pRippleShader = static_cast<atgRippleShader*>(atgShaderLibFactory::FindOrCreatePass(RIPPLE_PASS_IDENTITY));
-    if (NULL == _pRippleShader)
-    {
-        LOG("create water failture, create ripple shader failture.");
-        return false;
-    }
-
-    _pRippleShader->SetDxDy(1.0f / float(_pWater->Width - 1), 1.0f / float(_pWater->Height - 1));
 
     _pDyncTexture = new atgTexture();
     if (!_pDyncTexture->Create(_pWater->Width, _pWater->Height, TF_R32F, NULL))
@@ -207,9 +198,6 @@ bool atgSampleWater::Create( int w, int h )
         return false;
     }
     _pDyncTexture->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
-
-    //pRippleShader->SetTex1(g_Texture);
-    _pRippleShader->SetRippleTex(_pDyncTexture);
 
     _pCamera = new atgCamera();
     _pCamera->SetPosition(Vec3(0,0, 150));
@@ -276,6 +264,16 @@ void atgSampleWater::Render(atgTexture* pTexture /* = 0 */)
          100.0f, -100.0f, 20.0f, 1.0f, 1.0f,
     };
 
+    atgRippleShader* pRippleShader = static_cast<atgRippleShader*>(atgShaderLibFactory::FindOrCreatePass(RIPPLE_PASS_IDENTITY));
+    if (NULL == pRippleShader)
+    {
+        LOG("can't find pass[%s]\n", RIPPLE_PASS_IDENTITY);
+        return;
+    }
+
+    pRippleShader->SetDxDy(1.0f / float(_pWater->Width - 1), 1.0f / float(_pWater->Height - 1));
+    pRippleShader->SetRippleTex(_pDyncTexture);
+
     Updata();
 
     if (_pCamera)
@@ -284,21 +282,12 @@ void atgSampleWater::Render(atgTexture* pTexture /* = 0 */)
         g_Renderer->SetMatrix(MD_PROJECTION, _pCamera->GetProj()); 
     }
 
-    if (_pRippleShader->IsLost())
-    {
-        _pRippleShader = static_cast<atgRippleShader*>(atgShaderLibFactory::FindOrCreatePass(RIPPLE_PASS_IDENTITY));
-        if (NULL == _pRippleShader)
-        {
-            return;
-        }
-    }
-
     if (pTexture)
     {
-        _pRippleShader->SetPrimitiveTex(pTexture);
+        pRippleShader->SetPrimitiveTex(pTexture);
     }
 
-    g_Renderer->DrawQuadByPass(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], _pRippleShader);
+    g_Renderer->DrawQuadByPass(&textureQuadData[0], &textureQuadData[5], &textureQuadData[10], &textureQuadData[15], &textureQuadData[3], &textureQuadData[8], &textureQuadData[13], &textureQuadData[18], RIPPLE_PASS_IDENTITY);
 }
 
 void atgSampleWater::OnKeyScanDown( Key::Scan keyscan )
@@ -625,12 +614,353 @@ void atgFlyCamera::OnPointerUp( uint8 id, int16 x, int16 y )
 }
 
 
-atgSimpleShowMapping::atgSimpleShowMapping()
+
+//////////////////////////////////////////////////////////////////////////
+//>场景深度
+class atgShaderRTSceenDepthColor : public atgShaderLibPass
+{
+public:
+    atgShaderRTSceenDepthColor();
+    ~atgShaderRTSceenDepthColor();
+
+    virtual bool			ConfingAndCreate();
+
+    void                    SetMatirxOfLightViewPojection(const Matrix& mat) { _ligthViewProj = mat; }
+
+protected:
+    virtual void			BeginContext(void* data);
+    
+    Matrix                  _ligthViewProj;
+};
+
+#define RT_DEPTH_COLOR_PASS_IDENTITY "atgSceenDepthColorShader"
+EXPOSE_INTERFACE(atgShaderRTSceenDepthColor, atgPass, RT_DEPTH_COLOR_PASS_IDENTITY);
+
+atgShaderRTSceenDepthColor::atgShaderRTSceenDepthColor()
 {
 
 }
 
-atgSimpleShowMapping::~atgSimpleShowMapping()
+atgShaderRTSceenDepthColor::~atgShaderRTSceenDepthColor()
 {
 
 }
+
+bool atgShaderRTSceenDepthColor::ConfingAndCreate()
+{
+    bool rs = false;
+
+    if (IsOpenGLGraph())
+    {
+        rs = atgPass::Create("shaders/rt_depth_color.glvs", "shaders/rt_depth_color.glfs");
+    }
+    else
+    {
+        rs = atgPass::Create("shaders/rt_depth_color.dxvs", "shaders/rt_depth_color.dxps");
+    }
+
+    return rs;
+}
+
+void atgShaderRTSceenDepthColor::BeginContext(void* data)
+{
+    atgPass::BeginContext(data);
+
+    // set matrix.
+    SetMatrix4x4("mat_light_view_Projection", _ligthViewProj);
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+//>场景深度
+class atgShaderShadowMapping : public atgShaderLibPass
+{
+public:
+    atgShaderShadowMapping();
+    ~atgShaderShadowMapping();
+
+    virtual bool			ConfingAndCreate();
+
+
+    void                    SetMatirxOfLightViewPojection(const Matrix& mat) { _ligthViewProj = mat; }
+    void                    SetColorDepthTex(atgTexture* pTex) { _pColorDepthTex = pTex; }
+
+    void                    SetLight(const Vec3& ligPos, const Vec3& ligDir) { _ligPos = ligPos; _ligDir = ligDir; }
+    void                    SetSpotParam(float outerCone, float innerCone) { _spot_outer_cone = outerCone;  _spot_inner_cone = innerCone; }
+    void                    SetAmbientColor(const Vec4& color) { _ambientColor = color; }
+    void                    SetBias(float bias) { _bias = bias; }
+
+protected:
+    virtual void			BeginContext(void* data);
+
+    Matrix                  _ligthViewProj;
+    atgTexture*             _pColorDepthTex;
+
+    Vec3                    _ligPos;
+    Vec3                    _ligDir;
+    float                   _spot_outer_cone;
+    float                   _spot_inner_cone;
+    Vec4                    _ambientColor;
+    float                   _bias;
+};
+
+#define SHADOW_MAPPING_PASS_IDENTITY "atgShadowMappingShader"
+EXPOSE_INTERFACE(atgShaderShadowMapping, atgPass, SHADOW_MAPPING_PASS_IDENTITY);
+
+
+atgShaderShadowMapping::atgShaderShadowMapping():_pColorDepthTex(0)
+{
+
+}
+
+atgShaderShadowMapping::~atgShaderShadowMapping()
+{
+
+}
+
+bool atgShaderShadowMapping::ConfingAndCreate()
+{
+    bool rs = false;
+
+    if (IsOpenGLGraph())
+    {
+        rs = atgPass::Create("shaders/rt_shadow_mapping.glvs", "shaders/rt_shadow_mapping.glfs");
+    }
+    else
+    {
+        rs = atgPass::Create("shaders/rt_shadow_mapping.dxvs", "shaders/rt_shadow_mapping.dxps");
+    }
+
+    return rs;
+}
+
+void atgShaderShadowMapping::BeginContext(void* data)
+{
+    atgPass::BeginContext(data);
+
+    // set matrix.
+    SetMatrix4x4("mat_light_view_Projection", _ligthViewProj);
+
+    // set texture
+    g_Renderer->BindTexture(0, _pColorDepthTex);
+    SetTexture("rtDepthSampler", 0);
+
+    // set light
+    SetFloat3("LightPosition", _ligPos.m);
+    SetFloat3("LightDirection", _ligDir.m);
+    SetFloat("spot_outer_cone", _spot_outer_cone);
+    SetFloat("spot_inner_cone", _spot_inner_cone);
+
+    // set bias
+    SetFloat("bias", _bias);
+
+    // set ambient
+    SetFloat4("ambient", _ambientColor.m);
+
+    // set port size
+    uint32 viewPort[4];
+    g_Renderer->GetViewPort(viewPort[0], viewPort[1], viewPort[2], viewPort[3]);
+    float viewPortF[2];
+    viewPortF[0] = (float)viewPort[2];
+    viewPortF[1] = (float)viewPort[3];
+    SetFloat2("fViewportDimensions", viewPortF);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//>影子贴图
+atgSimpleShadowMapping::atgSimpleShadowMapping():pRT(0),pPixelDepthTex(0),pNormalDepthTex(0)
+{
+    bias = 0.00005f;
+}
+
+atgSimpleShadowMapping::~atgSimpleShadowMapping()
+{
+    SAFE_DELETE(pPixelDepthTex);
+    SAFE_DELETE(pNormalDepthTex);
+    SAFE_DELETE(pRT);
+}
+
+bool atgSimpleShadowMapping::Create()
+{
+    const int textureSize = 512;
+    pPixelDepthTex = new atgTexture();
+    if (false == pPixelDepthTex->Create(textureSize, textureSize, IsOpenGLGraph() ? TF_R8G8B8A8 : TF_R32F, NULL, true))
+    {
+        return false;
+    }
+    pPixelDepthTex->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
+    
+    pNormalDepthTex = new atgTexture();
+    if (false == pNormalDepthTex->Create(textureSize, textureSize, TF_D16, NULL, true))
+    {
+        return false;
+    }
+
+    std::vector<atgTexture*> colorBuffer;
+    colorBuffer.push_back(pPixelDepthTex);
+    pRT = new atgRenderTarget();
+    if (false == pRT->Create(colorBuffer, pNormalDepthTex))
+    {
+        return false;
+    }
+
+    lightPos.Set(150.f,180.f,-110.f);
+    lightDir.Set(-0.65f,-0.73f,0.172f);
+    lightDir.Normalize();
+    atgMath::LookAt(lightPos.m, (lightPos + lightDir).m, Vec3Up.m, lightViewMatrix.m);
+
+    return true;
+}
+
+void atgSimpleShadowMapping::Render(class atgCamera* sceneCamera)
+{
+    DrawDepthTex(sceneCamera);
+    DrawSceen(sceneCamera);
+}
+
+void atgSimpleShadowMapping::OnKeyScanDown( Key::Scan keyscan )
+{
+    switch (keyscan)
+    {
+    case Key::Comma: //<
+        {
+            bias += 0.000001f;
+            LOG("new bias[%f]\n", bias);
+        }
+        break;
+    case Key::Period: //>
+        {
+            bias -= 0.000001f;
+            LOG("new bias[%f]\n", bias);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void atgSimpleShadowMapping::DrawDepthTex(class atgCamera* sceneCamera)
+{
+    if (pRT)
+    {
+        g_Renderer->PushRenderTarget(0, pRT);
+        
+        g_Renderer->Clear();
+
+        atgPass* pPass = atgShaderLibFactory::FindOrCreatePass(RT_DEPTH_COLOR_PASS_IDENTITY);
+        if (pPass == NULL)
+        {
+            LOG("can't find pass[%s]\n", RT_DEPTH_COLOR_PASS_IDENTITY);
+            return;
+        }
+
+        ((atgShaderRTSceenDepthColor*)pPass)->SetMatirxOfLightViewPojection(sceneCamera->GetProj().Concatenate(lightViewMatrix));
+        
+        DrawBox(RT_DEPTH_COLOR_PASS_IDENTITY);
+        DrawPlane(RT_DEPTH_COLOR_PASS_IDENTITY);
+        
+        g_Renderer->PopRenderTarget(0);
+    }
+}
+
+void atgSimpleShadowMapping::DrawSceen(class atgCamera* sceneCamera)
+{
+    g_Renderer->SetMatrix(MD_VIEW, sceneCamera->GetView());
+    g_Renderer->SetMatrix(MD_PROJECTION, sceneCamera->GetProj());
+
+    atgPass* pPass = atgShaderLibFactory::FindOrCreatePass(SHADOW_MAPPING_PASS_IDENTITY);
+    if (pPass == NULL)
+    {
+        LOG("can't find pass[%s]\n", SHADOW_MAPPING_PASS_IDENTITY);
+        return;
+    }
+
+    atgShaderShadowMapping* pShadowPass = (atgShaderShadowMapping*)pPass;
+        
+    pShadowPass->SetMatirxOfLightViewPojection(sceneCamera->GetProj().Concatenate(lightViewMatrix));
+    pShadowPass->SetColorDepthTex(pPixelDepthTex);
+    //pShadowPass->SetAmbientColor(GetVec4Color(YD_COLOR_NAVAJO_WHITE));
+    pShadowPass->SetAmbientColor(Vec4Zero);
+    pShadowPass->SetLight(lightPos, lightDir);
+    pShadowPass->SetSpotParam(30.0f, 15.0f);
+    pShadowPass->SetBias(bias);
+    
+    DrawBox(SHADOW_MAPPING_PASS_IDENTITY);
+    DrawPlane(SHADOW_MAPPING_PASS_IDENTITY);
+}
+
+void atgSimpleShadowMapping::DrawBox(const char* pPassIdentity /* = NULL */)
+{
+    g_Renderer->BeginFullQuad();
+
+    Vec3 startPos;
+    float size = 100.0f;
+
+    Vec3 color = GetVec3Color(YD_COLOR_DARK_TURQUOISE).m;
+
+    //>前
+    g_Renderer->AddFullQuad( startPos.m,                            // 1
+                            (startPos + Vec3(size, 0, 0)).m,        // 2
+                            (startPos + Vec3(0, -size, 0)).m,       // 3
+                            (startPos + Vec3(size, -size, 0)).m,    // 4
+                             color.m); 
+
+    //>后
+    g_Renderer->AddFullQuad((startPos + Vec3(0, 0, -size)).m,       // 5
+                            (startPos + Vec3(0, -size, -size)).m,   // 6
+                            (startPos + Vec3(size, 0, -size)).m,    // 7
+                            (startPos + Vec3(size, -size, -size)).m,// 8
+                             color.m);  
+
+    //>左
+    g_Renderer->AddFullQuad((startPos + Vec3(0, 0, -size)).m,       // 5
+                             startPos.m,                            // 1
+                            (startPos + Vec3(0, -size, -size)).m,   // 6
+                            (startPos + Vec3(0, -size, 0)).m,       // 3
+                             color.m);
+
+    //>右
+    g_Renderer->AddFullQuad((startPos + Vec3(size, 0, 0)).m,        // 2
+                            (startPos + Vec3(size, 0, -size)).m,    // 7
+                            (startPos + Vec3(size, -size, 0)).m,    // 4
+                            (startPos + Vec3(size, -size, -size)).m,// 8
+                             color.m);
+
+    //>顶
+    g_Renderer->AddFullQuad((startPos + Vec3(0, 0, -size)).m,       // 5
+                            (startPos + Vec3(size, 0, -size)).m,    // 7
+                             startPos.m,                            // 1
+                            (startPos + Vec3(size, 0, 0)).m,        // 2
+                            color.m);
+
+
+    //>低
+    g_Renderer->AddFullQuad((startPos + Vec3(0, -size, 0)).m,       // 3
+                            (startPos + Vec3(size, -size, 0)).m,    // 4
+                            (startPos + Vec3(0, -size, -size)).m,   // 6
+                            (startPos + Vec3(size, -size, -size)).m,// 8
+                             color.m);
+
+
+
+    g_Renderer->EndFullQuad(pPassIdentity);
+}
+
+void atgSimpleShadowMapping::DrawPlane(const char* pPassIdentity /* = NULL */)
+{
+    g_Renderer->BeginFullQuad();
+
+    Vec3 startPos(-250.f, -100.0f, 250.0f);
+    float size = 500.0f;
+
+    Vec3 color = GetVec3Color(YD_COLOR_PERU).m;
+
+    g_Renderer->AddFullQuad( startPos.m,                            // 1
+                            (startPos + Vec3(0, 0, -size)).m,       // 2
+                            (startPos + Vec3(size, 0, 0)).m,        // 3
+                            (startPos + Vec3(size, 0, -size)).m,    // 4
+                             color.m);
+
+    g_Renderer->EndFullQuad(pPassIdentity);
+}
+

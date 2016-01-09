@@ -42,22 +42,22 @@ public :
             return false;
         }
 
-        if (false == _frustum.Create())
+        _pShadowMapping = new atgSimpleShadowMapping();
+        if (false == _pShadowMapping->Create())
         {
             return false;
         }
 
-        PNG_Loader::Load(&image, "ui/ui1.png", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
-
-        if (image.width > 0)
-        {
-            if (g_Texture == NULL || g_Texture->IsLost())
-            {
-                g_Texture = new atgTexture();
-                g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
-                g_Texture->SetFilterMode(TFM_FILTER_BILINEAR);
-            }
-        }
+        //PNG_Loader::Load(&image, "ui/ui1.png", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
+        //if (image.width > 0)
+        //{
+        //    if (g_Texture == NULL || g_Texture->IsLost())
+        //    {
+        //        g_Texture = new atgTexture();
+        //        g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
+        //        g_Texture->SetFilterMode(TFM_FILTER_BILINEAR);
+        //    }
+        //}
 
         return true;
     }
@@ -71,6 +71,11 @@ public :
     void OnKeyScanDown(Key::Scan keyscan)
     {
         _camera.OnKeyScanDown(keyscan);
+
+        if (_pShadowMapping)
+        {
+            _pShadowMapping->OnKeyScanDown(keyscan);
+        }
 
         switch (keyscan)
         {
@@ -129,17 +134,13 @@ public :
         ++frame;
 
         //>ÉèÖÃ¹Û²ì¾ØÕó
-        g_Renderer->SetMatrix(MD_VIEW, _camera.GetCamera()->GetView());
-        g_Renderer->SetMatrix(MD_PROJECTION, _camera.GetCamera()->GetProj());
+        //>g_Renderer->SetMatrix(MD_VIEW, _camera.GetCamera()->GetView());
+        //>g_Renderer->SetMatrix(MD_PROJECTION, _camera.GetCamera()->GetProj());
         
-
         g_Renderer->Clear();
         g_Renderer->BeginFrame();
-        
-        _frustum.Render();
 
-        atgSamlpeViewPortDrawAxis drawer;
-        drawer.Render(_camera.GetCamera());
+        _pShadowMapping->Render(_camera.GetCamera());
 
         g_Renderer->EndFrame();
         g_Renderer->Present();
@@ -150,7 +151,7 @@ public :
     }
 
     atgFlyCamera _camera;
-    atgSampleDrawFrustum _frustum;
+    atgSimpleShadowMapping* _pShadowMapping;
     PNG_Image image;
     //atgPerfMonitor _monitor;
 };
