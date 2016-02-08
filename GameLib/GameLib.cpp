@@ -41,6 +41,8 @@ public :
         {
             return false;
         }
+        _camera.GetCamera()->SetFov(30.f);
+        _camera.GetCamera()->SetClipFar(10000.0f);
 
         _pShadowMapping = new atgSimpleShadowMapping();
         if (false == _pShadowMapping->Create())
@@ -80,12 +82,16 @@ public :
         switch (keyscan)
         {
         case Key::F1:
-            {
+            {//> 关闭垂直同步
                 g_Renderer->SetVSyncState(false);
             }break;
         case Key::F2:
-            {
+            {//> 开启垂直同步
                 g_Renderer->SetVSyncState(true);
+            }break;
+        case Key::R:
+            {//> 释放所有gpu资源
+                g_Renderer->ReleaseAllGpuResource();
             }break;
         default:
             break;
@@ -103,6 +109,11 @@ public :
     void OnPointerMove(uint8 id, int16 x, int16 y)
     {
         _camera.OnPointerMove(id, x, y);
+
+        if (_pShadowMapping)
+        {
+            _pShadowMapping->OnPointerMove(id, x, y);
+        }
 
     }
 

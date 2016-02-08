@@ -2563,3 +2563,157 @@ void SmdModel::ParseTriangles( std::istringstream & is)
         atgMath::VecNormalize(vertices[*it].normal);
 }
 
+
+bool ObjLoader::LoadGeometryFromOBJ( const char* strObjFile )
+{
+    atgReadFile reader;
+    if (!reader.Open(strObjFile))
+    {
+        cout<<"无法打开文件"<<strObjFile<<endl;
+        return false;
+    }
+    uint32 srcBufLen = reader.GetLength();
+    int8* SourceBuffer = new int8[srcBufLen];
+    reader.Read(SourceBuffer, srcBufLen, 1);
+    reader.Close();
+
+    char strCommand[256] = {0};
+    std::stringstream InFile( SourceBuffer );
+    if( !InFile )
+        return false;
+
+    bool flushFace = false;
+    std::string currMtlName;
+
+    int vertexIndexStart = 0;
+    int normalIndexStart = 0;
+    int texcoordIndexStart = 0;
+
+    for(; ; )
+    {
+        InFile >> strCommand;
+        if( !InFile )
+            break;
+
+        if( 0 == strcmp( strCommand, ("#") ) )
+        {
+            // Comment
+        }
+        else if( 0 == strcmp( strCommand, ("g") ) )
+        {
+            // 物体
+            flushFace = true;
+        }
+        else if( 0 == strcmp( strCommand, ("usemtl") ) )
+        {
+            // 物体材质
+            InFile >> currMtlName;
+        }
+        else if( 0 == strcmp( strCommand, ("mtllib") ) )
+        {
+            // 物体材质
+        }
+        else if( 0 == strcmp( strCommand, ("v") ) )
+        {
+            if (flushFace)
+            {
+                flushFace = false;
+
+                // CreateMesh
+                //CreateMeshInternal(primitives);
+
+                //primitives.back().material = gEnv->resourceMgr->LoadMaterial(currMtlName.c_str());				
+            }
+            // Vertex Position
+            float x, y, z;
+            InFile >> x >> y >> z;
+
+            //Positions.push_back( float4( x, y, z, 1 ) );
+
+            // for3DsMax, 加入点列，随后方便走面的时候，输入normal和tc
+        }
+        else if( 0 == strcmp( strCommand, ("vt") ) )
+        {
+            // Vertex TexCoord
+            float u, v;
+            InFile >> u >> v;
+            // for3DsMax, 加入点列，随后方便走面的时候，输入normal和tc
+            //TexCoords.push_back( float2( u, 1-v ) );
+        }
+        else if( 0 == strcmp( strCommand, ("vn"))  )
+        {
+            // Vertex Normal
+            float x, y, z;
+            InFile >> x >> y >> z;
+            //Normals.push_back( float3( x, y, z) );
+        }
+        else if( 0 == strcmp( strCommand, ("f") ) )
+        {
+            // Face
+            int iPosition, iTexCoord, iNormal;
+            //SrVertexP3N3T2 vertex;
+            uint16	dwIndex[3];
+            for( uint32 iFace = 0; iFace < 3; iFace++ )
+            {
+                //memset( &vertex, 0, sizeof( SrVertexP3N3T2 ) );
+
+                // OBJ format uses 1-based arrays
+                InFile >> iPosition;
+                iPosition = abs(iPosition);
+                //vertex.pos = Positions[ iPosition - 1 ];
+
+                if( '/' == InFile.peek() )
+                {
+                    InFile.ignore();
+
+                    if( '/' != InFile.peek() )
+                    {
+                        // Optional texture coordinate
+                        InFile >> iTexCoord;
+                        iTexCoord = abs(iTexCoord);
+                        //vertex.texcoord = TexCoords[ iTexCoord - 1];
+
+                    }
+
+                    if( '/' == InFile.peek() )
+                    {
+                        InFile.ignore();
+
+                        // Optional vertex normal
+                        InFile >> iNormal;
+                        iNormal = abs(iNormal);
+                        //vertex.normal = Normals[ iNormal - 1 ];
+                    }
+                }
+
+                //dwIndex[iFace] = AddVertex( iPosition, &vertex );			
+            }
+            // gkEngine, Add Indice
+            //m_Indices.push_back( dwIndex[0] );
+            //m_Indices.push_back( dwIndex[1] );
+            //m_Indices.push_back( dwIndex[2] );
+        }
+        else
+        {
+            // Unimplemented or unrecognized command
+        }
+
+        InFile.ignore( 1000, '\n' );
+    }
+
+    if (flushFace)
+    {
+        flushFace = false;
+
+        // CreateMesh
+        //CreateMeshInternal(primitives);
+        //primitives.back().material = gEnv->resourceMgr->LoadMaterial(currMtlName.c_str());				
+    }
+
+    return true;
+}
+
+bool ObjLoader::LoadMaterialFromMTL( const char* strMtlile )
+{
+    return true;
+}
