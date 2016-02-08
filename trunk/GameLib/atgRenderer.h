@@ -567,6 +567,7 @@ public:
     void                    SetDepthTestEnable(bool enable);
     void                    SetAlphaTestEnable(bool enbale, float value = 1.0f);
     void                    SetFaceCull(FaceCullMode mode);
+    void                    SetScissorEnable(bool enable, int x = 0, int y = 0, int w = 0, int h = 0);
     void                    GetBlendFunction(BlendFunction& outSrcBlend, BlendFunction& outDestBlend);
     void                    SetBlendFunction(BlendFunction SrcBlend, BlendFunction DestBlend);
 

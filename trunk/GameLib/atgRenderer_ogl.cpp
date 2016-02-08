@@ -829,9 +829,6 @@ bool atgTexture::Destory()
 {
     atgGpuResource::Lost();
     SAFE_DELETE(_impl);
-    _width = 0;
-    _height = 0;
-    _format = TF_R8G8B8A8;
     
     return true;
 }
@@ -889,7 +886,7 @@ void atgTexture::SetFilterMode(TextureFilterMode filter)
     {
     case TFM_FILTER_NEAREST:
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
+        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
         break;
     case TFM_FILTER_BILINEAR:
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
@@ -1530,7 +1527,23 @@ bool atgRenderTarget::Active(uint8 index)
 {
     if (IsLost() && !_colorBuffer.empty())
     {
-        if(!Create(_colorBuffer, _depthStencilBuffer))
+        if (_depthStencilBuffer->IsLost())
+        {
+            if(false == _depthStencilBuffer->Create(_depthStencilBuffer->_width, _depthStencilBuffer->_height, _depthStencilBuffer->_format, NULL, true))
+            {
+                return false;
+            }
+        }
+
+        if (_colorBuffer[0]->IsLost())
+        {
+            if(false == _colorBuffer[0]->Create(_colorBuffer[0]->_width, _colorBuffer[0]->_height, _colorBuffer[0]->_format, NULL, true))
+            {
+                return false;
+            }
+        }
+
+        if(false == Create(_colorBuffer, _depthStencilBuffer))
         {
             return false;
         }
@@ -1774,6 +1787,19 @@ void atgRenderer::SetFaceCull(FaceCullMode mode)
     {
         GL_ASSERT( glEnable(GL_CULL_FACE) );
         GL_ASSERT( glFrontFace(GL_CCW) );
+    }
+}
+
+void atgRenderer::SetScissorEnable(bool enable, int x /* = 0 */, int y /* = 0 */, int w /* = 0 */, int h /* = 0 */)
+{
+    if (enable)
+    {
+        GL_ASSERT( glEnable(GL_SCISSOR_TEST) );
+        GL_ASSERT( glScissor(x, y, w, h) );
+    }
+    else
+    {
+        GL_ASSERT( glDisable(GL_SCISSOR_TEST) );
     }
 }
 

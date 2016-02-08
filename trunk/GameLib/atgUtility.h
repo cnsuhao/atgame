@@ -106,6 +106,7 @@ public:
 
     void                OnKeyScanDown(Key::Scan keyscan);
 
+    void                OnPointerMove(uint8 id, int16 x, int16 y);
 protected:
     void                DrawDepthTex(class atgCamera* sceneCamera);
     void                DrawSceen(class atgCamera* sceneCamera);

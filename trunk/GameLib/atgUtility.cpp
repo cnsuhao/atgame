@@ -588,8 +588,9 @@ void atgFlyCamera::OnPointerMove( uint8 id, int16 x, int16 y )
                 float oPitch = _pCamera->GetPitch();
                 float dx = static_cast<float>(x - last_x);
                 float dy = static_cast<float>(y - last_y);
-                oYaw -= dx * 0.001f;
+                oYaw += dx * 0.001f;
                 oPitch += dy * 0.001f;
+                oPitch = atgMath::Clamp(oPitch, atgMath::DegreesToRadians(-270.0f), atgMath::DegreesToRadians(-90.0f));
                 _pCamera->SetYaw(oYaw);
                 _pCamera->SetPitch(oPitch);
             }
@@ -782,7 +783,7 @@ atgSimpleShadowMapping::~atgSimpleShadowMapping()
 
 bool atgSimpleShadowMapping::Create()
 {
-    const int textureSize = 512;
+    const int textureSize = 256;
     pPixelDepthTex = new atgTexture();
     if (false == pPixelDepthTex->Create(textureSize, textureSize, IsOpenGLGraph() ? TF_R8G8B8A8 : TF_R32F, NULL, true))
     {
@@ -804,8 +805,12 @@ bool atgSimpleShadowMapping::Create()
         return false;
     }
 
-    lightPos.Set(150.f,180.f,-110.f);
+    lightPos.Set(150.f*1.2f,180.f*1.2f,-110.f*1.2f);
     lightDir.Set(-0.65f,-0.73f,0.172f);
+
+    //lightPos.Set(1149.f*0.5f,2113.f*0.5f,-324.f*0.5f);
+    //lightDir.Set(-0.326f,-0.93f,0.166f);
+
     lightDir.Normalize();
     atgMath::LookAt(lightPos.m, (lightPos + lightDir).m, Vec3Up.m, lightViewMatrix.m);
 
@@ -826,17 +831,30 @@ void atgSimpleShadowMapping::OnKeyScanDown( Key::Scan keyscan )
         {
             bias += 0.000001f;
             LOG("new bias[%f]\n", bias);
-        }
-        break;
+        }break;
     case Key::Period: //>
         {
             bias -= 0.000001f;
             LOG("new bias[%f]\n", bias);
-        }
-        break;
+        }break;
     default:
         break;
     }
+}
+
+void atgSimpleShadowMapping::OnPointerMove( uint8 id, int16 x, int16 y )
+{
+#ifndef _WIN32
+    if (id == 1)
+    {
+        bias -= 0.000001f;
+    }else
+    {
+        bias += 0.000001f;
+    }
+
+    LOG("new bias[%f]\n", bias);
+#endif // !_WIN32
 }
 
 void atgSimpleShadowMapping::DrawDepthTex(class atgCamera* sceneCamera)
@@ -854,7 +872,10 @@ void atgSimpleShadowMapping::DrawDepthTex(class atgCamera* sceneCamera)
             return;
         }
 
-        ((atgShaderRTSceenDepthColor*)pPass)->SetMatirxOfLightViewPojection(sceneCamera->GetProj().Concatenate(lightViewMatrix));
+        //>fov在60度左右影子效果比较好.
+        Matrix projMat;
+        atgMath::Perspective(60.0f, 1.0f, 0.1f, 10000.f, projMat.m);
+        ((atgShaderRTSceenDepthColor*)pPass)->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));
         
         DrawBox(RT_DEPTH_COLOR_PASS_IDENTITY);
         DrawPlane(RT_DEPTH_COLOR_PASS_IDENTITY);
@@ -876,17 +897,30 @@ void atgSimpleShadowMapping::DrawSceen(class atgCamera* sceneCamera)
     }
 
     atgShaderShadowMapping* pShadowPass = (atgShaderShadowMapping*)pPass;
-        
-    pShadowPass->SetMatirxOfLightViewPojection(sceneCamera->GetProj().Concatenate(lightViewMatrix));
+    
+    //>fov在60度左右影子效果比较好.
+    Matrix projMat;
+    atgMath::Perspective(60.0f, 1.0f, 0.1f, 10000.f, projMat.m);
+    pShadowPass->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));    
     pShadowPass->SetColorDepthTex(pPixelDepthTex);
     //pShadowPass->SetAmbientColor(GetVec4Color(YD_COLOR_NAVAJO_WHITE));
-    pShadowPass->SetAmbientColor(Vec4Zero);
+    pShadowPass->SetAmbientColor(Vec4(0.3f, 0.3f, 0.3f, 1.0f));
     pShadowPass->SetLight(lightPos, lightDir);
     pShadowPass->SetSpotParam(30.0f, 15.0f);
     pShadowPass->SetBias(bias);
     
     DrawBox(SHADOW_MAPPING_PASS_IDENTITY);
     DrawPlane(SHADOW_MAPPING_PASS_IDENTITY);
+
+    uint32 oldVP[4];
+    g_Renderer->GetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
+    uint32 newVP[4] = {0, IsOpenGLGraph() ? 0 : oldVP[3] - 200, 200, 200 };
+    g_Renderer->SetViewPort(newVP[0], newVP[1], newVP[2], newVP[3]);
+
+    g_Renderer->DrawFullScreenQuad(pPixelDepthTex, IsOpenGLGraph());
+
+    g_Renderer->SetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
+    
 }
 
 void atgSimpleShadowMapping::DrawBox(const char* pPassIdentity /* = NULL */)
@@ -963,4 +997,5 @@ void atgSimpleShadowMapping::DrawPlane(const char* pPassIdentity /* = NULL */)
 
     g_Renderer->EndFullQuad(pPassIdentity);
 }
+
 

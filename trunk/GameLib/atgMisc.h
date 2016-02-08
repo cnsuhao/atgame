@@ -1267,3 +1267,16 @@ protected:
     unsigned int numVertices;
     unsigned int numTriangles;
 };
+
+class ObjLoader
+{
+
+public:
+    bool LoadGeometryFromOBJ( const char* strObjFile );
+    bool LoadMaterialFromMTL( const char* strMtlile );
+
+
+
+
+
+};

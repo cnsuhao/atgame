@@ -886,9 +886,6 @@ bool atgTexture::Destory()
 {
     atgGpuResource::Lost();
     SAFE_DELETE(_impl);
-    _width = 0;
-    _height = 0;
-    _format = TF_R8G8B8A8;
 
     return true;
 }
@@ -1836,6 +1833,26 @@ bool atgRenderTarget::Destory()
 
 bool atgRenderTarget::Active(uint8 index)
 {
+
+    if (!_colorBuffer.empty())
+    {
+        if (_depthStencilBuffer->IsLost())
+        {
+            if(false == _depthStencilBuffer->Create(_depthStencilBuffer->_width, _depthStencilBuffer->_height, _depthStencilBuffer->_format, NULL, true))
+            {
+                return false;
+            }
+        }
+
+        if (_colorBuffer[0]->IsLost())
+        {
+            if(false == _colorBuffer[0]->Create(_colorBuffer[0]->_width, _colorBuffer[0]->_height, _colorBuffer[0]->_format, NULL, true))
+            {
+                return false;
+            }
+        }
+    }
+
     if (_impl)
     {
         if (_colorBuffer.empty())
@@ -2082,6 +2099,21 @@ void atgRenderer::SetFaceCull(FaceCullMode mode)
     }else
     {
         DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW) );
+    }
+}
+
+void  atgRenderer::SetScissorEnable(bool enable, int x /* = 0 */, int y /* = 0 */, int w /* = 0 */, int h /* = 0 */)
+{
+    if (enable)
+    {
+        RECT rt;
+        rt.left = x; rt.top = y; rt.right = x + w; rt.bottom = y + h;
+        DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE) );
+        DX_ASSERT( g_pd3dDevice->SetScissorRect(&rt) );
+    }
+    else
+    {
+        DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE) );
     }
 }
 
