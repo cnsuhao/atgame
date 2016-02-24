@@ -772,6 +772,8 @@ void atgShaderShadowMapping::BeginContext(void* data)
 atgSimpleShadowMapping::atgSimpleShadowMapping():pRT(0),pPixelDepthTex(0),pNormalDepthTex(0)
 {
     bias = 0.00005f;
+    d_far = 1000.f;
+    d_near = 0.1f;
 }
 
 atgSimpleShadowMapping::~atgSimpleShadowMapping()
@@ -827,15 +829,42 @@ void atgSimpleShadowMapping::OnKeyScanDown( Key::Scan keyscan )
 {
     switch (keyscan)
     {
+    case Key::Semicolon:
+        {
+            bias += 0.0001f;
+            LOG("new bias[%f]\n", bias);
+            break;
+        }
+    case Key::Apostrophe:
+        {
+            bias -= 0.0001f;
+            LOG("new bias[%f]\n", bias);
+            break;
+        }
     case Key::Comma: //<
         {
-            bias += 0.000001f;
-            LOG("new bias[%f]\n", bias);
+            d_far += 10.f;
+            LOG("new d_far[%f]\n", d_far);
         }break;
     case Key::Period: //>
         {
-            bias -= 0.000001f;
-            LOG("new bias[%f]\n", bias);
+            d_far -= 10.f;
+            LOG("new d_far[%f]\n", d_far);
+
+        }break;
+    case Key::LeftBracket: //[
+        {
+            //bias += 0.000001f;
+            //LOG("new bias[%f]\n", bias);
+            d_near += 10.f;
+            LOG("new d_near[%f]\n", d_near);
+        }break;
+    case Key::RightBracket: //]
+        {
+            d_near -= 10.f;
+            LOG("new d_near[%f]\n", d_near);
+            //bias -= 0.000001f;
+            //LOG("new bias[%f]\n", bias);
         }break;
     default:
         break;
@@ -874,7 +903,7 @@ void atgSimpleShadowMapping::DrawDepthTex(class atgCamera* sceneCamera)
 
         //>fov在60度左右影子效果比较好.
         Matrix projMat;
-        atgMath::Perspective(60.0f, 1.0f, 0.1f, 10000.f, projMat.m);
+        atgMath::Perspective(60.0f, 1.0f, d_near, d_far, projMat.m);
         ((atgShaderRTSceenDepthColor*)pPass)->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));
         
         DrawBox(RT_DEPTH_COLOR_PASS_IDENTITY);
@@ -900,7 +929,7 @@ void atgSimpleShadowMapping::DrawSceen(class atgCamera* sceneCamera)
     
     //>fov在60度左右影子效果比较好.
     Matrix projMat;
-    atgMath::Perspective(60.0f, 1.0f, 0.1f, 10000.f, projMat.m);
+    atgMath::Perspective(60.0f, 1.0f, d_near, d_far, projMat.m);
     pShadowPass->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));    
     pShadowPass->SetColorDepthTex(pPixelDepthTex);
     //pShadowPass->SetAmbientColor(GetVec4Color(YD_COLOR_NAVAJO_WHITE));

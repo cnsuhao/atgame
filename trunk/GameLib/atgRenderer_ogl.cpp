@@ -1504,7 +1504,13 @@ bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture*
     else
     {
         GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer[0]->_impl->TextureID, 0) );
+        //GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthStencilBuffer->_impl->TextureID, 0) );
         GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthStencilBuffer->_impl->TextureID) );
+    }
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        LOG("Error: FrameBufferObject is not complete!\n");
     }
 
     GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
@@ -1868,12 +1874,21 @@ void atgRenderer::SetBlendFunction(BlendFunction SrcBlend, BlendFunction DestBle
     }
 }
 
-void atgRenderer::Clear()
+void atgRenderer::Clear(ClearTarget target)
 {
     ATG_PROFILE("atgRenderer::Clear");
     GL_ASSERT( glClearColor(0.0f, 0.141f, 0.141f, 1.0f) );              // Set Black Background
     GL_ASSERT( glClearDepth(1.0f) );                                // Set Depth Buffer Setup
-    GL_ASSERT( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );// Clear Screen And Depth Buffer
+    GLbitfield bitMask = 0;
+    if (target & CT_COLOR)
+    {
+        bitMask |= GL_COLOR_BUFFER_BIT;
+    }
+    if (target & CT_DEPTH)
+    {
+        bitMask |= GL_DEPTH_BUFFER_BIT;
+    }
+    GL_ASSERT( glClear( bitMask ) );// Clear Screen And Depth Buffer
 }
 
 void atgRenderer::BeginFrame()

@@ -532,6 +532,15 @@ enum BlendFunction
     BF_ONE_MINUS_DST_ALPHA,
 };
 
+enum ClearTarget
+{
+    CT_COLOR = 1,
+    CT_DEPTH = 2,
+    CT_STENCIL = 4,
+    CT_COLOR_AND_DEPTH = CT_COLOR | CT_DEPTH,
+    CT_COLOR_AND_DEPTHSTENCIL = CT_COLOR_AND_DEPTH | CT_STENCIL,
+};
+
 extern const char* StringOpenGLIdentity;
 extern const char* StringGLESIdentity;
 extern const char* StringDirectxIdentity;
@@ -571,7 +580,7 @@ public:
     void                    GetBlendFunction(BlendFunction& outSrcBlend, BlendFunction& outDestBlend);
     void                    SetBlendFunction(BlendFunction SrcBlend, BlendFunction DestBlend);
 
-    void                    Clear();
+    void                    Clear(ClearTarget target = CT_COLOR_AND_DEPTH);
 
     void                    BeginFrame();
     void                    EndFrame();
