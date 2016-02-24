@@ -122,4 +122,6 @@ private:
     Vec3  lightDir;
     Matrix lightViewMatrix;
     float  bias;
+    float d_far;
+    float d_near;
 };

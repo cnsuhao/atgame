@@ -100,8 +100,8 @@ struct Key
         I               =0x17,
         O               =0x18,
         P               =0x19,
-        LeftBracket     =0x1A,
-        RightBracket    =0x1B,
+        LeftBracket     =0x1A,    /* [ */
+        RightBracket    =0x1B,    /* ] */
         Return          =0x1C,    /* Enter on main keyboard */
         LeftControl     =0x1D,
         A               =0x1E,
@@ -113,8 +113,8 @@ struct Key
         J               =0x24,
         K               =0x25,
         L               =0x26,
-        Semicolon       =0x27,
-        Apostrophe      =0x28,
+        Semicolon       =0x27,    /* ; */
+        Apostrophe      =0x28,    /* ' */
         Grave           =0x29,    /* accent grave */
         LeftShift       =0x2A,
         Backslash       =0x2B,
