@@ -1,7 +1,8 @@
 ////////////////////////////////////////
 // Global variable
 ////////////////////////////////////////
-precision mediump float;
+//precision mediump float;
+precision highp float;
 
 varying vec4 ps_vertexColor;
 varying vec2 ps_depthInfo;
