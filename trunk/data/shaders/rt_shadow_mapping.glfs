@@ -25,7 +25,7 @@ float unpack (vec4 colour)
     const vec4 bitShifts = vec4(1.0 / (256.0 * 256.0 * 256.0),
                                 1.0 / (256.0 * 256.0),
                                 1.0 / 256.0,
-                                1);
+                                1.0);
 								
     return dot(colour , bitShifts);
 }
@@ -87,6 +87,7 @@ void main()
 		st = (st + 1.0) /2.0;
 	  
 		shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias);
+		//shadow = texture2DCompare(rtDepthSampler, st, d1 - bias);
 	}
 	else
 	{
