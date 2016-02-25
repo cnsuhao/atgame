@@ -5,6 +5,145 @@
 #include "atgIntersection.h"
 
 
+atgFlyCamera::atgFlyCamera():_pCamera(0)
+{
+    button[0] = button[1] = false;
+}
+
+atgFlyCamera::~atgFlyCamera()
+{
+
+}
+
+bool atgFlyCamera::Create( class atgCamera* pCamera )
+{
+    _pCamera = pCamera;
+
+    return true;
+}
+
+void atgFlyCamera::OnKeyScanDown( Key::Scan keyscan )
+{
+    float moveSpeed = 10.5f;
+
+    switch (keyscan)
+    {
+    case Key::W:
+        {
+            Vec3 forward = _pCamera->GetForward();
+            Vec3 pos = _pCamera->GetPosition();
+            forward.Scale(moveSpeed);
+            pos.Add(forward.m);
+            _pCamera->SetPosition(pos.m);
+
+        }
+        break;
+    case Key::S:
+        {
+            Vec3 forward = _pCamera->GetForward();
+            Vec3 pos = _pCamera->GetPosition();
+            forward.Scale(-moveSpeed);
+            pos.Add(forward.m);
+            _pCamera->SetPosition(pos.m);
+        }
+        break;
+    case Key::A:
+        {
+            Vec3 right = _pCamera->GetRight();
+            Vec3 pos = _pCamera->GetPosition();
+            right.Scale(moveSpeed);
+            pos.Add(right.m);
+            _pCamera->SetPosition(pos.m);
+        }
+        break;
+    case Key::D:
+        {
+            Vec3 right = _pCamera->GetRight();
+            Vec3 pos = _pCamera->GetPosition();
+            right.Scale(-moveSpeed);
+            pos.Add(right.m);
+            _pCamera->SetPosition(pos.m);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void atgFlyCamera::OnPointerDown( uint8 id, int16 x, int16 y )
+{
+    if(id == 0)
+    {
+        button[0] = true;
+    }
+
+    if(id == 1)
+    {
+        button[1] = true;
+    }
+}
+
+void atgFlyCamera::OnPointerMove( uint8 id, int16 x, int16 y )
+{
+    static int16 last_x = x;
+    static int16 last_y = y;
+
+    if (id == MBID_MIDDLE && _pCamera)
+    {
+        float moveSpeed = 10.5f;
+        if (x > 0)
+        {
+            Vec3 forward = _pCamera->GetForward();
+            Vec3 pos = _pCamera->GetPosition();
+            forward.Scale(moveSpeed);
+            pos.Add(forward.m);
+            _pCamera->SetPosition(pos.m);
+        }
+        else
+        {
+            Vec3 forward = _pCamera->GetForward();
+            Vec3 pos = _pCamera->GetPosition();
+            forward.Scale(-moveSpeed);
+            pos.Add(forward.m);
+            _pCamera->SetPosition(pos.m);
+        }
+    }
+    else
+    {
+        if (button[1])
+        {
+            if (_pCamera)
+            {
+                float oYaw = _pCamera->GetYaw();
+                float oPitch = _pCamera->GetPitch();
+                float dx = static_cast<float>(x - last_x);
+                float dy = static_cast<float>(y - last_y);
+                oYaw += dx * 0.001f;
+                oPitch += dy * 0.001f;
+                oPitch = atgMath::Clamp(oPitch, atgMath::DegreesToRadians(-270.0f), atgMath::DegreesToRadians(-90.0f));
+                _pCamera->SetYaw(oYaw);
+                _pCamera->SetPitch(oPitch);
+            }
+        }
+
+        last_x = x;
+        last_y = y;
+    }
+}
+
+void atgFlyCamera::OnPointerUp( uint8 id, int16 x, int16 y )
+{
+    if(id == 0)
+    {
+        button[0] = false;
+    }
+
+    if(id == 1)
+    {
+        button[1] = false;
+    }
+}
+
 atgSampleDrawFrustum::atgSampleDrawFrustum()
 {
 
@@ -475,147 +614,6 @@ void atgSampleRenderToTextrue::OnDrawEnd()
     g_Renderer->DrawFullScreenQuad(pColorTex, IsOpenGLGraph());
 }
 
-atgFlyCamera::atgFlyCamera():_pCamera(0)
-{
-    button[0] = button[1] = false;
-}
-
-atgFlyCamera::~atgFlyCamera()
-{
-
-}
-
-bool atgFlyCamera::Create( class atgCamera* pCamera )
-{
-    _pCamera = pCamera;
-
-    return true;
-}
-
-void atgFlyCamera::OnKeyScanDown( Key::Scan keyscan )
-{
-    float moveSpeed = 10.5f;
-
-    switch (keyscan)
-    {
-    case Key::W:
-        {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
-
-        }
-        break;
-    case Key::S:
-        {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(-moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
-        }
-        break;
-    case Key::A:
-        {
-            Vec3 right = _pCamera->GetRight();
-            Vec3 pos = _pCamera->GetPosition();
-            right.Scale(moveSpeed);
-            pos.Add(right.m);
-            _pCamera->SetPosition(pos.m);
-        }
-        break;
-    case Key::D:
-        {
-            Vec3 right = _pCamera->GetRight();
-            Vec3 pos = _pCamera->GetPosition();
-            right.Scale(-moveSpeed);
-            pos.Add(right.m);
-            _pCamera->SetPosition(pos.m);
-        }
-        break;
-    default:
-        break;
-    }
-}
-
-void atgFlyCamera::OnPointerDown( uint8 id, int16 x, int16 y )
-{
-    if(id == 0)
-    {
-        button[0] = true;
-    }
-
-    if(id == 1)
-    {
-        button[1] = true;
-    }
-}
-
-void atgFlyCamera::OnPointerMove( uint8 id, int16 x, int16 y )
-{
-    static int16 last_x = x;
-    static int16 last_y = y;
-
-    if (id == MBID_MIDDLE && _pCamera)
-    {
-        float moveSpeed = 10.5f;
-        if (x > 0)
-        {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
-        }
-        else
-        {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(-moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
-        }
-    }
-    else
-    {
-        if (button[1])
-        {
-            if (_pCamera)
-            {
-                float oYaw = _pCamera->GetYaw();
-                float oPitch = _pCamera->GetPitch();
-                float dx = static_cast<float>(x - last_x);
-                float dy = static_cast<float>(y - last_y);
-                oYaw += dx * 0.001f;
-                oPitch += dy * 0.001f;
-                oPitch = atgMath::Clamp(oPitch, atgMath::DegreesToRadians(-270.0f), atgMath::DegreesToRadians(-90.0f));
-                _pCamera->SetYaw(oYaw);
-                _pCamera->SetPitch(oPitch);
-            }
-        }
-
-        last_x = x;
-        last_y = y;
-    }
-}
-
-void atgFlyCamera::OnPointerUp( uint8 id, int16 x, int16 y )
-{
-    if(id == 0)
-    {
-        button[0] = false;
-    }
-
-    if(id == 1)
-    {
-        button[1] = false;
-    }
-}
-
-
-
 //////////////////////////////////////////////////////////////////////////
 //>场景深度
 class atgShaderRTSceenDepthColor : public atgShaderLibPass
@@ -632,6 +630,7 @@ protected:
     virtual void			BeginContext(void* data);
     
     Matrix                  _ligthViewProj;
+    float                    _opengl_depth_texture;
 };
 
 #define RT_DEPTH_COLOR_PASS_IDENTITY "atgSceenDepthColorShader"
@@ -639,7 +638,15 @@ EXPOSE_INTERFACE(atgShaderRTSceenDepthColor, atgPass, RT_DEPTH_COLOR_PASS_IDENTI
 
 atgShaderRTSceenDepthColor::atgShaderRTSceenDepthColor()
 {
+    _opengl_depth_texture = 0;
 
+#if 0 && defined(_ANDROID) //> oes depth texture 效果不好(精度值太低了), 所以禁用了
+        std::string extensions = (char*)glGetString(GL_EXTENSIONS);
+        if (extensions.find("OES_depth_texture") != std::string::npos)
+        {
+            _opengl_depth_texture = 1.0;
+        }
+#endif
 }
 
 atgShaderRTSceenDepthColor::~atgShaderRTSceenDepthColor()
@@ -669,6 +676,12 @@ void atgShaderRTSceenDepthColor::BeginContext(void* data)
 
     // set matrix.
     SetMatrix4x4("mat_light_view_Projection", _ligthViewProj);
+
+    // set use OES_depth_texture
+    if (IsOpenGLGraph())
+    {
+        SetFloat("use_depth_texture_OES", _opengl_depth_texture);
+    }
 }
 
 
@@ -690,6 +703,7 @@ public:
     void                    SetSpotParam(float outerCone, float innerCone) { _spot_outer_cone = outerCone;  _spot_inner_cone = innerCone; }
     void                    SetAmbientColor(const Vec4& color) { _ambientColor = color; }
     void                    SetBias(float bias) { _bias = bias; }
+    void                    SetOpenglDepthTextureOES(float f) { _opengl_depth_texture = f; }
 
 protected:
     virtual void			BeginContext(void* data);
@@ -703,6 +717,7 @@ protected:
     float                   _spot_inner_cone;
     Vec4                    _ambientColor;
     float                   _bias;
+    float                   _opengl_depth_texture;
 };
 
 #define SHADOW_MAPPING_PASS_IDENTITY "atgShadowMappingShader"
@@ -742,6 +757,12 @@ void atgShaderShadowMapping::BeginContext(void* data)
     // set matrix.
     SetMatrix4x4("mat_light_view_Projection", _ligthViewProj);
 
+    // set use OES_depth_texture
+    if (IsOpenGLGraph())
+    {
+        SetFloat("use_depth_texture_OES", _opengl_depth_texture);
+    }
+
     // set texture
     g_Renderer->BindTexture(0, _pColorDepthTex);
     SetTexture("rtDepthSampler", 0);
@@ -769,40 +790,62 @@ void atgShaderShadowMapping::BeginContext(void* data)
 
 //////////////////////////////////////////////////////////////////////////
 //>影子贴图
-atgSimpleShadowMapping::atgSimpleShadowMapping():pRT(0),pPixelDepthTex(0),pNormalDepthTex(0)
+atgSimpleShadowMapping::atgSimpleShadowMapping():pRT(0),pColorTex(0),pDepthTex(0)
 {
-    bias = 0.00005f;
+    bias = 0.008f;
     d_far = 1000.f;
-    d_near = 0.1f;
+    d_near = 1.0f;
 }
 
 atgSimpleShadowMapping::~atgSimpleShadowMapping()
 {
-    SAFE_DELETE(pPixelDepthTex);
-    SAFE_DELETE(pNormalDepthTex);
+    SAFE_DELETE(pColorTex);
+    SAFE_DELETE(pDepthTex);
     SAFE_DELETE(pRT);
 }
 
 bool atgSimpleShadowMapping::Create()
 {
-    const int textureSize = 256;
-    pPixelDepthTex = new atgTexture();
-    if (false == pPixelDepthTex->Create(textureSize, textureSize, IsOpenGLGraph() ? TF_R8G8B8A8 : TF_R32F, NULL, true))
+    const int textureSize = 1024;
+    pColorTex = new atgTexture();
+    
+    _opengl_depth_texture = 0;
+#if 0 && defined(_ANDROID) //> oes depth texture 效果不好(精度值太低了), 所以禁用了
+    std::string extensions = (char*)glGetString(GL_EXTENSIONS);
+    if (extensions.find("OES_depth_texture") != std::string::npos)
+    {
+        if (false == pColorTex->Create(textureSize, textureSize, TF_R32F, NULL, true))
+        {
+            return false;
+        }
+        _opengl_depth_texture = 1.0f;
+    }
+    else
+    {
+        if (false == pColorTex->Create(textureSize, textureSize, IsOpenGLGraph() ? TF_R8G8B8A8 : TF_R32F, NULL, true))
+        {
+            return false;
+        }
+    }
+#else
+    if (false == pColorTex->Create(textureSize, textureSize, IsOpenGLGraph() ? TF_R8G8B8A8 : TF_R32F, NULL, true))
     {
         return false;
     }
-    pPixelDepthTex->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
+#endif
+
+    pColorTex->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
     
-    pNormalDepthTex = new atgTexture();
-    if (false == pNormalDepthTex->Create(textureSize, textureSize, TF_D16, NULL, true))
+    pDepthTex = new atgTexture();
+    if (false == pDepthTex->Create(textureSize, textureSize, TF_D16, NULL, true))
     {
         return false;
     }
 
     std::vector<atgTexture*> colorBuffer;
-    colorBuffer.push_back(pPixelDepthTex);
+    colorBuffer.push_back(pColorTex);
     pRT = new atgRenderTarget();
-    if (false == pRT->Create(colorBuffer, pNormalDepthTex))
+    if (false == pRT->Create(colorBuffer, pDepthTex))
     {
         return false;
     }
@@ -874,15 +917,24 @@ void atgSimpleShadowMapping::OnKeyScanDown( Key::Scan keyscan )
 void atgSimpleShadowMapping::OnPointerMove( uint8 id, int16 x, int16 y )
 {
 #ifndef _WIN32
-    if (id == 1)
-    {
-        bias -= 0.000001f;
-    }else
-    {
-        bias += 0.000001f;
-    }
+    //if (id == 0)
+    //{
+    //    bias -= 0.0001f;
+    //}else
+    //{
+    //    bias += 0.0001f;
+    //}
+    //LOG("----new bias[%f]\n", bias);
 
-    LOG("new bias[%f]\n", bias);
+    if (id == 0)
+    {
+        d_near += 1.f;
+    }
+    else
+    {
+        d_near -= 1.f;
+    }
+    LOG("new d_near[%f]\n", d_near);
 #endif // !_WIN32
 }
 
@@ -931,12 +983,13 @@ void atgSimpleShadowMapping::DrawSceen(class atgCamera* sceneCamera)
     Matrix projMat;
     atgMath::Perspective(60.0f, 1.0f, d_near, d_far, projMat.m);
     pShadowPass->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));    
-    pShadowPass->SetColorDepthTex(pPixelDepthTex);
+    pShadowPass->SetColorDepthTex(pColorTex);
     //pShadowPass->SetAmbientColor(GetVec4Color(YD_COLOR_NAVAJO_WHITE));
     pShadowPass->SetAmbientColor(Vec4(0.3f, 0.3f, 0.3f, 1.0f));
     pShadowPass->SetLight(lightPos, lightDir);
     pShadowPass->SetSpotParam(30.0f, 15.0f);
     pShadowPass->SetBias(bias);
+    pShadowPass->SetOpenglDepthTextureOES(_opengl_depth_texture);
     
     DrawBox(SHADOW_MAPPING_PASS_IDENTITY);
     DrawPlane(SHADOW_MAPPING_PASS_IDENTITY);
@@ -946,7 +999,7 @@ void atgSimpleShadowMapping::DrawSceen(class atgCamera* sceneCamera)
     uint32 newVP[4] = {0, IsOpenGLGraph() ? 0 : oldVP[3] - 200, 200, 200 };
     g_Renderer->SetViewPort(newVP[0], newVP[1], newVP[2], newVP[3]);
 
-    g_Renderer->DrawFullScreenQuad(pPixelDepthTex, IsOpenGLGraph());
+    g_Renderer->DrawFullScreenQuad(pColorTex, IsOpenGLGraph());
 
     g_Renderer->SetViewPort(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
     
