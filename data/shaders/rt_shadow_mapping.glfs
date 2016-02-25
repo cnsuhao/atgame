@@ -15,6 +15,7 @@ uniform vec3 LightDirection;
 uniform float spot_outer_cone;
 uniform float spot_inner_cone;
 uniform float bias;
+uniform float use_depth_texture_OES;
 
 uniform vec4 ambient;
 uniform vec2 fViewportDimensions;
@@ -31,8 +32,16 @@ float unpack (vec4 colour)
 }
 
 float texture2DCompare(sampler2D depths, vec2 uv, float compare){
-   float depth = unpack(texture2D(depths, uv));
-   return step(compare, depth);
+	float depth;
+	if(use_depth_texture_OES <= 0.0)
+	{
+		depth = unpack(texture2D(depths, uv));
+	}
+	else
+	{
+		depth = texture2D(depths, uv).x;
+	}
+	return step(compare, depth);
 }
 
 float texture2DShadowLerp(sampler2D depths, vec2 size, vec2 uv, float compare)
@@ -82,12 +91,10 @@ void main()
 		float d1 = LigViewPos.z / LigViewPos.w;
 	  
 		vec2 st = vec2(LigViewPos.xy / LigViewPos.w);
-		//st.x = st.x * 0.5 + 0.5;
-		//st.y = 1.0 - (st.y * 0.5 + 0.5);
 		st = (st + 1.0) /2.0;
 	  
-		shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias);
-		//shadow = texture2DCompare(rtDepthSampler, st, d1 - bias);
+		//shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias * 0.01);
+		shadow = texture2DCompare(rtDepthSampler, st, d1 - bias * 0.01);
 	}
 	else
 	{

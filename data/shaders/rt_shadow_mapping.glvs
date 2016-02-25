@@ -1,6 +1,7 @@
 ////////////////////////////////////////
 // Global variable
 ////////////////////////////////////////
+precision highp float; 
 
 attribute vec3 vs_vertexPosition;
 attribute vec3 vs_vertexColor;
