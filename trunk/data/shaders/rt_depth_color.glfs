@@ -4,6 +4,8 @@
 //precision mediump float;
 precision highp float;
 
+uniform float use_depth_texture_OES;
+
 varying vec4 ps_vertexColor;
 varying vec2 ps_depthInfo;
 
@@ -28,10 +30,17 @@ vec4 pack (float depth)
 ////////////////////////////////////////
 void main()
 {
-	// the depth
-	float normalizedDistance  = ps_depthInfo.x / ps_depthInfo.y;
-	// scale -1.0;1.0 to 0.0;1.0
-	//normalizedDistance = (normalizedDistance + 1.0) / 2.0;
-	// pack value into 32-bit RGBA texture
-    gl_FragColor = pack(normalizedDistance);
+	if(use_depth_texture_OES <= 0.0)
+	{
+		// the depth
+		float normalizedDistance  = ps_depthInfo.x / ps_depthInfo.y;
+		// scale -1.0;1.0 to 0.0;1.0
+		//normalizedDistance = (normalizedDistance + 1.0) / 2.0;
+		// pack value into 32-bit RGBA texture
+		gl_FragColor = pack(normalizedDistance);
+	}
+	else
+	{
+		gl_FragColor = vec4(0,0,0,1.0);
+	}
 }

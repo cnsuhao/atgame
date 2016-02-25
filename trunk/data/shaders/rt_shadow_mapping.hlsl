@@ -105,7 +105,8 @@ float4 ps_main(VS_OUTPUT input):COLOR0
 		st.x = st.x * 0.5 + 0.5;
 		st.y = 1.0 - (st.y * 0.5 + 0.5);
 	  
-		shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias);
+		//shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias * 0.01);
+		shadow = texture2DCompare(rtDepthSampler, st, d1 - bias * 0.01);
 	}
    
 	return ambient * input.colour + shadow * effect * input.colour;
