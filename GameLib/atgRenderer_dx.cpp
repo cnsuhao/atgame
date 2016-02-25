@@ -2183,7 +2183,7 @@ void atgRenderer::SetBlendFunction(BlendFunction SrcBlend, BlendFunction DestBle
     }
 }
 
-void atgRenderer::Clear()
+void atgRenderer::Clear(ClearTarget target /* = CT_COLOR_AND_DEPTH */)
 {
     ATG_PROFILE("atgRenderer::Clear");
     DX_ASSERT( g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_XRGB(0,36,36), 1.0f, 0) );

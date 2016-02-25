@@ -115,8 +115,8 @@ protected:
     void                DrawPlane(const char* pPassIdentity = NULL);
 private:
     class atgRenderTarget* pRT;
-    class atgTexture* pPixelDepthTex;     //>作为渲染纹理使用
-    class atgTexture* pNormalDepthTex;    //>默认的深度缓存
+    class atgTexture* pColorTex;     //>作为渲染纹理使用
+    class atgTexture* pDepthTex;    //>默认的深度缓存
 
     Vec3  lightPos;
     Vec3  lightDir;
@@ -124,4 +124,5 @@ private:
     float  bias;
     float d_far;
     float d_near;
+    float _opengl_depth_texture;
 };

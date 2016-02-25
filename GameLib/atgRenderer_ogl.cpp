@@ -718,11 +718,13 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         isColorFormat = true;
         break;
     case TF_R8G8B8A8:
-        inFormat = GL_RGBA;
-        internalFormat = GL_RGBA;
-        type = GL_UNSIGNED_BYTE;
-        pixelSize = 4;
-        isColorFormat = true;
+        {
+            inFormat = GL_RGBA;
+            internalFormat = GL_RGBA;
+            type = GL_UNSIGNED_BYTE;
+            pixelSize = 4;
+            isColorFormat = true;
+        }
         break;
     case TF_R5G5B5A1:
         inFormat = GL_RGBA;
@@ -750,7 +752,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
             internalFormat = GL_LUMINANCE;
             type = GL_FLOAT;
         }
-        pixelSize = 1;
+        pixelSize = 4;
         isColorFormat = true;
         isFloatData = true;
         break;
@@ -1256,36 +1258,68 @@ bool atgPass::Create( const char* VSFilePath, const char* FSFilePath )
     atgGpuResource::ReSet();
     g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgPass::Destory));
     LOG("create pass(%s,%s) success.\n", VSFilePath, FSFilePath);
+
+    //
+    //GLint activeAttributes;
+    //GLint length;
+    //GL_ASSERT( glGetProgramiv(_impl->programID, GL_ACTIVE_ATTRIBUTES, &activeAttributes) );
+    //if (activeAttributes > 0)
+    //{
+    //    GL_ASSERT( glGetProgramiv(_impl->programID, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &length) );
+    //    if (length > 0)
+    //    {
+    //        GLchar* attribName = new GLchar[length + 1];
+    //        GLint attribSize;
+    //        GLenum attribType;
+    //        GLint attribLocation;
+    //        for (int i = 0; i < activeAttributes; ++i)
+    //        {
+    //            // Query attribute info.
+    //            GL_ASSERT( glGetActiveAttrib(_impl->programID, i, length, NULL, &attribSize, &attribType, attribName) );
+    //            attribName[length] = '\0';
+
+    //            // Query the pre-assigned attribute location.
+    //            GL_ASSERT( attribLocation = glGetAttribLocation(_impl->programID, attribName) );
+
+    //            // Assign the vertex attribute mapping for the effect.
+    //            //effect->_vertexAttributes[attribName] = attribLocation;
+    //        }
+    //        SAFE_DELETE_ARRAY(attribName);
+    //    }
+    //}
+
+    //{
+    //    GLint activeUniforms;
+    //    GLint length;
+    //    GL_ASSERT( glGetProgramiv(_impl->programID, GL_ACTIVE_UNIFORMS, &activeUniforms) );
+    //    if (activeUniforms > 0)
+    //    {
+    //        GL_ASSERT( glGetProgramiv(_impl->programID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &length) );
+    //        if (length > 0)
+    //        {
+    //            GLchar* uniformName = new GLchar[length + 1];
+    //            GLint uniformSize;
+    //            GLenum uniformType;
+    //            GLint uniformLocation;
+    //            for (int i = 0; i < activeUniforms; ++i)
+    //            {
+    //                // Query attribute info.
+    //                GL_ASSERT( glGetActiveUniform(_impl->programID, i, length, NULL, &uniformSize, &uniformType, uniformName) );
+    //                uniformName[length] = '\0';
+
+    //                // Query the pre-assigned attribute location.
+    //                GL_ASSERT( uniformLocation = glGetAttribLocation(_impl->programID, uniformName) );
+
+    //                // Assign the vertex attribute mapping for the effect.
+    //                //effect->_vertexAttributes[attribName] = attribLocation;
+    //            }
+    //            SAFE_DELETE_ARRAY(uniformName);
+    //        }
+    //    }
+    //}
+
+
     return true;
-    /*
-    GLint activeAttributes;
-    GLint length;
-    GL_ASSERT( glGetProgramiv(_impl->programID, GL_ACTIVE_ATTRIBUTES, &activeAttributes) );
-    if (activeAttributes > 0)
-    {
-        GL_ASSERT( glGetProgramiv(_impl->programID, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &length) );
-        if (length > 0)
-        {
-            GLchar* attribName = new GLchar[length + 1];
-            GLint attribSize;
-            GLenum attribType;
-            GLint attribLocation;
-            for (int i = 0; i < activeAttributes; ++i)
-            {
-                // Query attribute info.
-                GL_ASSERT( glGetActiveAttrib(_impl->programID, i, length, NULL, &attribSize, &attribType, attribName) );
-                attribName[length] = '\0';
-
-                // Query the pre-assigned attribute location.
-                GL_ASSERT( attribLocation = glGetAttribLocation(_impl->programID, attribName) );
-
-                // Assign the vertex attribute mapping for the effect.
-                //effect->_vertexAttributes[attribName] = attribLocation;
-            }
-            SAFE_DELETE_ARRAY(attribName);
-        }
-    }
-    return true;*/
 }
 
 bool atgPass::Destory()
@@ -1504,13 +1538,13 @@ bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture*
     else
     {
         GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer[0]->_impl->TextureID, 0) );
-        //GL_ASSERT( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthStencilBuffer->_impl->TextureID, 0) );
         GL_ASSERT( glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthStencilBuffer->_impl->TextureID) );
     }
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         LOG("Error: FrameBufferObject is not complete!\n");
+        GL_ASSERT(0);
     }
 
     GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
@@ -1887,6 +1921,10 @@ void atgRenderer::Clear(ClearTarget target)
     if (target & CT_DEPTH)
     {
         bitMask |= GL_DEPTH_BUFFER_BIT;
+    }
+    if (target & CT_STENCIL)
+    {
+        bitMask |= GL_STENCIL_BUFFER_BIT;
     }
     GL_ASSERT( glClear( bitMask ) );// Clear Screen And Depth Buffer
 }
