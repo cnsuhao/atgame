@@ -5,7 +5,8 @@
 
 #include "atgBase.h"
 #include "atgMath.h"
-
+#include "atgMisc.h"
+#include "atgLight.h"
 
 //////////////////////////////////////////////////////////////////////////
 //> 方便操作的相机
@@ -101,6 +102,7 @@ public:
     ~atgSimpleShadowMapping();
 
     bool                Create();
+    void                Destory();
 
     void                Render(class atgCamera* sceneCamera);
 
@@ -125,4 +127,22 @@ private:
     float d_far;
     float d_near;
     float _opengl_depth_texture;
+};
+
+
+class MeshTest
+{
+public:
+    MeshTest();
+    ~MeshTest();
+
+    bool Init();
+
+    void Render(class atgCamera* sceneCamera);
+
+    void OnKeyScanDown(Key::Scan keyscan);
+
+
+    std::vector<class atgMesh*> _meshs;
+    atgPointLight _light;
 };

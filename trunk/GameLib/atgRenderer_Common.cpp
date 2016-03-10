@@ -126,7 +126,7 @@ atgRenderer::atgRenderer(atgGame* game)
     for(int i = 0; i < MD_NUMBER; ++i)
         _matrixs[i].Identity();
 
-    _globalAmbientColor = Vec3(0.1f, 0.1f, 0.1f);
+    _globalAmbientColor = Vec3(0.03f, 0.03f, 0.03f);
 
     _bindMaterial = NULL;
     _bindPass = NULL;
@@ -219,7 +219,7 @@ void atgRenderer::AddBindLights( const bindLights& lights )
 void atgRenderer::RemoveBindLight(atgLight* light)
 {
     bindLights::iterator it = _bindLights.begin();
-    for (bindLights::iterator end; it != end; ++it)
+    for (bindLights::iterator end = _bindLights.end(); it != end; ++it)
     {
         if (*it == light)
         {

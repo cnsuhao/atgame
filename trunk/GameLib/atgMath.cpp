@@ -576,7 +576,47 @@ void atgMath::MatConcatenate( const float mat1[4][4], const float mat2[4][4],flo
     memcpy(result, temp, MATRIX44_SIZE());
 }
 
+void atgMath::VecRotate( const float vec[3], const float quat[4], float result[3] )
+{
+    if(0)
+    {
+        // normal method
+        float q1[4], q2[4], q3[4];
+        q1[0] = quat[0]; q1[1] = quat[1]; q1[2] = quat[2]; q1[3] = quat[3];
+        q2[0] =  vec[0]; q2[1] =  vec[1]; q2[2] =  vec[2]; q2[3] = 0.0f;
+        q3[0] =  -q1[0]; q3[1] =  -q1[0]; q3[2] =  -q1[2]; q3[3] = q1[3];
+
+        float temp[4];
+        QuatMultiply(q1, q2, temp);
+        QuatMultiply(temp, q3, q1);
+        result[0] = q1[0];
+        result[1] = q1[1];
+        result[2] = q1[2];
+        return;
+    }
+
+    // nVidia SDK implementation
+
+    float uv[3];
+    float uuv[3];
+    float qvec[3];
+    qvec[0] = quat[0];
+    qvec[1] = quat[1];
+    qvec[2] = quat[2];
+
+    VecCross(qvec, vec, uv);
+    VecCross(qvec, uv, uuv);
+
+    float halfW = 2.0f * quat[3];
+
+    result[0] = vec[0] + uv[0] * halfW + uuv[0] * 2.0f;
+    result[1] = vec[1] + uv[1] * halfW + uuv[1] * 2.0f;
+    result[2] = vec[2] + uv[2] * halfW + uuv[2] * 2.0f;
+}
+
 bool atgMath::IsBetween0And1ForClipZ()
 {
     return !IsOpenGLGraph();
 }
+
+

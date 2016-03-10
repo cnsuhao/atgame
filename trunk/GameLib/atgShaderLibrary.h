@@ -2,6 +2,7 @@
 
 #include "atgMisc.h"
 #include "atgRenderer.h"
+#include "atgLight.h"
 
 class atgMaterial;
 
@@ -82,8 +83,14 @@ public:
     virtual bool            ConfingAndCreate();
 protected:
     virtual void            BeginContext(void* data);
+
+    virtual void            EndContext(void* data);
+
+    atgPointLight           _tempLight;
+    bool                    _usingTempLight;
 };
 
 #define LIGHT_TEXTURE_PASS_IDENTITY "atgLightTextureShader"
 EXPOSE_INTERFACE(atgShaderLightTexture, atgPass, LIGHT_TEXTURE_PASS_IDENTITY);
 
+//class atgShaderLightNormalTexture : public  atgShaderNotLighteTexture

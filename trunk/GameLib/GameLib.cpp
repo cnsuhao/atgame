@@ -12,6 +12,8 @@
 #include "atgShaderLibrary.h"
 #include "atgUtility.h"
 
+#include "atgBlenderImport.h"
+
 //#include "perfMonitor.h"
 
 static atgTexture* g_Texture = NULL;
@@ -25,13 +27,33 @@ public :
 
     bool OnInitialize()
     {
+
+        //Matrix pmat;
+        //Matrix vmat;
+        //atgMath::LookAt(Vec3Zero.m, Vec3Back.m, Vec3Up.m, vmat.m);
+        //atgMath::Perspective(30.0f, 1.0f, 1.0f, 1000.0f, pmat.m);
+        //
+        //
+        //for (float i = -1.0f; i >= -1000.f; --i)
+        //{
+        //    Vec4 v4_1(0,0,i, 1.0f);
+        //    Vec4 v4_2 = vmat.Transfrom(v4_1);
+        //    v4_2 = pmat.Transfrom(v4_2);
+        //    LOG("depth z=%f(i=%f)\n", v4_2.z / v4_2.w, i);
+        //}
+
         LOG("Game::OnInitialize!\n");
 
         //SetRandomSeed((uint32)GetAbsoluteMsecTime());
         //LoadConfig();
 
+        //atgBlenderImport::load("model\\box.fbx");
+        //atgBlenderImport::load("model\\modelBuilding_House1.fbx");
+        
+
         g_Renderer->SetViewPort(0, 0, GetWindowWidth(), GetWindowHeight());
         g_Renderer->SetFaceCull(FCM_CCW);
+        g_Renderer->SetVSyncState(true);
 
         Matrix world(MatrixIdentity);
         //world.RotationZXY(0.0f, -90.0f, -90.0f);
@@ -44,19 +66,23 @@ public :
         _camera.GetCamera()->SetFov(30.f);
         _camera.GetCamera()->SetClipFar(10000.0f);
 
-        _pShadowMapping = new atgSimpleShadowMapping();
-        if (false == _pShadowMapping->Create())
+        //if (false == shadowMapping.Create())
+        //{
+        //    return false;
+        //}
+
+        if (meshTest.Init())
         {
             return false;
         }
 
-        //PNG_Loader::Load(&image, "ui/ui1.png", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
+        //TGA_Loader::Load(&image, "model/CHRNPCICOHER156_DIFFUSE.tga", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
         //if (image.width > 0)
         //{
         //    if (g_Texture == NULL || g_Texture->IsLost())
         //    {
         //        g_Texture = new atgTexture();
-        //        g_Texture->Create(image.width, image.height, TF_R8G8B8A8, image.imageData);
+        //        g_Texture->Create(image.width, image.height, image.bpp == 24 ? TF_R8G8B8 : TF_R8G8B8A8, image.imageData);
         //        g_Texture->SetFilterMode(TFM_FILTER_BILINEAR);
         //    }
         //}
@@ -66,6 +92,7 @@ public :
 
     virtual void OnShutdown()
     {
+        shadowMapping.Destory();
         SAFE_DELETE(g_Texture);
     }
 
@@ -74,10 +101,9 @@ public :
     {
         _camera.OnKeyScanDown(keyscan);
 
-        if (_pShadowMapping)
-        {
-            _pShadowMapping->OnKeyScanDown(keyscan);
-        }
+        //shadowMapping.OnKeyScanDown(keyscan);
+        
+        meshTest.OnKeyScanDown(keyscan);
 
         switch (keyscan)
         {
@@ -110,11 +136,7 @@ public :
     {
         _camera.OnPointerMove(id, x, y);
 
-        if (_pShadowMapping)
-        {
-            _pShadowMapping->OnPointerMove(id, x, y);
-        }
-
+        shadowMapping.OnPointerMove(id, x, y);
     }
 
     void OnPointerUp(uint8 id, int16 x, int16 y)
@@ -151,7 +173,12 @@ public :
         g_Renderer->Clear();
         g_Renderer->BeginFrame();
 
-        _pShadowMapping->Render(_camera.GetCamera());
+        //g_Renderer->BindTexture(0, g_Texture);
+
+        //shadowMapping.Render(_camera.GetCamera());
+
+        meshTest.Render(_camera.GetCamera());
+
 
         g_Renderer->EndFrame();
         g_Renderer->Present();
@@ -162,9 +189,11 @@ public :
     }
 
     atgFlyCamera _camera;
-    atgSimpleShadowMapping* _pShadowMapping;
-    PNG_Image image;
+    atgSimpleShadowMapping shadowMapping;
+    TGA_Image image;
     //atgPerfMonitor _monitor;
+
+    MeshTest meshTest;
 };
 
 #ifdef _WIN32

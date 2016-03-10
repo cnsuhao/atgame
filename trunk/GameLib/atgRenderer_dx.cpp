@@ -224,7 +224,7 @@ void* atgIndexBuffer::Lock( uint32 offset, uint32 size )
 {
     AASSERT(_impl);
     void* pIndexBuffer = NULL;
-    if (!IsLost() && _impl && size < _size)
+    if (!IsLost() && _impl && size <= _size)
     {
         if( FAILED(_impl->pDXIB->Lock(offset,
                                       size,
@@ -2367,9 +2367,6 @@ void atgRenderer::BindIndexBuffer( atgIndexBuffer* indexBuffer )
 
 void atgRenderer::BindVertexBuffer( atgVertexBuffer* vertexBuffer )
 {
-    if(!_bindPass)
-        return;
-
     if (vertexBuffer)
     {
         DX_ASSERT( vertexBuffer->_impl->Bind() );

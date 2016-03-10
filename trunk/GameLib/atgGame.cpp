@@ -570,6 +570,9 @@
     int win32_ogl_present()
     {
     #if defined (USE_OPENGL) 
+        
+        glFlush();
+
         #ifndef USE_OPENGLES
             return SwapBuffers(hDC);
         #else
@@ -683,7 +686,7 @@
 
     static void android_term_display(atgGame* game)
     {
-
+        LOG("################################################################################android_term_display");
         android_term_surface(game);
 
         if (__eglContext != EGL_NO_CONTEXT)
@@ -801,8 +804,7 @@
             LOG("APP_CMD_INIT_WINDOW");
             // The window is being shown, get it ready.
             if (app->window != NULL)
-            {
-                g_Renderer->ReleaseAllGpuResource();
+            {  
                 if(g_Renderer->Initialize(0, 0, 0))
                 {
                     __initialized = true;
@@ -818,7 +820,7 @@
             break;
         case APP_CMD_TERM_WINDOW: // code : 2
             LOG("APP_CMD_TERM_WINDOW");
-            android_term_display(game);
+            android_term_surface(game);
             __initialized = false;
             break;
         case APP_CMD_CONFIG_CHANGED:
@@ -854,6 +856,20 @@
             //    Game::getInstance()->resume();
             //}
             break;
+        case APP_CMD_LOST_FOCUS: // code : 7
+            LOG("APP_CMD_LOST_FOCUS");
+            // When our app loses focus, we stop monitoring the sensors.
+            // This is to avoid consuming battery while not being used.
+            if (__accelerometerSensor != NULL)
+            {
+                ASensorEventQueue_disableSensor(__sensorEventQueue, __accelerometerSensor);
+            }
+            if (__gyroscopeSensor != NULL)
+            {
+                ASensorEventQueue_disableSensor(__sensorEventQueue, __gyroscopeSensor);
+            }
+            __animating = 0;
+            break;
         case APP_CMD_RESUME: // code : 11
             LOG("APP_CMD_RESUME");
             if (__initialized && game)
@@ -880,21 +896,6 @@
             {
                 break;
             }
-        case APP_CMD_LOST_FOCUS: // code : 7
-            LOG("APP_CMD_LOST_FOCUS");
-            // When our app loses focus, we stop monitoring the sensors.
-            // This is to avoid consuming battery while not being used.
-            if (__accelerometerSensor != NULL)
-            {
-                ASensorEventQueue_disableSensor(__sensorEventQueue, __accelerometerSensor);
-            }
-            if (__gyroscopeSensor != NULL)
-            {
-                ASensorEventQueue_disableSensor(__sensorEventQueue, __gyroscopeSensor);
-            }
-
-            __animating = 0;
-            break;
         }
     }
 
@@ -1053,8 +1054,8 @@
                     {
                         if (__state->window != NULL)
                         {
-                            android_term_surface(game);
                             g_Renderer->ReleaseAllGpuResource();
+                            android_term_display(game);
                             g_Renderer->Initialize(0, 0, 0);
                         }
                         __initialized = true;
@@ -1077,113 +1078,117 @@
 
     bool android_init_ogl()
     {
-        int samples = 8;
-        // Hard-coded to 32-bit/OpenGL ES 2.0.
-        // NOTE: EGL_SAMPLE_BUFFERS, EGL_SAMPLES and EGL_DEPTH_SIZE MUST remain at the beginning of the attribute list
-        // since they are expected to be at indices 0-5 in config fallback code later.
-        // EGL_DEPTH_SIZE is also expected to
-        EGLint eglConfigAttrs[] =
-        {
-            EGL_SAMPLE_BUFFERS,     samples > 0 ? 1 : 0,
-            EGL_SAMPLES,            samples,
-            EGL_DEPTH_SIZE,         24,
-            EGL_RED_SIZE,           8,
-            EGL_GREEN_SIZE,         8,
-            EGL_BLUE_SIZE,          8,
-            EGL_ALPHA_SIZE,         8,
-            EGL_STENCIL_SIZE,       8,
-            EGL_SURFACE_TYPE,       EGL_WINDOW_BIT,
-            EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
-            EGL_NONE
-        };
 
-        EGLint eglConfigCount;
-        const EGLint eglContextAttrs[] =
+        if (__eglContext == EGL_NO_CONTEXT)
         {
-            EGL_CONTEXT_CLIENT_VERSION,    2,
-            EGL_NONE
-        };
+            int samples = 8;
+            // Hard-coded to 32-bit/OpenGL ES 2.0.
+            // NOTE: EGL_SAMPLE_BUFFERS, EGL_SAMPLES and EGL_DEPTH_SIZE MUST remain at the beginning of the attribute list
+            // since they are expected to be at indices 0-5 in config fallback code later.
+            // EGL_DEPTH_SIZE is also expected to
+            EGLint eglConfigAttrs[] =
+            {
+                EGL_SAMPLE_BUFFERS,     samples > 0 ? 1 : 0,
+                EGL_SAMPLES,            samples,
+                EGL_DEPTH_SIZE,         24,
+                EGL_RED_SIZE,           8,
+                EGL_GREEN_SIZE,         8,
+                EGL_BLUE_SIZE,          8,
+                EGL_ALPHA_SIZE,         8,
+                EGL_STENCIL_SIZE,       8,
+                EGL_SURFACE_TYPE,       EGL_WINDOW_BIT,
+                EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
+                EGL_NONE
+            };
+
+            EGLint eglConfigCount;
+            const EGLint eglContextAttrs[] =
+            {
+                EGL_CONTEXT_CLIENT_VERSION,    2,
+                EGL_NONE
+            };
+
+            if (__eglDisplay == EGL_NO_DISPLAY && __eglContext == EGL_NO_CONTEXT)
+            {
+                // Get the EGL display and initialize.
+                __eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+                if (__eglDisplay == EGL_NO_DISPLAY)
+                {
+                    checkErrorEGL("eglGetDisplay");
+                    return false;
+                }
+
+                if (eglInitialize(__eglDisplay, NULL, NULL) != EGL_TRUE)
+                {
+                    checkErrorEGL("eglInitialize");
+                    return false;
+                }
+
+                // Try both 24 and 16-bit depth sizes since some hardware (i.e. Tegra) does not support 24-bit depth
+                bool validConfig = false;
+                EGLint depthSizes[] = { 24, 16 };
+                for (unsigned int i = 0; i < 2; ++i)
+                {
+                    eglConfigAttrs[1] = samples > 0 ? 1 : 0;
+                    eglConfigAttrs[3] = samples;
+                    eglConfigAttrs[5] = depthSizes[i];
+
+                    if (eglChooseConfig(__eglDisplay, eglConfigAttrs, &__eglConfig, 1, &eglConfigCount) == EGL_TRUE && eglConfigCount > 0)
+                    {
+                        validConfig = true;
+                        break;
+                    }
+
+                    if (samples)
+                    {
+                        // Try lowering the MSAA sample size until we find a supported config
+                        int sampleCount = samples;
+                        while (sampleCount)
+                        {
+                            LOG("No EGL config found for depth_size=%d and samples=%d. Trying samples=%d instead.\n", depthSizes[i], sampleCount, sampleCount / 2);
+                            sampleCount /= 2;
+                            eglConfigAttrs[1] = sampleCount > 0 ? 1 : 0;
+                            eglConfigAttrs[3] = sampleCount;
+                            if (eglChooseConfig(__eglDisplay, eglConfigAttrs, &__eglConfig, 1, &eglConfigCount) == EGL_TRUE && eglConfigCount > 0)
+                            {
+                                validConfig = true;
+                                break;
+                            }
+                        }
+
+                        if (validConfig)
+                            break;
+                    }
+                    else
+                    {
+                        LOG("No EGL config found for depth_size=%d.\n", depthSizes[i]);
+                    }
+                }
+
+                if (!validConfig)
+                {
+                    checkErrorEGL("eglChooseConfig");
+                    return false;
+                }
+
+                LOG(" EGL_SAMPLE_BUFFERS=%d\n EGL_SAMPLES=%d\n EGL_DEPTH_SIZE=%d\n EGL_RED_SIZE=%d\n EGL_GREEN_SIZE=%d\n EGL_BLUE_SIZE=%d\n EGL_ALPHA_SIZE=%d\n EGL_STENCIL_SIZE=%d\n EGL_SURFACE_TYPE=%d\n EGL_RENDERABLE_TYPE=%d.\n", 
+                    eglConfigAttrs[1],eglConfigAttrs[3], eglConfigAttrs[5], eglConfigAttrs[7], eglConfigAttrs[9],eglConfigAttrs[11],
+                    eglConfigAttrs[13],eglConfigAttrs[15],eglConfigAttrs[17],eglConfigAttrs[19]);
+
+                __eglContext = eglCreateContext(__eglDisplay, __eglConfig, EGL_NO_CONTEXT, eglContextAttrs);
+                if (__eglContext == EGL_NO_CONTEXT)
+                {
+                    checkErrorEGL("eglCreateContext");
+                    return false;
+                }
+            }
+        }
 
         const EGLint eglSurfaceAttrs[] =
         {
             EGL_RENDER_BUFFER,    EGL_BACK_BUFFER,
             EGL_NONE
         };
-
-        if (__eglDisplay == EGL_NO_DISPLAY && __eglContext == EGL_NO_CONTEXT)
-        {
-            // Get the EGL display and initialize.
-            __eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-            if (__eglDisplay == EGL_NO_DISPLAY)
-            {
-                checkErrorEGL("eglGetDisplay");
-                return false;
-            }
-
-            if (eglInitialize(__eglDisplay, NULL, NULL) != EGL_TRUE)
-            {
-                checkErrorEGL("eglInitialize");
-                return false;
-            }
-
-            // Try both 24 and 16-bit depth sizes since some hardware (i.e. Tegra) does not support 24-bit depth
-            bool validConfig = false;
-            EGLint depthSizes[] = { 24, 16 };
-            for (unsigned int i = 0; i < 2; ++i)
-            {
-                eglConfigAttrs[1] = samples > 0 ? 1 : 0;
-                eglConfigAttrs[3] = samples;
-                eglConfigAttrs[5] = depthSizes[i];
-
-                if (eglChooseConfig(__eglDisplay, eglConfigAttrs, &__eglConfig, 1, &eglConfigCount) == EGL_TRUE && eglConfigCount > 0)
-                {
-                    validConfig = true;
-                    break;
-                }
-
-                if (samples)
-                {
-                    // Try lowering the MSAA sample size until we find a supported config
-                    int sampleCount = samples;
-                    while (sampleCount)
-                    {
-                        LOG("No EGL config found for depth_size=%d and samples=%d. Trying samples=%d instead.\n", depthSizes[i], sampleCount, sampleCount / 2);
-                        sampleCount /= 2;
-                        eglConfigAttrs[1] = sampleCount > 0 ? 1 : 0;
-                        eglConfigAttrs[3] = sampleCount;
-                        if (eglChooseConfig(__eglDisplay, eglConfigAttrs, &__eglConfig, 1, &eglConfigCount) == EGL_TRUE && eglConfigCount > 0)
-                        {
-                            validConfig = true;
-                            break;
-                        }
-                    }
-
-                    if (validConfig)
-                        break;
-                }
-                else
-                {
-                    LOG("No EGL config found for depth_size=%d.\n", depthSizes[i]);
-                }
-            }
-
-            if (!validConfig)
-            {
-                checkErrorEGL("eglChooseConfig");
-                return false;
-            }
-            
-            LOG(" EGL_SAMPLE_BUFFERS=%d\n EGL_SAMPLES=%d\n EGL_DEPTH_SIZE=%d\n EGL_RED_SIZE=%d\n EGL_GREEN_SIZE=%d\n EGL_BLUE_SIZE=%d\n EGL_ALPHA_SIZE=%d\n EGL_STENCIL_SIZE=%d\n EGL_SURFACE_TYPE=%d\n EGL_RENDERABLE_TYPE=%d.\n", 
-                eglConfigAttrs[1],eglConfigAttrs[3], eglConfigAttrs[5], eglConfigAttrs[7], eglConfigAttrs[9],eglConfigAttrs[11],
-                eglConfigAttrs[13],eglConfigAttrs[15],eglConfigAttrs[17],eglConfigAttrs[19]);
-
-            __eglContext = eglCreateContext(__eglDisplay, __eglConfig, EGL_NO_CONTEXT, eglContextAttrs);
-            if (__eglContext == EGL_NO_CONTEXT)
-            {
-                checkErrorEGL("eglCreateContext");
-                return false;
-            }
-        }
 
         // EGL_NATIVE_VISUAL_ID is an attribute of the EGLConfig that is
         // guaranteed to be accepted by ANativeWindow_setBuffersGeometry().
@@ -1221,6 +1226,8 @@
 
     bool android_ogl_present()
     {
+        eglWaitNative(EGL_CORE_NATIVE_ENGINE);
+        eglWaitGL();
         return eglSwapBuffers(__eglDisplay, __eglSurface);
     }
 

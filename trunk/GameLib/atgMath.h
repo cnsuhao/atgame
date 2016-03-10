@@ -453,8 +453,10 @@ inline void atgMath::VecProj(const float v0[3], const float v1[3], float result[
     result[2] = (p * v1[2]) * invLenSq;
 }
 
-// Vproj = ((v0 dot v1) / length(v1)) * (v1 / length(v1)) => (v0 dot v1Nomralied) * v1Nomralied
-//inline void VecProj(const float v0[3], const float v1Nomralied[3], float result[3])
+// Vproj = ((v0 dot v1) / length(v1)) * (v1 / length(v1)) 
+// if v1 is normalized , so length(v1) euq 1.0 => (v0 dot v1) * v1 
+//=> (v0 dot v1Nomralized) * v1Nomralized
+//inline void VecProj(const float v0[3], const float v1Nomralized[3], float result[3])
 //{
 //    float p = VecDot(v0, v1Nomralied);
 //    VecScale(v1Nomralied, p, result);
@@ -741,6 +743,7 @@ inline void atgMath::LookAtRH(const float eyePos[3], const float lookAt[3], cons
     result[3][3] = 1.0f;
 }
 
+//>顶点变换后,z/w的值在[0.0-1.0]为可见. 且w大于0.
 inline void atgMath::Perspective(float fov_y, float aspect, float zNear, float zFar, float result[4][4])
 {
     PerspectiveRH(fov_y, aspect, zNear, zFar, result);

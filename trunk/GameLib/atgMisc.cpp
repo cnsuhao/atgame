@@ -185,6 +185,46 @@ float atgReadFile::ReadFloat()
 
 //////////////////////////////////////////////////////////////////////////
 // TGA_Loader
+
+
+Image* TGA_Loader::Load(const char* filename, bool yReversed, ColorOrder co)
+{
+    TGA_Image* img = new TGA_Image();
+    if(!TGA_Loader::Load(img, filename, yReversed, co))
+    {
+        SAFE_DELETE(img);
+    }
+
+    return img;
+}
+
+Image* TGA_Loader::LoadMemory( const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co /*= CO_RGBA*/ )
+{
+    TGA_Image* img = new TGA_Image();
+    if(!TGA_Loader::LoadMemory(img, buffer, bufferSize, yReversed, co))
+    {
+        SAFE_DELETE(img);
+    }
+
+    return img;
+}
+
+void TGA_Loader::Release( Image* image )
+{
+    if (image)
+    {
+        TGA_Loader::Release(image);
+        SAFE_DELETE(image);
+    }
+}
+
+const std::string& TGA_Loader::FileExt()
+{
+    static std::string fileExt("tga");
+
+    return fileExt;
+}
+
 bool TGA_Loader::Load( TGA_Image* image, const char* filename, bool yReversed, ColorOrder co )
 {
     if ( filename == NULL )
@@ -234,7 +274,7 @@ bool TGA_Loader::LoadMemory( TGA_Image* image, const char* buffer, uint32 buffer
 
     if (header.head.descLen >0){
         srcBuffer += header.head.descLen;
-        bufferSize -= header.head.descLen;
+        srcBufLen -= header.head.descLen;
     }
 
     if ( memcmp( &uTGAcompare.cmapType, &header.head.cmapType, sizeof(header.head) - sizeof(uint8) ) == 0 ){            //未压缩TGA
@@ -262,7 +302,7 @@ bool TGA_Loader::LoadUncompressedTGA( TGA_Image* image, const char* buffer, uint
     AASSERT( buffer != NULL && image != NULL );
     uint16 bytePerPixel = image->bpp/8;
     uint32 imgSize = image->width * image->height * bytePerPixel;               //图像总字节数
-    image->imageData = new uint8[imgSize];
+    image->imageData = new uint8[image->width * image->height];
     uint32 pitch =  image->width * bytePerPixel;
     bool bXReversed = ((header->attrib & 16) == 16);
     bool bYReversed = ((header->attrib & 32) == 32);
@@ -324,9 +364,9 @@ bool TGA_Loader::LoadCompressedTGA( TGA_Image* image, const char* buffer, uint32
 
             for( int i = 0; i < chunkHeader; i++ )
             {
-                memcpy(colorbuffer, srcBuffer, image->bpp);
-                srcBuffer += image->bpp;
-                srcBufLen -= image->bpp;
+                memcpy(colorbuffer, srcBuffer, bytePerPixel);
+                srcBuffer += bytePerPixel;
+                srcBufLen -= bytePerPixel;
                 image->imageData[currentByte] = colorbuffer[2];
                 image->imageData[currentByte+1] = colorbuffer[1];
                 image->imageData[currentByte+2] = colorbuffer[0];
@@ -342,9 +382,9 @@ bool TGA_Loader::LoadCompressedTGA( TGA_Image* image, const char* buffer, uint32
         {
             chunkHeader -= 127;         //减去127获得ID bit 的rid    开始循环拷贝我们多次读到内存中的像素，这由RLE头中的值规定。
 
-            memcpy(colorbuffer, srcBuffer, image->bpp);
-            srcBuffer += image->bpp;
-            srcBufLen -= image->bpp;
+            memcpy(colorbuffer, srcBuffer, bytePerPixel);
+            srcBuffer += bytePerPixel;
+            srcBufLen -= bytePerPixel;
 
             for( int i = 0; i < chunkHeader; i++ ){
                 image->imageData[currentByte] = colorbuffer[2];             // 拷贝“R”字节
@@ -377,6 +417,47 @@ extern "C"
 #include "jpeglib.h"
 #include "jerror.h"
 }
+
+
+
+Image* JPEG_Loader::Load(const char* filename, bool yReversed, ColorOrder co)
+{
+    JPEG_Image* img = new JPEG_Image();
+    if(!JPEG_Loader::Load(img, filename, yReversed, co))
+    {
+        SAFE_DELETE(img);
+    }
+
+    return img;
+}
+
+Image* JPEG_Loader::LoadMemory( const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co /*= CO_RGBA*/ )
+{
+    JPEG_Image* img = new JPEG_Image();
+    if(!JPEG_Loader::LoadMemory(img, buffer, bufferSize, yReversed, co))
+    {
+        SAFE_DELETE(img);
+    }
+
+    return img;
+}
+
+void JPEG_Loader::Release( Image* image )
+{
+    if (image)
+    {
+        JPEG_Loader::Release(image);
+        SAFE_DELETE(image);
+    }
+}
+
+const std::string& JPEG_Loader::FileExt()
+{
+    static std::string fileExt("jpg");
+
+    return fileExt;
+}
+
 
 // Source manager structure
 struct JPEG_SOURCE_MANAGER
@@ -421,7 +502,7 @@ bool JPEG_Loader::LoadMemory( JPEG_Image* image, const int8* buffer, uint32 buff
     JSAMPARRAY Pointer;
     jpeg_decompress_struct Info;
     jpeg_error_mgr ErrorManager;
-    int8 * pTargetBuffer;
+    uint8 * pTargetBuffer;
 
     uint32 srcBufLen = bufferSize;
     const int8* SourceBuffer = buffer;
@@ -443,7 +524,7 @@ bool JPEG_Loader::LoadMemory( JPEG_Image* image, const int8* buffer, uint32 buff
     {
         //>默认生成32位的RGBA数据
         uint32 DestLen = Info.output_width * Info.output_height * 4;
-        int8* DecodeBuffer = new int8[DestLen];
+        uint8* DecodeBuffer = new uint8[DestLen];
         image->imageData = DecodeBuffer;
         image->width = Info.output_width;
         image->height = Info.output_height;
@@ -494,7 +575,7 @@ bool JPEG_Loader::LoadMemory( JPEG_Image* image, const int8* buffer, uint32 buff
     {
         //>生成24位的RGB数据
         uint32 DestLen = Info.output_width * Info.output_height * 3;
-        int8* DecodeBuffer = new int8[DestLen];
+        uint8* DecodeBuffer = new uint8[DestLen];
         image->imageData = DecodeBuffer;
         image->width = Info.output_width;
         image->height = Info.output_height;
@@ -600,6 +681,45 @@ void JPEG_Loader::SourceTerminate(struct jpeg_decompress_struct* Info)
 }
 
 #include "png.h"
+
+Image* PNG_Loader::Load(const char* filename, bool yReversed, ColorOrder co)
+{
+    PNG_Image* img = new PNG_Image();
+    if(!PNG_Loader::Load(img, filename, yReversed, co))
+    {
+        SAFE_DELETE(img);
+    }
+
+    return img;
+}
+
+Image* PNG_Loader::LoadMemory( const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co /*= CO_RGBA*/ )
+{
+    PNG_Image* img = new PNG_Image();
+    if(!PNG_Loader::LoadMemory(img, buffer, bufferSize, yReversed, co))
+    {
+        SAFE_DELETE(img);
+    }
+
+    return img;
+}
+
+void PNG_Loader::Release( Image* image )
+{
+    if (image)
+    {
+        PNG_Loader::Release(image);
+        SAFE_DELETE(image);
+    }
+}
+
+const std::string& PNG_Loader::FileExt()
+{
+    static std::string fileExt("png");
+
+    return fileExt;
+}
+
 
 typedef struct 
 {
@@ -754,7 +874,7 @@ bool PNG_Loader::LoadMemory(PNG_Image* image, const int8* buffer, uint32 bufferS
         rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
         png_size_t dataLen = rowbytes * image->height;
-        image->imageData = static_cast<int8*>(malloc(dataLen * sizeof(int8)));
+        image->imageData = static_cast<uint8*>(malloc(dataLen * sizeof(uint8)));
         if (!image->imageData)
         {
             if (row_pointers != NULL)
@@ -780,7 +900,7 @@ bool PNG_Loader::LoadMemory(PNG_Image* image, const int8* buffer, uint32 bufferS
                 for(int i = 0; i < image->width * image->height; i++)
                 {
 					int8* p = fourBytes + i * 4;
-                    *(int32*)p = FVCC(p[3], p[0], p[1], p[2]);
+                    atgMath::Swap(p[0], p[2]);
                 }
             }
         }
@@ -2652,7 +2772,7 @@ bool ObjLoader::LoadGeometryFromOBJ( const char* strObjFile )
             // Face
             int iPosition, iTexCoord, iNormal;
             //SrVertexP3N3T2 vertex;
-            uint16	dwIndex[3];
+            //uint16	dwIndex[3];
             for( uint32 iFace = 0; iFace < 3; iFace++ )
             {
                 //memset( &vertex, 0, sizeof( SrVertexP3N3T2 ) );
@@ -2716,4 +2836,91 @@ bool ObjLoader::LoadGeometryFromOBJ( const char* strObjFile )
 bool ObjLoader::LoadMaterialFromMTL( const char* strMtlile )
 {
     return true;
+}
+
+ImageLoader& ImageLoader::GetInstance()
+{
+    static ImageLoader instance;
+    if (instance.loaders.empty())
+    {
+        instance.AddLoader(new PNG_Loader());
+        instance.AddLoader(new TGA_Loader());
+        instance.AddLoader(new JPEG_Loader());
+    }
+    return instance;
+}
+
+#include <algorithm>
+
+Image* ImageLoader::Load( const char* filename, bool yReversed, ColorOrder co /*= CO_RGBA*/ )
+{
+    std::string fileExt;
+
+    fileExt = GetFileExt(filename);
+    if (fileExt.empty())
+    {
+        return NULL;
+    }
+
+    transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::tolower);
+
+    uint32 loaderIdx = 0;
+    auto it = ImageLoader::loaders.begin();
+    for (auto end = ImageLoader::loaders.end(); 
+         it != end; ++it, loaderIdx++)
+    {
+        if((*it)->FileExt() == fileExt)
+        {
+            Image* img = (*it)->Load(filename, yReversed, co);
+            if (img)
+            {
+                img->loaderIdx = loaderIdx;
+                return img;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+void ImageLoader::Release( Image* image )
+{
+    if (image && image->loaderIdx < ImageLoader::loaders.size())
+    {
+        ImageLoader::loaders[image->loaderIdx]->Release(image);
+    }
+}
+
+void ImageLoader::AddLoader( LoaderInterface* loader )
+{
+    if (loader)
+    {
+        ImageLoader::loaders.push_back(loader);
+    }
+}
+
+std::string ImageLoader::GetFileExt( const char* filename )
+{
+    std::string fileName(filename);
+
+    size_t offset = fileName.find_last_of('.');
+    if (offset != std::string::npos)
+    {
+        return fileName.substr(offset+1, fileName.length());
+    }
+
+    return "";
+}
+
+std::string ImageLoader::GetFilePath( const char* filename )
+{
+    std::string fileName(filename);
+
+    size_t offset = fileName.find_last_of('\\');
+    if (offset != std::string::npos)
+    {
+        return fileName.substr(0, offset + 1);
+    }
+
+    return "";
 }

@@ -235,6 +235,48 @@ enum ColorOrder
     CO_RGBA
 };
 
+struct Image
+{
+    uint8*      imageData;
+    uint16      width;
+    uint16      height;
+    uint8       bpp;                //Image color depth in bits per pixel (24/32 ??)
+    uint32      loaderIdx;
+    Image():imageData(0),width(0),height(0),bpp(0),loaderIdx(0)
+    {
+
+    }
+};
+
+class ImageLoader
+{
+    ImageLoader(){ }
+public:
+
+    class LoaderInterface
+    {
+    public:
+        virtual Image* Load(const char* filename, bool yReversed, ColorOrder co = CO_RGBA) = 0;
+        virtual Image* LoadMemory(const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co = CO_RGBA) = 0;
+        virtual void Release( Image* image ) = 0;
+        virtual const std::string& FileExt() = 0; //file name extension
+    };
+
+    static ImageLoader& GetInstance();
+
+    Image* Load(const char* filename, bool yReversed, ColorOrder co = CO_RGBA);
+    void Release(Image* image);
+
+    void AddLoader(LoaderInterface* loader);
+
+public:
+    static std::string GetFileExt(const char* filename);
+    static std::string GetFilePath(const char* filename);
+private:
+    std::vector<LoaderInterface*> loaders;
+};
+
+
 
 //////////////////////////////////////////////////////////////////////////
 // TAG Õº∆¨∂¡»°
@@ -265,20 +307,22 @@ typedef struct
     uint8           attrib;
 }TGA_Header;
 
-typedef struct _tga_Image
+typedef struct _tga_Image : public Image
 {
-    uint8*      imageData;
-    uint16      width;
-    uint16      height;
-    uint8       bpp;                //Image color depth in bits per pixel
     bool        bCompressed;        //Compressed or Uncompressed
 
-    _tga_Image():imageData(NULL){}
+    _tga_Image():bCompressed(false){}
 }TGA_Image;
 #pragma pack( pop )
 
-class TGA_Loader
+class TGA_Loader : public ImageLoader::LoaderInterface
 {
+public:
+    virtual Image*      Load(const char* filename, bool yReversed, ColorOrder co = CO_RGBA);
+    virtual Image*      LoadMemory(const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co = CO_RGBA);
+    virtual void        Release( Image* image );
+    virtual const std::string& FileExt();
+
 public:
     static bool         Load( TGA_Image* image, const char* filename, bool yReversed, ColorOrder co = CO_RGBA);
     static bool         LoadMemory(TGA_Image* image, const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co = CO_RGBA);
@@ -288,20 +332,21 @@ protected:
     static bool         LoadCompressedTGA( TGA_Image* image, const char* buffer, uint32 bufferSize, TGA_Header* header, bool yReversed, ColorOrder co );
 };
 
-struct JPEG_Image
+struct JPEG_Image : public Image
 {
-    int8*       imageData;
-    uint16      width;
-    uint16      height;
-    uint8       bpp;
-
-    JPEG_Image():imageData(NULL),width(0),height(0),bpp(0)
+    JPEG_Image()
     {
     }
 };
 
-class JPEG_Loader
+class JPEG_Loader : public ImageLoader::LoaderInterface
 {
+public:
+    virtual Image*      Load(const char* filename, bool yReversed, ColorOrder co = CO_RGBA);
+    virtual Image*      LoadMemory(const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co = CO_RGBA);
+    virtual void        Release( Image* image );
+    virtual const std::string& FileExt();
+
 public:
     static bool         Load( JPEG_Image* image, const char* filename, bool yReversed, ColorOrder co = CO_RGBA );
     static bool         LoadMemory(JPEG_Image* image, const int8* buffer, uint32 bufferSize, bool yReversed, ColorOrder co = CO_RGBA);
@@ -315,19 +360,21 @@ protected:
     static void         SourceTerminate(struct jpeg_decompress_struct* Info);
 };
 
-struct PNG_Image
+struct PNG_Image : Image
 {
-    int8*       imageData;
-    uint16      width;
-    uint16      height;
-    uint8       bpp;
-    PNG_Image():imageData(NULL),width(0),height(0),bpp(0)
+    PNG_Image()
     {
     }
 };
 
-class PNG_Loader
+class PNG_Loader : public ImageLoader::LoaderInterface
 {
+public:
+    virtual Image*      Load(const char* filename, bool yReversed, ColorOrder co = CO_RGBA);
+    virtual Image*      LoadMemory(const char* buffer, uint32 bufferSize, bool yReversed, ColorOrder co = CO_RGBA);
+    virtual void        Release( Image* image );
+    virtual const std::string& FileExt();
+
 public:
     static bool         Load( PNG_Image* image, const char* filename, bool yReversed, ColorOrder co = CO_RGBA );
     static bool         LoadMemory(PNG_Image* image, const int8* buffer, uint32 bufferSize, bool yReversed, ColorOrder co = CO_RGBA);

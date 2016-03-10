@@ -1,7 +1,6 @@
 #include "atgBase.h"
 #include "atgShaderLibrary.h"
-//#include "atgMaterial.h"
-//#include "atgLight.h"
+#include "atgMaterial.h"
 
 const int IPASS_CONFIG_FAILD = -2;
 
@@ -159,7 +158,7 @@ void atgShaderNotLighteTexture::SetTexture( atgTexture* texture )
 
 atgShaderLightTexture::atgShaderLightTexture()
 {
-
+    _usingTempLight = false;
 }
 
 atgShaderLightTexture::~atgShaderLightTexture()
@@ -179,31 +178,43 @@ bool atgShaderLightTexture::ConfingAndCreate()
     {
         rs = atgPass::Create("shaders/light_texture.dxvs", "shaders/light_texture.dxps");
     }
+
+    _tempLight.SetRange(500.0f);
+    _tempLight.SetPosition(Vec3(0.0f, 0.0f, 0.0f));
+    _tempLight.SetColor(Vec3(0.8f, 0.8f, 0.8f));
+    _tempLight.SetSpecular(Vec3One);
     return rs;
 }
 
 void atgShaderLightTexture::BeginContext( void* data )
 {
-    /*
+    
     atgShaderNotLighteTexture::BeginContext(data);
-    // 如果到时候没有设置光， new 一个临时光让shader运行正常也不错。
+    
 
     // set MVMatrix
     Matrix WorldMatrix;
-    g_Renderer->GetMatrix(&WorldMatrix.m, MD_WORLD);
+    g_Renderer->GetMatrix(WorldMatrix, MD_WORLD);
 
     Matrix WorldViewMatrix;
-    g_Renderer->GetMatrix(&WorldViewMatrix.m, MD_VIEW);
+    g_Renderer->GetMatrix(WorldViewMatrix, MD_VIEW);
     WorldViewMatrix.Concatenate(WorldMatrix);
-    SetMatrix4x4("mat_world_view", WorldViewMatrix.m);
+    SetMatrix4x4("mat_world_view", WorldViewMatrix);
 
     Matrix WorldViewMatrixInverseTranspose(WorldViewMatrix);
     WorldViewMatrixInverseTranspose.Inverse();
     WorldViewMatrixInverseTranspose.Transpose();
-    SetMatrix4x4("mat_world_view_inverse_transpose", WorldViewMatrixInverseTranspose.m);
+    SetMatrix4x4("mat_world_view_inverse_transpose", WorldViewMatrixInverseTranspose);
 
     Vec4 lightData0;
     Vec4 lightData1;
+    // 如果到时候没有设置光， new 一个临时光让shader运行正常也不错。
+    if (g_Renderer->GetBindLights().empty())
+    {
+        g_Renderer->AddBindLight(&_tempLight);
+        _usingTempLight = true;
+    }
+
     const bindLights& lights = g_Renderer->GetBindLights();
     if (!lights.empty())
     {
@@ -229,6 +240,7 @@ void atgShaderLightTexture::BeginContext( void* data )
                 {
                     atgPointLight* pointLight = static_cast<atgPointLight*>(light);
                     // set position;
+                    g_Renderer->GetMatrix(WorldViewMatrix, MD_VIEW);
                     Vec3 lightPosition = WorldViewMatrix.Transfrom(pointLight->GetPosition());
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightPosition", i);
                     SetFloat3(uniformNameBuff, lightPosition.m);
@@ -250,11 +262,11 @@ void atgShaderLightTexture::BeginContext( void* data )
                     // set range
                     lightData1.y = spotLight->GetRange();
                     // outer cone angle and inner cone angle
-                    lightData1.z = DegreesToRadians(Clamp(spotLight->GetOuterCone(),0.0f,90.0f)); 
-                    lightData1.w = DegreesToRadians(Clamp(spotLight->GetInnerCone(),0.0f,90.0f));
+                    lightData1.z = atgMath::DegreesToRadians(atgMath::Clamp(spotLight->GetOuterCone(),0.0f,90.0f)); 
+                    lightData1.w = atgMath::DegreesToRadians(atgMath::Clamp(spotLight->GetInnerCone(),0.0f,90.0f));
 
                     if (lightData1.w > lightData1.z)
-                        Swap(lightData1.z, lightData1.w);
+                        atgMath::Swap(lightData1.z, lightData1.w);
 
                     lightData1.z = cosf(lightData1.z);
                     lightData1.w = cosf(lightData1.w);
@@ -293,5 +305,14 @@ void atgShaderLightTexture::BeginContext( void* data )
     }
 
     SetFloat3("u_globalAmbient", g_Renderer->GetGlobalAmbientColor().m);
-    */
+}
+
+void atgShaderLightTexture::EndContext( void* data )
+{
+    if (_usingTempLight)
+    {
+        g_Renderer->RemoveBindLight(&_tempLight);
+    }
+
+    _usingTempLight = false;
 }
