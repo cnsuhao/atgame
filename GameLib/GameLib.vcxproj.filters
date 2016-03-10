@@ -13,7 +13,10 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Lib">
+    <Filter Include="Game">
+      <UniqueIdentifier>{7d33e5c6-56bd-43d9-8f3b-a8f9ffe5e58b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
       <UniqueIdentifier>{c7488f84-972d-4fb3-b380-a4b41e3b8c16}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -28,40 +31,52 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="atgRenderer.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgMath.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgTypeDef.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgBase.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgProfile.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgMisc.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgShaderLibrary.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgGame.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgCamera.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="perfMonitor.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgIntersection.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgUtility.h">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="atgBlenderImport.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="atgMaterial.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="atgMesh.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="atgLight.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -72,43 +87,55 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="atgMath.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgBase.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgRenderer_Common.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgProfile.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgMisc.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgShaderLibrary.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgRenderer_dx.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgRenderer_ogl.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgGame.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgCamera.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="perfMonitor.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgIntersection.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgUtility.cpp">
-      <Filter>Lib</Filter>
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="atgBlenderImport.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="atgMaterial.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="atgMesh.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="atgLight.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -121,13 +121,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../Directx9/include;../glew/include;../jpeg-6b/src;../zlib/include;../libpng/include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Directx9/include;../glew/include;../jpeg-6b/src;../zlib/include;../libpng/include;../assimp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\glew\lib\windows\x86;..\zlib\lib\windows\x86;..\libpng\lib\windows\x86;..\Directx9\lib\x86;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>winmm.lib;opengl32.lib;glew32.lib;d3d9.lib;d3dx9.lib;jpeg.lib;FreeType.lib;libpng14.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\glew\lib\windows\x86;..\zlib\lib\windows\x86;..\libpng\lib\windows\x86;..\Directx9\lib\x86;..\assimp\lib\vs2010;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;opengl32.lib;glew32.lib;d3d9.lib;d3dx9.lib;jpeg.lib;FreeType.lib;libpng14.lib;zlib.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OpenGLES|Win32'">
@@ -138,13 +138,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_OPENGL;USE_OPENGLES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../Directx9/include;../jpeg-6b/src;../zlib/include;../libpng/include;../OGLES2/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Directx9/include;../jpeg-6b/src;../zlib/include;../libpng/include;../OGLES2/include;../assimp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\OGLES2\WindowsX86\Lib;..\zlib\lib\windows\x86;..\libpng\lib\windows\x86;..\Directx9\lib\x86;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>winmm.lib;libEGL.lib;libGLESv2.lib;jpeg.lib;FreeType.lib;libpng14.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\OGLES2\WindowsX86\Lib;..\zlib\lib\windows\x86;..\libpng\lib\windows\x86;..\Directx9\lib\x86;..\assimp\lib\vs2010;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;libEGL.lib;libGLESv2.lib;jpeg.lib;FreeType.lib;libpng14.lib;zlib.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Directx9|Win32'">
@@ -155,13 +155,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_DIRECTX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../Directx9/include;../glew/include;../jpeg-6b/src;../zlib/include;../libpng/include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../Directx9/include;../glew/include;../jpeg-6b/src;../zlib/include;../libpng/include;../assimp/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\glew\lib\windows\x86;..\zlib\lib\windows\x86;..\libpng\lib\windows\x86;..\Directx9\lib\x86;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>winmm.lib;opengl32.lib;glew32.lib;d3d9.lib;d3dx9.lib;jpeg.lib;FreeType.lib;libpng14.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\glew\lib\windows\x86;..\zlib\lib\windows\x86;..\libpng\lib\windows\x86;..\Directx9\lib\x86;..\assimp\lib\vs2010;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;opengl32.lib;glew32.lib;d3d9.lib;d3dx9.lib;jpeg.lib;FreeType.lib;libpng14.lib;zlib.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -187,10 +187,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atgBase.h" />
+    <ClInclude Include="atgBlenderImport.h" />
     <ClInclude Include="atgCamera.h" />
     <ClInclude Include="atgGame.h" />
     <ClInclude Include="atgIntersection.h" />
+    <ClInclude Include="atgLight.h" />
+    <ClInclude Include="atgMaterial.h" />
     <ClInclude Include="atgMath.h" />
+    <ClInclude Include="atgMesh.h" />
     <ClInclude Include="atgMisc.h" />
     <ClInclude Include="atgProfile.h" />
     <ClInclude Include="atgRenderer.h" />
@@ -203,10 +207,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="atgBase.cpp" />
+    <ClCompile Include="atgBlenderImport.cpp" />
     <ClCompile Include="atgCamera.cpp" />
     <ClCompile Include="atgGame.cpp" />
     <ClCompile Include="atgIntersection.cpp" />
+    <ClCompile Include="atgLight.cpp" />
+    <ClCompile Include="atgMaterial.cpp" />
     <ClCompile Include="atgMath.cpp" />
+    <ClCompile Include="atgMesh.cpp" />
     <ClCompile Include="atgMisc.cpp" />
     <ClCompile Include="atgProfile.cpp" />
     <ClCompile Include="atgRenderer_Common.cpp" />

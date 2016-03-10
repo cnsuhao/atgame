@@ -146,7 +146,7 @@ bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexForma
 {
     Destory();
 
-    int indexSize = sizeof(uint16);
+    int indexSize = sizeof(uint32);
     int bufSize = numIndices * indexSize;
     _impl = new atgIndexBufferImpl;
     _impl->accessMode = accessMode;
@@ -161,6 +161,8 @@ bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexForma
 
     atgGpuResource::ReSet();
     g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgIndexBuffer::Destory));
+    //LOG("create a atgIndexBuffer[%p].\n", this);
+
     return true;
 }
 
@@ -479,6 +481,8 @@ bool atgVertexBuffer::Create( atgVertexDecl* decl, const void *pData, uint32 siz
 
     atgGpuResource::ReSet();
     g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgVertexBuffer::Destory));
+    //LOG("create a atgVertexBuffer[%p].\n", this);
+
     return true;
 }
 
@@ -584,13 +588,20 @@ bool atgVertexBuffer::IsLocked() const
 class atgTextureImpl
 {
 public:
-    atgTextureImpl():TextureID(0),internalFormat(0),inFormat(0),type(0),locked(false),isFloatData(0),pixelSize(0),pLockMemory(0) {}
+    atgTextureImpl():TextureID(0),internalFormat(0),inFormat(0),type(0),isColorFormat(0),locked(false),isFloatData(0),pixelSize(0),pLockMemory(0) {}
     ~atgTextureImpl() 
     {
         SAFE_DELETE_ARRAY(pLockMemory);
         if(TextureID)
         {
-            GL_ASSERT( glDeleteTextures(1, &TextureID) );
+            if (isColorFormat)
+            {
+                GL_ASSERT( glDeleteTextures(1, &TextureID) );
+            }
+            else
+            {
+                GL_ASSERT( glDeleteRenderbuffers(1, &TextureID) );
+            }
             TextureID = 0;
         }
     }
@@ -601,6 +612,7 @@ public:
     GLint internalFormat;
     GLenum inFormat;
     GLenum type;
+    bool isColorFormat;
 
     bool locked;
     bool isFloatData;
@@ -743,9 +755,16 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     case TF_R32F:
         if (useToRenderTarget)
         {
+#ifdef USE_OPENGLES
+            inFormat = GL_RED_EXT;
+            internalFormat = GL_R32F_EXT;
+            type = GL_FLOAT;
+#else
             inFormat = GL_DEPTH_COMPONENT;
             internalFormat = GL_DEPTH_COMPONENT;
             type = GL_UNSIGNED_INT;
+#endif
+
         }else
         {
             inFormat = GL_LUMINANCE;
@@ -792,6 +811,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     _impl->internalFormat = internalFormat;
     _impl->inFormat = inFormat;
     _impl->type = type;
+    _impl->isColorFormat = isColorFormat;
 
     if (isColorFormat)
     {
@@ -816,14 +836,18 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     {
         GL_ASSERT( glGenRenderbuffers(1, &_impl->TextureID) );  
         GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, _impl->TextureID) );
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
-        GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
         GL_ASSERT( glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, _width, _height) );
-        GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
+        GL_ASSERT( glBindRenderbuffer(GL_RENDERBUFFER, 0) );
     }
 
     atgGpuResource::ReSet();
-    g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgTexture::Destory));
+    if (!useToRenderTarget)
+    {
+        g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgTexture::Destory));
+    }
+
+    //LOG("create a atgTexture[%p].\n", this);
+
     return true;
 }
 
@@ -1257,7 +1281,7 @@ bool atgPass::Create( const char* VSFilePath, const char* FSFilePath )
 
     atgGpuResource::ReSet();
     g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgPass::Destory));
-    LOG("create pass(%s,%s) success.\n", VSFilePath, FSFilePath);
+    //LOG("create a atgPass[%p](vs=%s,fs=%s).\n",this, VSFilePath, FSFilePath);
 
     //
     //GLint activeAttributes;
@@ -1481,10 +1505,11 @@ bool atgPass::SetTexture(const char* var_name, uint8 index)
 class atgRenderTargetImpl
 {
 public:
-    atgRenderTargetImpl():FrameBufferId(0) {}
-    ~atgRenderTargetImpl() { glDeleteFramebuffers(1, &FrameBufferId); }
+    atgRenderTargetImpl():FrameBufferId(0),PreviousFBO(0) {}
+    ~atgRenderTargetImpl() {  glBindFramebuffer(GL_FRAMEBUFFER, 0); glDeleteFramebuffers(1, &FrameBufferId); }
 
     GLuint FrameBufferId;
+    GLint PreviousFBO;
     uint32 viewPort[4];
 
 };
@@ -1528,6 +1553,7 @@ bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture*
 
     _depthStencilBuffer = depthStencilBuffer;
 
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_impl->PreviousFBO);
     GL_ASSERT( glGenFramebuffers(1, &_impl->FrameBufferId) );
     GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
 
@@ -1547,10 +1573,11 @@ bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture*
         GL_ASSERT(0);
     }
 
-    GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+    GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->PreviousFBO) );
 
     atgGpuResource::ReSet();
-    g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgRenderTarget::Destory));
+    //g_Renderer->InsertGpuResource(this, static_cast<GpuResDestoryFunc>(&atgRenderTarget::Destory));
+    //LOG("create a atgRenderTarget[%p].\n",this);
 
     return true;
 }
@@ -1591,6 +1618,7 @@ bool atgRenderTarget::Active(uint8 index)
 
     if (_impl)
     {
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_impl->PreviousFBO);
         GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
 
         g_Renderer->GetViewPort(_impl->viewPort[0], _impl->viewPort[1], _impl->viewPort[2], _impl->viewPort[3]);
@@ -1604,10 +1632,9 @@ bool atgRenderTarget::Active(uint8 index)
 
 void atgRenderTarget::Deactive()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     if (_impl)
     {
+        glBindFramebuffer(GL_FRAMEBUFFER, _impl->PreviousFBO);
         g_Renderer->SetViewPort(_impl->viewPort[0], _impl->viewPort[1], _impl->viewPort[2], _impl->viewPort[3]);
     }
 }
@@ -1995,7 +2022,7 @@ bool atgRenderer::DrawIndexedPrimitive( PrimitveType pt, uint32 primitveCount,  
 {
     GLenum gl_pt;
     if(PrimitiveTypeConvertToOGL(pt, gl_pt)){
-        GL_ASSERT( glDrawElements(gl_pt, indicesCount, GL_UNSIGNED_SHORT, 0) ); // with VBO
+        GL_ASSERT( glDrawElements(gl_pt, indicesCount, GL_UNSIGNED_INT, 0) ); // with VBO
     }
     return true;
 }

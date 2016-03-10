@@ -24,7 +24,7 @@ bool atgFlyCamera::Create( class atgCamera* pCamera )
 
 void atgFlyCamera::OnKeyScanDown( Key::Scan keyscan )
 {
-    float moveSpeed = 10.5f;
+    float moveSpeed = 1.5f;
 
     switch (keyscan)
     {
@@ -625,6 +625,7 @@ public:
     virtual bool			ConfingAndCreate();
 
     void                    SetMatirxOfLightViewPojection(const Matrix& mat) { _ligthViewProj = mat; }
+    void                    SetOpenglDepthTextureOES(float f) { _opengl_depth_texture = f; }
 
 protected:
     virtual void			BeginContext(void* data);
@@ -639,14 +640,6 @@ EXPOSE_INTERFACE(atgShaderRTSceenDepthColor, atgPass, RT_DEPTH_COLOR_PASS_IDENTI
 atgShaderRTSceenDepthColor::atgShaderRTSceenDepthColor()
 {
     _opengl_depth_texture = 0;
-
-#if 0 && defined(_ANDROID) //> oes depth texture 效果不好(精度值太低了), 所以禁用了
-        std::string extensions = (char*)glGetString(GL_EXTENSIONS);
-        if (extensions.find("OES_depth_texture") != std::string::npos)
-        {
-            _opengl_depth_texture = 1.0;
-        }
-#endif
 }
 
 atgShaderRTSceenDepthColor::~atgShaderRTSceenDepthColor()
@@ -799,10 +792,17 @@ atgSimpleShadowMapping::atgSimpleShadowMapping():pRT(0),pColorTex(0),pDepthTex(0
 
 atgSimpleShadowMapping::~atgSimpleShadowMapping()
 {
+
+}
+
+
+void atgSimpleShadowMapping::Destory()
+{
     SAFE_DELETE(pColorTex);
     SAFE_DELETE(pDepthTex);
     SAFE_DELETE(pRT);
 }
+
 
 bool atgSimpleShadowMapping::Create()
 {
@@ -810,7 +810,7 @@ bool atgSimpleShadowMapping::Create()
     pColorTex = new atgTexture();
     
     _opengl_depth_texture = 0;
-#if 0 && defined(_ANDROID) //> oes depth texture 效果不好(精度值太低了), 所以禁用了
+#if 1 && defined(_ANDROID) //> oes depth texture 效果不好(精度值太低了), 所以禁用了
     std::string extensions = (char*)glGetString(GL_EXTENSIONS);
     if (extensions.find("OES_depth_texture") != std::string::npos)
     {
@@ -835,7 +835,7 @@ bool atgSimpleShadowMapping::Create()
 #endif
 
     pColorTex->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
-    
+
     pDepthTex = new atgTexture();
     if (false == pDepthTex->Create(textureSize, textureSize, TF_D16, NULL, true))
     {
@@ -956,7 +956,9 @@ void atgSimpleShadowMapping::DrawDepthTex(class atgCamera* sceneCamera)
         //>fov在60度左右影子效果比较好.
         Matrix projMat;
         atgMath::Perspective(60.0f, 1.0f, d_near, d_far, projMat.m);
-        ((atgShaderRTSceenDepthColor*)pPass)->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));
+        atgShaderRTSceenDepthColor* pDepthPass = (atgShaderRTSceenDepthColor*)pPass;
+        pDepthPass->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));
+        pDepthPass->SetOpenglDepthTextureOES(_opengl_depth_texture);
         
         DrawBox(RT_DEPTH_COLOR_PASS_IDENTITY);
         DrawPlane(RT_DEPTH_COLOR_PASS_IDENTITY);
@@ -1078,6 +1080,92 @@ void atgSimpleShadowMapping::DrawPlane(const char* pPassIdentity /* = NULL */)
                              color.m);
 
     g_Renderer->EndFullQuad(pPassIdentity);
+}
+
+#include "atgBlenderImport.h"
+#include "atgMesh.h"
+
+MeshTest::MeshTest()
+{
+
+}
+
+MeshTest::~MeshTest()
+{
+}
+
+bool MeshTest::Init()
+{
+    _light.SetRange(1000.0f);
+    _light.SetPosition(Vec3(3.0f, 37.0f, 8.0f));
+    _light.SetColor(Vec3(0.8f, 0.8f, 0.8f));
+    _light.SetSpecular(Vec3One);
+    g_Renderer->AddBindLight(&_light);
+    return atgBlenderImport::loadMesh("model\\powergirl hero156.fbx", _meshs);
+}
+
+void MeshTest::Render( class atgCamera* sceneCamera )
+{
+    g_Renderer->SetMatrix(MD_VIEW, sceneCamera->GetView());
+    g_Renderer->SetMatrix(MD_PROJECTION, sceneCamera->GetProj());
+    g_Renderer->SetFaceCull(FCM_CW);
+
+    _light.DebugDraw();
+
+    for (auto it = _meshs.begin(); it != _meshs.end(); ++it)
+    {
+        (*it)->Render();
+    }
+}
+
+void MeshTest::OnKeyScanDown( Key::Scan keyscan )
+{
+    Vec3 position = _light.GetPosition();
+
+    switch (keyscan)
+    {
+    case Key::Semicolon:
+        {
+            position.x += 1.0f;
+            LOG("new x[%f]\n", position.x);
+            break;
+        }
+    case Key::Apostrophe:
+        {
+            position.x -= 1.0f;
+            LOG("new x[%f]\n", position.x);
+            break;
+        }
+    case Key::Comma: //<
+        {
+            position.y += 1.0f;
+            LOG("new y[%f]\n", position.y);
+        }break;
+    case Key::Period: //>
+        {
+            position.y -= 1.f;
+            LOG("new y[%f]\n", position.y);
+
+        }break;
+    case Key::LeftBracket: //[
+        {
+            //bias += 0.000001f;
+            //LOG("new bias[%f]\n", bias);
+            position.z += 1.f;
+            LOG("new x[%f]\n", position.z);
+        }break;
+    case Key::RightBracket: //]
+        {
+            position.z -= 1.f;
+            LOG("new x[%f]\n", position.z);
+            //bias -= 0.000001f;
+            //LOG("new bias[%f]\n", bias);
+        }break;
+    default:
+        break;
+    }
+
+    _light.SetPosition(position);
 }
 
 
