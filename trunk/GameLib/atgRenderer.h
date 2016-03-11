@@ -59,13 +59,7 @@
 #define DX_ASSERT(expression) expression
 #endif
 
-enum BufferAccessMode
-{
-    BAM_Static,
-    BAM_Dynamic
-};
-
-
+class atgRenderer;
 
 class atgGpuResource
 {
@@ -88,6 +82,12 @@ private:
 
 typedef bool (atgGpuResource::*GpuResDestoryFunc)(void);
 
+enum BufferAccessMode
+{
+    BAM_Static,
+    BAM_Dynamic
+};
+
 class atgIndexBuffer : public atgGpuResource
 {
     friend class atgRenderer;
@@ -109,6 +109,9 @@ public:
     void*                   Lock(uint32 offset, uint32 size);
     void                    Unlock();
     bool                    IsLocked() const;
+
+    bool                    Bind();
+    void                    Unbind();
 
     const char*             GetTypeName() const { return "atgIndexBuffer"; }
 private:
@@ -183,6 +186,9 @@ public:
     void*                   Lock( uint32 offset, uint32 size );
     void                    Unlock();
     bool                    IsLocked() const;
+
+    bool                    Bind();
+    void                    Unbind();
 
     const char*             GetTypeName() const { return "atgVertexBuffer"; }
 private:
@@ -266,6 +272,9 @@ public:
     TextureFilterMode       GetFilterMode() const { return _filter; }
     void                    SetAddressMode(TextureCoordinate coordinate, TextureAddressMode address);
     TextureAddressMode      GetAddressMode(TextureCoordinate coordinate) const { return _address[coordinate]; }
+
+    bool                    Bind(uint8 index);
+    void                    Unbind(uint8 index);
 
     const char*             GetTypeName() const { return "atgTexture"; }
 private:
@@ -380,34 +389,36 @@ public:
     bool                    Create(const char* pVSFilePath, const char* pFSFilePath);
     bool                    CreateFromSource(const char* pVSsrc, const char* pFSsrc);
     bool                    Destory();
-    void                    Bind();
 
     const char*             GetName();
 
     bool                    SetInt(const char* var_name, int value);
     bool                    SetFloat(const char* var_name, float value);
-    bool                    SetFloat2(const char* var_name, const float f[2]);
-    bool                    SetFloat3(const char* var_name, const float f[3]);
-    bool                    SetFloat4(const char* var_name, const float f[4]);
-    bool                    SetMatrix4x4(const char* var_name, const Matrix& mat);
+    bool                    SetFloat2(const char* var_name, const atgVec2& f);
+    bool                    SetFloat3(const char* var_name, const atgVec3& f);
+    bool                    SetFloat4(const char* var_name, const atgVec4& f);
+    bool                    SetMatrix4x4(const char* var_name, const atgMatrix& mat);
 
     bool                    SetTexture(const char* var_name, uint8 index);
 #ifdef USE_DIRECTX
 
     bool                    SetVsInt(const char* var_name, int value);
     bool                    SetVsFloat(const char* var_name, float value);
-    bool                    SetVsFloat2(const char* var_name, const float f[2]);
-    bool                    SetVsFloat3(const char* var_name, const float f[3]);
-    bool                    SetVsFloat4(const char* var_name, const float f[4]);
-    bool                    SetVsMatrix4x4(const char* var_name, const float mat[4][4]);
+    bool                    SetVsFloat2(const char* var_name, const atgVec2& f);
+    bool                    SetVsFloat3(const char* var_name, const atgVec3& f);
+    bool                    SetVsFloat4(const char* var_name, const atgVec4& f);
+    bool                    SetVsMatrix4x4(const char* var_name, const atgMatrix& mat);
 
     bool                    SetPsInt(const char* var_name, int value);
     bool                    SetPsFloat(const char* var_name, float value);
-    bool                    SetPsFloat2(const char* var_name, const float f[2]);
-    bool                    SetPsFloat3(const char* var_name, const float f[3]);
-    bool                    SetPsFloat4(const char* var_name, const float f[4]);
-    bool                    SetPsMatrix4x4(const char* var_name, const float mat[4][4]);
+    bool                    SetPsFloat2(const char* var_name, const atgVec2& f);
+    bool                    SetPsFloat3(const char* var_name, const atgVec3& f);
+    bool                    SetPsFloat4(const char* var_name, const atgVec4& f);
+    bool                    SetPsMatrix4x4(const char* var_name, const atgMatrix& mat);
 #endif // USE_DIRECTX
+
+    bool                    Bind();
+    void                    Unbind();
 
     const char*             GetTypeName() const { return "atgPass"; }
 protected:
@@ -477,8 +488,8 @@ public:
     bool                    Destory();
 
 
-    bool                    Active(uint8 index);
-    void                    Deactive();
+    bool                    Bind(uint8 index);
+    void                    Unbind();
 
     const std::vector<atgTexture*>& GetColorBuffer() const { return _colorBuffer; }
     atgTexture*             GetDepthStencilBuffer() const { return _depthStencilBuffer; }
@@ -569,8 +580,8 @@ public:
     void                    SetViewPort(uint32 offsetX, uint32 offsetY, uint32 width, uint32 height);
     void                    GetViewPort(uint32& offsetX, uint32& offsetY, uint32& width, uint32& height) const;
 
-    void                    SetMatrix(MatrixDefine index, const Matrix& mat);
-    void                    GetMatrix(Matrix& mat, MatrixDefine index) const;
+    void                    SetMatrix(MatrixDefine index, const atgMatrix& mat);
+    void                    GetMatrix(atgMatrix& mat, MatrixDefine index) const;
 
     void                    SetLightEnable(bool enable);
     void                    SetDepthTestEnable(bool enable);
@@ -595,26 +606,8 @@ public:
     void                    ClearBindLight();
     inline const bindLights& GetBindLights() const;
 
-    inline void             SetGlobalAmbientColor(const Vec3& color);
-    inline const Vec3&      GetGlobalAmbientColor() const;
-
-    void                    BindMaterial(atgMaterial* material);
-    inline atgMaterial*     GetBindMaterial() const;
-
-    void                    BindPass(atgPass* pass);
-    inline atgPass*         GetBindPass() const;
-
-    void                    BindIndexBuffer(atgIndexBuffer* indexBuffer);
-    inline atgIndexBuffer*  GetBindIndexBuffer() const;
-
-    void                    BindVertexBuffer(atgVertexBuffer* vertexBuffer);
-    inline atgVertexBuffer* GetBindVertexBuffer() const;
-
-    void                    BindTexture(uint8 index, atgTexture* texture);
-    inline atgTexture*      GetBindTexture(uint8 index) const;
-
-    inline void             SetCamera(atgCamera* pCamera) { _camera = pCamera; }
-    inline atgCamera*       GetCamera() const { return _camera; }
+    inline void             SetGlobalAmbientColor(const atgVec3& color);
+    inline const atgVec3&   GetGlobalAmbientColor() const;
 
     void                    SetPointSize(float size);
 
@@ -624,32 +617,32 @@ public:
 
     //> draw point mobile phone 不是支持得很好.所以没啥用
     bool                    BeginPoint();
-    void                    AddPoint(const float center[3], const float color[3]);
+    void                    AddPoint(const atgVec3& center, const atgVec3& color);
     void                    EndPoint();
 
     bool                    BeginLine();
-    void                    AddLine(const float point1[3], const float point2[3], const float color[3]);
+    void                    AddLine(const atgVec3& point1, const atgVec3& point2, const atgVec3& color);
     void                    EndLine();
     
     //                        1  2
     //                        3  4
     bool                    BeginQuad();
-    void                    AddQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float color[3]);
+    void                    AddQuad(const atgVec3& p1, const atgVec3& p2, const atgVec3& p3, const atgVec3& p4, const atgVec3& color);
     void                    EndQuad();
 
     //> 绘制实四边形
     bool                    BeginFullQuad();
-    void                    AddFullQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float color[3]);
+    void                    AddFullQuad(const atgVec3& p1, const atgVec3& p2, const atgVec3& p3, const atgVec3& p4, const atgVec3& color);
     void                    EndFullQuad(const char* pPassIdentity = NULL);
 
     //> 绘制纹理多边形
-    bool                    DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture);
+    bool                    DrawTexureQuad(const atgVec3& p1, const atgVec3& p2, const atgVec3& p3, const atgVec3& p4, const atgVec2& t1, const atgVec2& t2, const atgVec2& t3, const atgVec2& t4, atgTexture* pTexture);
     bool                    DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert = false);
-    bool                    DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], const char* pPassIdentity);
+    bool                    DrawQuadByPass(const atgVec3& p1, const atgVec3& p2, const atgVec3& p3, const atgVec3& p4, const atgVec2& t1, const atgVec2& t2, const atgVec2& t3, const atgVec2& t4, const char* pPassIdentity);
     
     //> 轴对其盒子
     bool                    BeginAABBoxLine();
-    void                    AddAABBoxLine(const float vMin[3], const float vMax[3], const float color[3]);
+    void                    AddAABBoxLine(const atgVec3& vMin, const atgVec3& vMax, const atgVec3& color);
     void                    EndAABBoxLine();
 
     //>圆
@@ -658,18 +651,12 @@ private:
     void                    _CommonInitialize();
 
 protected:
-    atgGame*                 _game;
-    Matrix                   _matrixs[MD_NUMBER];
+    atgGame*                _game;
+    atgMatrix               _matrixs[MD_NUMBER];
 
-    Vec3                    _globalAmbientColor;
+    atgVec3                 _globalAmbientColor;
 
     bindLights              _bindLights;
-    atgMaterial*            _bindMaterial;
-    atgPass*                _bindPass;
-    atgIndexBuffer*         _bindIndexBuffer;
-    atgVertexBuffer*        _bindVertexBuffer;
-    atgTexture*             _bindTexture[MaxNumberBindTexture];
-    atgCamera*              _camera;
 
     // Viewport
     uint32 _VP_offsetX;
@@ -726,12 +713,12 @@ private:
 //////////////////////////////////////////////////////////////////////////
 // inline implement
 
-inline void atgRenderer::SetGlobalAmbientColor(const Vec3& color)
+inline void atgRenderer::SetGlobalAmbientColor(const atgVec3& color)
 {
     _globalAmbientColor = color;
 }
 
-inline const Vec3& atgRenderer::GetGlobalAmbientColor() const
+inline const atgVec3& atgRenderer::GetGlobalAmbientColor() const
 {
     return _globalAmbientColor;
 }
@@ -739,35 +726,6 @@ inline const Vec3& atgRenderer::GetGlobalAmbientColor() const
 inline const bindLights& atgRenderer::GetBindLights() const
 {
     return _bindLights;
-}
-
-inline atgMaterial* atgRenderer::GetBindMaterial() const
-{
-    return _bindMaterial;
-}
-
-inline atgPass* atgRenderer::GetBindPass() const
-{ 
-    return _bindPass; 
-}
-
-inline atgIndexBuffer* atgRenderer::GetBindIndexBuffer() const
-{
-    return _bindIndexBuffer;
-}
-
-inline atgVertexBuffer* atgRenderer::GetBindVertexBuffer() const
-{
-    return _bindVertexBuffer;
-}
-
-inline atgTexture* atgRenderer::GetBindTexture( uint8 index ) const
-{
-    if (0 <= index && index < MaxNumberBindTexture)
-    {
-        return _bindTexture[index];
-    }
-    return NULL;
 }
 
 extern atgRenderer* g_Renderer;

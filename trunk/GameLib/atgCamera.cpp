@@ -9,20 +9,20 @@ atgCamera::atgCamera(void)
 
     _position.Set(0.0f, 100.0f, 100.0f);
 
-    _forward = _position;
-    _forward.Scale(-1.0f);
+    _forward = _position * -1.0f;
     _forward.Normalize();
 
     _up.Set(0.0f, 1.0f, 0.0f);
     SetForward(_forward.m);
-
-    Quat q;
-    Matrix mat(MatrixIdentity);
+    
+    atgMatrix mat(MatrixIdentity);
     mat.SetColumn3(0, GetRight().m);
     mat.SetColumn3(1, _up.m);
     mat.SetColumn3(2, _forward.m);
-    atgMath::MatToQuat(mat.m, q.m);
-    atgMath::QuatToEulerAngle(q.m, _eulerAngle.m);
+
+    atgQuaternion q;
+    mat.Get(q);
+    q.GetEulerAngle(_eulerAngle);
 
     _fov_y = 90.0f;
     _aspect = 4.0f / 3.0f;
@@ -36,17 +36,17 @@ atgCamera::~atgCamera(void)
 {
 }
 
-void atgCamera::SetLookAt( const Vec3& Position, const Vec3& Focus, const Vec3& UpAxis )
+void atgCamera::SetLookAt( const atgVec3& Position, const atgVec3& Focus, const atgVec3& UpAxis )
 {
     _position = Position;
 
-    _forward = Focus.Sub(_position);
+    _forward = Focus - _position;
     _forward.Normalize();
 
     _up = UpAxis;
     _up.Normalize();
 
-    Vec3 right;
+    atgVec3 right;
     right = _up.Cross(_forward);
     right.Normalize();
 
@@ -57,39 +57,37 @@ void atgCamera::SetLookAt( const Vec3& Position, const Vec3& Focus, const Vec3& 
     _updateViewByAngle = false;
 }
 
-void atgCamera::SetPosition( const Vec3& Position )
+void atgCamera::SetPosition( const atgVec3& Position )
 {
     _position = Position;
 
     _needUpdateView = true;
 }
 
-void atgCamera::SetForward( const Vec3& Forward )
+void atgCamera::SetForward( const atgVec3& Forward )
 {
     _forward = Forward;
 
-    Vec3 right;
-    atgMath::VecCross(_up.m, _forward.m, right.m);
-    atgMath::VecNormalize(right.m);
+    atgVec3 right = _up.Cross(_forward);
+    right.Normalize();
 
-    atgMath::VecCross(_forward.m, right.m, _up.m);
-    atgMath::VecNormalize(_up.m);
+    _up = _forward.Cross(right);
+    _up.Normalize();
 
     _needUpdateView = true;
     _updateViewByAngle = false;
 }
 
-void atgCamera::SetUp( const Vec3& UpAxis )
+void atgCamera::SetUp( const atgVec3& UpAxis )
 {
     _up = UpAxis;
-    atgMath::VecNormalize(_up.m);
+    _up.Normalize();
 
-    Vec3 right;
-    atgMath::VecCross(_up.m, _forward.m, right.m);
-    atgMath::VecNormalize(right.m);
+    atgVec3 right = _up.Cross(_forward);
+    right.Normalize();
 
-    atgMath::VecCross(right.m, _up.m, _forward.m);
-    atgMath::VecNormalize(_forward.m);
+    _forward = right.Cross(_up);
+    _forward.Normalize();
 
     _needUpdateView = true;
     _updateViewByAngle = false;
@@ -119,10 +117,9 @@ void atgCamera::SetRoll( float Roll )
     _updateViewByAngle = true;
 }
 
-void atgCamera::SetRotation( const Quat& rotation )
+void atgCamera::SetRotation( const atgQuaternion & rotation )
 {
-    Matrix mat;
-    atgMath::QuatToMat(rotation.m, mat.m);
+    atgMatrix mat(rotation);
 
     mat.GetColumn3(1, _up);
     mat.GetColumn3(2, _forward);
@@ -130,19 +127,18 @@ void atgCamera::SetRotation( const Quat& rotation )
     _needUpdateView = true;
 }
 
-const Quat& atgCamera::GetRotation() const
+const atgQuaternion& atgCamera::GetRotation() const
 {
-    Matrix mat(MatrixIdentity);
-    Vec3 right;
-    atgMath::VecCross(_up.m, _forward.m, right.m);
-    atgMath::VecNormalize(right.m);
+    atgMatrix mat(MatrixIdentity);
+    atgVec3 right = _up.Cross(_forward);
+    right.Normalize();
 
     mat.SetColumn3(0, right);
     mat.SetColumn3(1, _up);
     mat.SetColumn3(2, _forward);
 
-    static Quat q;
-    atgMath::MatToQuat(mat.m, q.m);
+    static atgQuaternion q;
+    mat.Get(q);
 
     return q;
 }
@@ -167,22 +163,20 @@ void atgCamera::_UpdateView()
 {
     if (_updateViewByAngle)
     {
-        Quat q;
-        atgMath::QuatFromEulerAngle(_eulerAngle.m, q.m);
+        atgQuaternion q(_eulerAngle.x, _eulerAngle.y, _eulerAngle.z);
 
         _up      = q.GetColumn1();
         _forward = q.GetColumn2();
         _updateViewByAngle = false;
     }
 
-    Vec3 at;
-    atgMath::VecAdd(_position.m, _forward.m, at.m);
-    atgMath::LookAt(_position.m, at.m, _up.m, _viewMat.m);
+    atgVec3 at = _position + _forward;
+    atgMatrix::LookAt(_position, at, _up, _viewMat);
 }
 
 void atgCamera::_UpdateProj()
 {
-    atgMath::Perspective(_fov_y, _aspect, _zNear, _zFar, _projMat.m);
+    atgMatrix::Perspective(_fov_y, _aspect, _zNear, _zFar, _projMat);
 }
 
 void atgCamera::SetProjection( float Fov_y, float Aspect, float ZNear, float ZFar )

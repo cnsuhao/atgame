@@ -448,8 +448,24 @@ private:
              0xff000000 )                               \
 )
 
-struct Vec3_t GetVec3Color(uint32 YD_COOLOR);
-struct Vec4_t GetVec4Color(uint32 YD_COOLOR);
+struct MiscVec3
+{
+    float x,y,z;
+
+    MiscVec3():x(0),y(0),z(0) {}
+    MiscVec3(float x, float y, float z):x(x),y(y),z(z) {}
+};
+
+struct MiscVec4
+{
+    float x,y,z,w;
+
+    MiscVec4():x(0),y(0),z(0) {}
+    MiscVec4(float x, float y, float z, float w):x(x),y(y),z(z),w(w) {}
+};
+
+struct MiscVec3 GetVec3Color(uint32 YD_COOLOR);
+struct MiscVec4 GetVec4Color(uint32 YD_COOLOR);
 
 // --------------------------------------------------------------------------------------
 

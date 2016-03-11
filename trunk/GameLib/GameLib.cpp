@@ -55,7 +55,7 @@ public :
         g_Renderer->SetFaceCull(FCM_CCW);
         g_Renderer->SetVSyncState(true);
 
-        Matrix world(MatrixIdentity);
+        atgMatrix world(MatrixIdentity);
         //world.RotationZXY(0.0f, -90.0f, -90.0f);
         g_Renderer->SetMatrix(MD_WORLD, world);
 
