@@ -42,11 +42,11 @@ public:
 
     virtual bool            ConfingAndCreate();
 
-    void                    SetSolidColor(const Vec3& SolidColor) { m_SolidColor = SolidColor; }
+    void                    SetSolidColor(const atgVec3& SolidColor) { m_SolidColor = SolidColor; }
 protected:
     virtual void            BeginContext(void* data);
 protected:
-    Vec3                    m_SolidColor;
+    atgVec3                 m_SolidColor;
 };
 
 #define SOLIDCOLOR_PASS_IDENTITY "atgSolidColorShader"
@@ -81,6 +81,8 @@ public:
     ~atgShaderLightTexture();
 
     virtual bool            ConfingAndCreate();
+
+    void                    SetMaterial(atgMaterial* pMaterial) { _material = pMaterial; }
 protected:
     virtual void            BeginContext(void* data);
 
@@ -88,6 +90,7 @@ protected:
 
     atgPointLight           _tempLight;
     bool                    _usingTempLight;
+    atgMaterial*            _material;
 };
 
 #define LIGHT_TEXTURE_PASS_IDENTITY "atgLightTextureShader"

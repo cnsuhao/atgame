@@ -109,8 +109,17 @@ public:
             vbo_indicesID = 0;
         }
     }
-    bool Bind();
-    bool Unbind();
+
+    bool Bind() 
+    {
+        GL_ASSERT( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_indicesID) );
+        return true;
+    }
+    
+    void Unbind()
+    {
+        GL_ASSERT( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) );
+    }
 public:
     GLuint vbo_indicesID;
     BufferAccessMode accessMode;
@@ -119,18 +128,6 @@ public:
     GLuint lockSize;
     char* pLockMemory;
 };
-
-bool atgIndexBufferImpl::Bind()
-{
-    GL_ASSERT( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_indicesID) );
-    return true;
-}
-
-bool atgIndexBufferImpl::Unbind()
-{
-    GL_ASSERT( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) );
-    return true;
-}
 
 atgIndexBuffer::atgIndexBuffer():_impl(NULL)
 {
@@ -213,6 +210,23 @@ bool atgIndexBuffer::IsLocked() const
         return _impl->locked;
 
     return false;
+}
+
+bool atgIndexBuffer::Bind()
+{
+    if (_impl)
+    {
+        return _impl->Bind();
+    }
+    return false;
+}
+
+void atgIndexBuffer::Unbind()
+{
+    if (_impl)
+    {
+        _impl->Unbind();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -344,7 +358,7 @@ public:
             vbo_vertexbufferID = 0; 
         }
     }
-    void Bind(GLuint programID);
+    bool Bind();
     void Unbind();
 public:
     atgVertexDecl decl;
@@ -356,8 +370,15 @@ public:
     char* pLockMemory;
 };
 
-void atgVertexBufferImpl::Bind(GLuint programID)
+bool atgVertexBufferImpl::Bind()
 {
+    GLint currentProgramID;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgramID);
+    if (currentProgramID < 0){
+        AASSERT(0);
+        return false;
+    }
+
     GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, vbo_vertexbufferID) );
     GLint index = -1;
     GLint size = 0;
@@ -373,43 +394,43 @@ void atgVertexBufferImpl::Bind(GLuint programID)
         {
         case atgVertexDecl::VA_Pos3:
             {
-                GL_ASSERT( index = glGetAttribLocation(programID, "vs_vertexPosition") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexPosition") );
                 size = 3;
                 break;
             }
         case atgVertexDecl::VA_Normal:
             {
-                GL_ASSERT( index = glGetAttribLocation(programID, "vs_vertexNormal") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexNormal") );
                 size = 3;
                 break;
             }
         case atgVertexDecl::VA_Pos4:
             {
-                GL_ASSERT( index = glGetAttribLocation(programID, "vs_vertexPosition") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexPosition") );
                 size = 4;
                 break;
             }
         case atgVertexDecl::VA_Diffuse:
             {
-                GL_ASSERT( index = glGetAttribLocation(programID, "vs_vertexColor") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexColor") );
                 size = 3;
                 break;
             }
         case atgVertexDecl::VA_Specular:
             {
-                GL_ASSERT( index = glGetAttribLocation(programID, "vs_vertexSpecular") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexSpecular") );
                 size = 4;
                 break;
             }
         case atgVertexDecl::VA_Texture0:
             {
-                GL_ASSERT( index = glGetAttribLocation(programID, "vs_textureCoord") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_textureCoord") );
                 size = 2;
                 break;
             }
         case atgVertexDecl::VA_Texture1:
             {
-                GL_ASSERT( index = glGetAttribLocation(programID, "vs_textureCoord1") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_textureCoord1") );
                 size = 2;
                 break;
             }
@@ -434,11 +455,12 @@ void atgVertexBufferImpl::Bind(GLuint programID)
         if(index != -1)
         {
             GL_ASSERT( glEnableVertexAttribArray(index) );
-            GL_ASSERT( glVertexAttribPointer( index,
-                size, type, normalized, stride, (const void*)offset) );
+            GL_ASSERT( glVertexAttribPointer( index, size, type, normalized, stride, (const void*)offset) );
         }
         offset += (size * sizeof(float));
     }
+
+    return true;
 }
 
 void atgVertexBufferImpl::Unbind()
@@ -450,7 +472,6 @@ void atgVertexBufferImpl::Unbind()
     }
     GL_ASSERT( glBindBuffer(GL_ARRAY_BUFFER, 0) );
 }
-
 
 atgVertexBuffer::atgVertexBuffer():_impl(NULL),_size(0)
 {
@@ -584,11 +605,26 @@ bool atgVertexBuffer::IsLocked() const
     return false;
 }
 
+bool atgVertexBuffer::Bind()
+{
+    if (_impl)
+        return _impl->Bind();
+
+    return false;
+}
+
+void atgVertexBuffer::Unbind()
+{
+    if (_impl)
+    {
+        _impl->Unbind();
+    }
+}
 
 class atgTextureImpl
 {
 public:
-    atgTextureImpl():TextureID(0),internalFormat(0),inFormat(0),type(0),isColorFormat(0),locked(false),isFloatData(0),pixelSize(0),pLockMemory(0) {}
+    atgTextureImpl():TextureID(0),internalFormat(0),inFormat(0),type(0),isColorFormat(0),locked(false),isFloatData(0),pixelSize(0),pLockMemory(0),index(0) {}
     ~atgTextureImpl() 
     {
         SAFE_DELETE_ARRAY(pLockMemory);
@@ -605,8 +641,29 @@ public:
             TextureID = 0;
         }
     }
-    void Bind(uint8 index);
-    static void Unbind(uint8 index);
+
+    bool Bind(uint8 index_)
+    {
+        if (index_ >= atgRenderer::MaxNumberBindTexture)
+            return false;
+
+        index = index_;
+
+        // Bind our texture in Texture Unit 0
+        GL_ASSERT( glActiveTexture(GL_TEXTURE0 + index) );
+        GL_ASSERT( glBindTexture(GL_TEXTURE_2D, TextureID) );
+
+        return true;
+    }
+
+    void Unbind(uint8 index)
+    {
+        if (index >= atgRenderer::MaxNumberBindTexture)
+            return;
+
+        glActiveTexture(GL_TEXTURE0 + index);
+        GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
+    }
 public:
     GLuint TextureID;
     GLint internalFormat;
@@ -618,27 +675,9 @@ public:
     bool isFloatData;
     uint8 pixelSize;
     char* pLockMemory;
-
+    uint8 index;
 
 };
-
-void atgTextureImpl::Bind(uint8 index)
-{
-    if (index >= atgRenderer::MaxNumberBindTexture)
-        return;
-
-    // Bind our texture in Texture Unit 0
-    GL_ASSERT( glActiveTexture(GL_TEXTURE0 + index) );
-    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, TextureID) );
-}
-
-void atgTextureImpl::Unbind(uint8 index)
-{
-    if (index >= atgRenderer::MaxNumberBindTexture)
-        return;
-
-    GL_ASSERT( glBindTexture(GL_TEXTURE_2D, 0) );
-}
 
 atgTexture::atgTexture():_width(0),_height(0),_format(TF_R8G8B8A8),_impl(NULL)
 {
@@ -901,6 +940,22 @@ void atgTexture::Unlock()
 bool atgTexture::IsLocked() const
 {
     return _impl->locked;
+}
+
+bool atgTexture::Bind(uint8 index)
+{
+    if (_impl)
+        return _impl->Bind(index);
+
+    return false;
+}
+
+void atgTexture::Unbind(uint8 index)
+{
+    if (_impl)
+    {
+        _impl->Unbind(index);
+    }
 }
 
 void atgTexture::SetFilterMode(TextureFilterMode filter)
@@ -1220,23 +1275,22 @@ public:
         }
     }
 
-    void Bind();
-    void Unbind();
+    bool Bind()
+    {
+        GL_ASSERT( glUseProgram(programID) );
+        return true;
+    }
+
+    void Unbind()
+    {
+        GL_ASSERT( glUseProgram(0) );
+    }
+
 public:
     GLuint programID;
     atgVertexShader* pVS;
     atgFragmentShader* pFS;
 };
-
-void atgPassImpl::Bind()
-{
-    GL_ASSERT( glUseProgram(programID) );
-}
-
-void atgPassImpl::Unbind()
-{
-    GL_ASSERT( glUseProgram(0) );
-}
 
 atgPass::atgPass():_impl(0)
 {
@@ -1354,11 +1408,27 @@ bool atgPass::Destory()
     return true;
 }
 
-void atgPass::Bind()
+bool atgPass::Bind()
 {
     if (_impl)
     {
-        _impl->Bind();
+        bool rs = _impl->Bind();
+        if (rs)
+        {
+            BeginContext(NULL);
+        }
+        return rs;
+    }
+
+    return false;
+}
+
+void atgPass::Unbind()
+{
+    if (_impl)
+    {
+        EndContext(NULL);
+        _impl->Unbind();
     }
 }
 
@@ -1394,15 +1464,14 @@ void atgPass::BeginContext(void* data)
     GLuint programID = _impl->programID;
     if(programID != 0)
     {
-        Matrix WVP;
-        Matrix Wrld;
-        Matrix View;
-        Matrix Proj;
+        atgMatrix WVP;
+        atgMatrix Wrld;
+        atgMatrix View;
+        atgMatrix Proj;
         g_Renderer->GetMatrix(Wrld, MD_WORLD);
         g_Renderer->GetMatrix(View, MD_VIEW);
         g_Renderer->GetMatrix(Proj, MD_PROJECTION);
-        View.Concatenate(Wrld, WVP);
-        Proj.Concatenate(WVP, WVP);
+        WVP = Proj * View * Wrld;
         SetMatrix4x4(UNF_M_WVP, WVP);
     }
 }
@@ -1436,55 +1505,55 @@ bool atgPass::SetFloat(const char* var_name, float value)
     return false;
 }
 
-bool atgPass:: SetFloat2(const char* var_name, const float f[2])
+bool atgPass:: SetFloat2(const char* var_name, const atgVec2& f)
 {
     GLint identityID = 0;
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        GL_ASSERT( glUniform2f(identityID, f[0], f[1]) );
+        GL_ASSERT( glUniform2f(identityID, f.x, f.y) );
         return true;
     }
     return false;
 }
 
 
-bool atgPass::SetFloat3(const char* var_name, const float f[3])
+bool atgPass::SetFloat3(const char* var_name, const atgVec3& f)
 {
     GLint identityID = 0;
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        GL_ASSERT( glUniform3f(identityID, f[0], f[1], f[2]) );
+        GL_ASSERT( glUniform3f(identityID, f.x, f.y, f.z) );
         return true;
     }
     return false;
 }
 
-bool atgPass::SetFloat4(const char* var_name, const float f[4])
+bool atgPass::SetFloat4(const char* var_name, const atgVec4& f)
 {
     GLint identityID = 0;
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        GL_ASSERT( glUniform4f(identityID, f[0], f[1], f[2], f[3]) );
+        GL_ASSERT( glUniform4f(identityID, f.x, f.y, f.z, f.w) );
         return true;
     }
     return false;
 }
 
-bool atgPass::SetMatrix4x4(const char* var_name, const Matrix& mat)
+bool atgPass::SetMatrix4x4(const char* var_name, const atgMatrix& mat)
 {
     // OPENGLES 不允许第三个参数为GL_TRUE， 所以自己转置矩阵
     //glUniformMatrix4fv(MVPMatrixID, 1, GL_FALSE, (GLfloat*)MVP.m); 
-    static float matTemp[4][4];
-    atgMath::MatTranspose(mat.m, matTemp);
+    atgMatrix matTemp(mat);
+    matTemp.Transpose();
 
     GLint identityID = 0;
     GL_ASSERT( identityID = glGetUniformLocation(_impl->programID, var_name) );
     if(identityID != -1)
     {
-        glUniformMatrix4fv(identityID, 1, GL_FALSE, (GLfloat*)&matTemp[0]);
+        glUniformMatrix4fv(identityID, 1, GL_FALSE, (GLfloat*)&matTemp.m[0]);
         return true;
     }
     return false;
@@ -1505,13 +1574,30 @@ bool atgPass::SetTexture(const char* var_name, uint8 index)
 class atgRenderTargetImpl
 {
 public:
-    atgRenderTargetImpl():FrameBufferId(0),PreviousFBO(0) {}
+    atgRenderTargetImpl():FrameBufferId(0),PreviousFBO(0),width(0),height(0) { }
     ~atgRenderTargetImpl() {  glBindFramebuffer(GL_FRAMEBUFFER, 0); glDeleteFramebuffers(1, &FrameBufferId); }
+
+    bool Bind()
+    {
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &PreviousFBO);
+        GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferId) );
+
+        g_Renderer->GetViewPort(viewPort[0], viewPort[1], viewPort[2], viewPort[3]);
+        g_Renderer->SetViewPort(0, 0, width, height);
+        return true;
+    }
+
+    void Unbind()
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, PreviousFBO);
+        g_Renderer->SetViewPort(viewPort[0], viewPort[1], viewPort[2], viewPort[3]);
+    }
 
     GLuint FrameBufferId;
     GLint PreviousFBO;
+    uint32 width;
+    uint32 height;
     uint32 viewPort[4];
-
 };
 
 atgRenderTarget::atgRenderTarget():_impl(NULL)
@@ -1552,6 +1638,8 @@ bool atgRenderTarget::Create( std::vector<atgTexture*>& colorBuffer, atgTexture*
     std::copy(colorBuffer.begin(), colorBuffer.end(), _colorBuffer.begin());
 
     _depthStencilBuffer = depthStencilBuffer;
+    _impl->width = depthStencilBuffer->GetWidth();
+    _impl->height = depthStencilBuffer->GetHeight();
 
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_impl->PreviousFBO);
     GL_ASSERT( glGenFramebuffers(1, &_impl->FrameBufferId) );
@@ -1590,7 +1678,7 @@ bool atgRenderTarget::Destory()
     return true;
 }
 
-bool atgRenderTarget::Active(uint8 index)
+bool atgRenderTarget::Bind(uint8 index)
 {
     if (IsLost() && !_colorBuffer.empty())
     {
@@ -1618,24 +1706,17 @@ bool atgRenderTarget::Active(uint8 index)
 
     if (_impl)
     {
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &_impl->PreviousFBO);
-        GL_ASSERT( glBindFramebuffer(GL_FRAMEBUFFER, _impl->FrameBufferId) );
-
-        g_Renderer->GetViewPort(_impl->viewPort[0], _impl->viewPort[1], _impl->viewPort[2], _impl->viewPort[3]);
-        g_Renderer->SetViewPort(0, 0, _depthStencilBuffer->_width, _depthStencilBuffer->_height);
-
-        return true;
+        return _impl->Bind();
     }
 
     return false;
 }
 
-void atgRenderTarget::Deactive()
+void atgRenderTarget::Unbind()
 {
     if (_impl)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, _impl->PreviousFBO);
-        g_Renderer->SetViewPort(_impl->viewPort[0], _impl->viewPort[1], _impl->viewPort[2], _impl->viewPort[3]);
+        _impl->Unbind();
     }
 }
 
@@ -1664,6 +1745,13 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
     vendorName += (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION); 
     vendorName += "\n\t\t";
     vendorName += (const char*)glGetString(GL_EXTENSIONS);
+
+    //> 取得支持压缩纹理的格式,大多数用不上
+    //GLint formatCount;
+    //glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &formatCount);
+    //GLint* formatArray = new GLint[formatCount];
+    //glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, formatArray);
+    //delete formatArray;
 
     LOG("%s\n", vendorName.c_str());
 
@@ -1758,7 +1846,7 @@ void atgRenderer::GetViewPort(uint32& offsetX, uint32& offsetY, uint32& width, u
 
 }
 
-void atgRenderer::SetMatrix(MatrixDefine index, const Matrix& mat)
+void atgRenderer::SetMatrix(MatrixDefine index, const atgMatrix& mat)
 {
     switch(index)
     {
@@ -1793,7 +1881,7 @@ void atgRenderer::SetMatrix(MatrixDefine index, const Matrix& mat)
     }
 }
 
-void atgRenderer::GetMatrix(Matrix& mat, MatrixDefine index) const
+void atgRenderer::GetMatrix(atgMatrix& mat, MatrixDefine index) const
 {
     if (MD_WORLD <= index && index < MD_NUMBER)
     {
@@ -1962,12 +2050,7 @@ void atgRenderer::BeginFrame()
 
 void atgRenderer::EndFrame()
 {
-    for (int i = 0; i < MaxNumberBindTexture; ++i)
-        BindTexture(i, NULL);
-    BindVertexBuffer(NULL);
-    BindIndexBuffer(NULL);
-    BindPass(NULL);
-    BindMaterial(NULL);
+
 }
 
 void atgRenderer::Present()
@@ -2025,75 +2108,6 @@ bool atgRenderer::DrawIndexedPrimitive( PrimitveType pt, uint32 primitveCount,  
         GL_ASSERT( glDrawElements(gl_pt, indicesCount, GL_UNSIGNED_INT, 0) ); // with VBO
     }
     return true;
-}
-
-void atgRenderer::BindPass( atgPass* pass )
-{
-    if (_bindPass)
-    {
-        _bindPass->EndContext(NULL);
-        _bindPass->_impl->Unbind();
-    }
-
-    _bindPass = pass;
-
-    if(_bindPass)
-    {
-        _bindPass->Bind();
-        _bindPass->BeginContext(NULL);
-    }
-}
-
-void atgRenderer::BindIndexBuffer( atgIndexBuffer* indexBuffer )
-{
-    if (_bindIndexBuffer)
-    {
-        _bindIndexBuffer->_impl->Unbind();
-    }
-
-    _bindIndexBuffer = indexBuffer;
-
-    if (_bindIndexBuffer)
-    {
-        _bindIndexBuffer->_impl->Bind();
-    }
-}
-
-void atgRenderer::BindVertexBuffer( atgVertexBuffer* vertexBuffer )
-{
-    if (_bindVertexBuffer)
-    {
-        _bindVertexBuffer->_impl->Unbind();
-    }
-
-    if(!_bindPass)
-        return;
-
-    GLuint programID = _bindPass->_impl->programID;
-    if(programID == 0)
-        return;
-
-    _bindVertexBuffer = vertexBuffer;
-
-    if (_bindVertexBuffer)
-    {
-        _bindVertexBuffer->_impl->Bind(programID);
-    }
-}
-
-void atgRenderer::BindTexture( uint8 index, atgTexture* texture )
-{
-    if (0 <= index && index < MaxNumberBindTexture)
-    {
-        _bindTexture[index] = texture;
-        if (texture)
-        {
-            texture->_impl->Bind(index);
-        }else
-        {
-            atgTextureImpl::Unbind(index);
-        }
-    }
 }
 
 void atgRenderer::SetPointSize(float size)

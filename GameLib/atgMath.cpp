@@ -1,5 +1,4 @@
 #include "atgMath.h"
-#include "atgRenderer.h"
 
 const float atgMath::PI             = 3.1415926f;
 const float atgMath::PI_DIV_2       = 1.5707963f;
@@ -11,62 +10,288 @@ const float atgMath::INV_PI_MUL_180 = (180.f / atgMath::PI);
 //> 误差常量
 const float atgMath::EPSILON        = 1e-5f;
 
-//> 向量常量
-const float atgMath::VectorZero[3]      = { 0.0f,  0.0f,  0.0f };
-const float atgMath::VectorOne[3]       = { 1.0f,  1.0f,  1.0f };
-const float atgMath::VectorLeft[3]      = {-1.0f,  0.0f,  0.0f };
-const float atgMath::VectorRight[3]     = { 1.0f,  0.0f,  0.0f };
-const float atgMath::VectorUp[3]        = { 0.0f,  1.0f,  0.0f };
-const float atgMath::VectorDown[3]      = { 0.0f, -1.0f,  0.0f };
-const float atgMath::VectorForward[3]   = { 0.0f,  0.0f,  1.0f };
-const float atgMath::VectorBack[3]      = { 0.0f,  0.0f, -1.0f };
+const atgVec3 Vec3One(1.0f,  1.0f,  1.0f);
+const atgVec3 Vec3Zero(0.0f,  0.0f,  0.0f);
+const atgVec3 Vec3Left(-1.0f,  0.0f,  0.0f);
+const atgVec3 Vec3Right(1.0f,  0.0f,  0.0f);
+const atgVec3 Vec3Up(0.0f,  1.0f,  0.0f);
+const atgVec3 Vec3Down(0.0f, -1.0f,  0.0f);
+const atgVec3 Vec3Forward(0.0f,  0.0f,  1.0f);
+const atgVec3 Vec3Back(0.0f,  0.0f, -1.0f);
 
-const Vec3 Vec3One(atgMath::VectorOne);
-const Vec3 Vec3Zero(atgMath::VectorZero);
-const Vec3 Vec3Left(atgMath::VectorLeft);
-const Vec3 Vec3Right(atgMath::VectorRight);
-const Vec3 Vec3Up(atgMath::VectorUp);
-const Vec3 Vec3Down(atgMath::VectorDown);
-const Vec3 Vec3Forward(atgMath::VectorForward);
-const Vec3 Vec3Back(atgMath::VectorBack);
+const atgVec4 Vec4One(1.0f, 1.0f, 1.0f, 1.0f);
+const atgVec4 Vec4Zero(0.0f, 0.0f, 0.0f, 0.0f);
 
-const Vec4 Vec4One(1.0f, 1.0f, 1.0f, 1.0f);
-const Vec4 Vec4Zero(0.0f, 0.0f, 0.0f, 0.0f);
+const atgQuaternion QuatOne(1.0f, 1.0f, 1.0f, 1.0f);
+const atgQuaternion QuatZero(0.0f, 0.0f, 0.0f, 0.0f);
+const atgQuaternion QuatIdentity(0.0f, 0.0f, 0.0f, 1.0f);
 
-const Quat QuatOne(1.0f, 1.0f, 1.0f, 1.0f);
-const Quat QuatZero(0.0f, 0.0f, 0.0f, 0.0f);
-const Quat QuatIdentity(0.0f, 0.0f, 0.0f, 1.0f);
+const atgMatrix MatrixIdentity(1.0f, 0.0f, 0.0f, 0.0f, 
+                               0.0f, 1.0f, 0.0f, 0.0f,
+                               0.0f, 0.0f, 1.0f, 0.0f,
+                               0.0f, 0.0f, 0.0f, 1.0f);
 
-const Matrix MatrixIdentity(1.0f, 0.0f, 0.0f, 0.0f, 
-                            0.0f, 1.0f, 0.0f, 0.0f,
-                            0.0f, 0.0f, 1.0f, 0.0f,
-                            0.0f, 0.0f, 0.0f, 1.0f);
 
-void atgMath::QuatNormalize( const float quatSrc[4], float quatDst[4] )
+atgVec4 atgMatrix::Transfrom(const atgVec4& v) const
 {
-    float lenght = quatSrc[0] * quatSrc[0] + quatSrc[1] * quatSrc[1] +
-        quatSrc[2] * quatSrc[2] + quatSrc[3] * quatSrc[3];
-    if(FloatEqual(lenght, 1.0))
-    {
-        quatDst[0] = quatSrc[0];
-        quatDst[1] = quatSrc[1];
-        quatDst[2] = quatSrc[2];
-        quatDst[3] = quatSrc[3];
-        return;
-    }
+    atgVec4 temp;
 
-    float lenghtRT = sqrtf(lenght);
-    if(FloatEqual(lenghtRT, EPSILON) )
-        return;
+    temp.x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * v.w;
+    temp.y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * v.w;
+    temp.z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * v.w;
+    temp.w = m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w;
 
-    float invLenghtRT = 1.0f / lenghtRT;
-    quatDst[0] = quatSrc[0] * invLenghtRT;
-    quatDst[1] = quatSrc[1] * invLenghtRT;
-    quatDst[2] = quatSrc[2] * invLenghtRT;
-    quatDst[3] = quatSrc[3] * invLenghtRT;
+    return temp;
 }
 
-void atgMath::QuatFromEulerAngle( const float vec[3], float quat[4] )
+bool atgMatrix::CanInverse() const
+{
+    float a0 = m[0][0] * m[1][1] - m[1][0] * m[0][1];
+    float a1 = m[0][0] * m[2][1] - m[2][0] * m[0][1];
+    float a2 = m[0][0] * m[3][1] - m[3][0] * m[0][1];
+    float a3 = m[1][0] * m[2][1] - m[2][0] * m[1][1];
+    float a4 = m[1][0] * m[3][1] - m[3][0] * m[1][1];
+    float a5 = m[2][0] * m[3][1] - m[3][0] * m[2][1];
+    float b0 = m[0][2] * m[1][3] - m[1][2] * m[0][3];
+    float b1 = m[0][2] * m[2][3] - m[2][2] * m[0][3];
+    float b2 = m[0][2] * m[3][3] - m[3][2] * m[0][3];
+    float b3 = m[1][2] * m[2][3] - m[2][2] * m[1][3];
+    float b4 = m[1][2] * m[3][3] - m[3][2] * m[1][3];
+    float b5 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
+
+    // Calculate the determinant.
+    float det = a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
+
+    // Close to zero, can't invert.
+    if (fabs(det) <= atgMath::EPSILON)
+        return false;
+
+    return true;
+}
+
+atgMatrix::atgMatrix(const atgQuaternion& q)
+{
+    atgVec3 column0 = q.GetColumn0();
+    atgVec3 column1 = q.GetColumn1();
+    atgVec3 column2 = q.GetColumn2();
+
+    m[0][0] = column0.x;
+    m[1][0] = column0.y;
+    m[2][0] = column0.z;
+
+    m[0][1] = column1.x;
+    m[1][1] = column1.y; 
+    m[2][1] = column1.z;
+
+    m[0][2] = column2.x;
+    m[1][2] = column2.y;
+    m[2][2] = column2.z;
+
+    m[3][0] = 0.0f;
+    m[3][1] = 0.0f;
+    m[3][2] = 0.0f;
+
+    m[0][3] = 0.0f;
+    m[1][3] = 0.0f;
+    m[2][3] = 0.0f;
+
+    m[3][3] = 1.0f;
+}
+
+atgMatrix& atgMatrix::Inverse()
+{
+    float temp[4][4];
+
+    float a0 = m[0][0] * m[1][1] - m[1][0] * m[0][1];
+    float a1 = m[0][0] * m[2][1] - m[2][0] * m[0][1];
+    float a2 = m[0][0] * m[3][1] - m[3][0] * m[0][1];
+    float a3 = m[1][0] * m[2][1] - m[2][0] * m[1][1];
+    float a4 = m[1][0] * m[3][1] - m[3][0] * m[1][1];
+    float a5 = m[2][0] * m[3][1] - m[3][0] * m[2][1];
+    float b0 = m[0][2] * m[1][3] - m[1][2] * m[0][3];
+    float b1 = m[0][2] * m[2][3] - m[2][2] * m[0][3];
+    float b2 = m[0][2] * m[3][3] - m[3][2] * m[0][3];
+    float b3 = m[1][2] * m[2][3] - m[2][2] * m[1][3];
+    float b4 = m[1][2] * m[3][3] - m[3][2] * m[1][3];
+    float b5 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
+
+    // Calculate the determinant.
+    float det = a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
+
+    // Close to zero, can't invert.
+    if (fabs(det) <= atgMath::EPSILON)
+        return *this;
+
+    // Support the case where m == dst.
+    float inv_det = 1.0f / det;
+    temp[0][0] = ( m[1][1] * b5 - m[2][1] * b4 + m[3][1] * b3) * inv_det;
+    temp[1][0] = (-m[1][0] * b5 + m[2][0] * b4 - m[3][0] * b3) * inv_det;
+    temp[2][0] = ( m[1][3] * a5 - m[2][3] * a4 + m[3][3] * a3) * inv_det;
+    temp[3][0] = (-m[1][2] * a5 + m[2][2] * a4 - m[3][2] * a3) * inv_det;
+
+    temp[0][1] = (-m[0][1] * b5 + m[2][1] * b2 - m[3][1] * b1) * inv_det;
+    temp[1][1] = ( m[0][0] * b5 - m[2][0] * b2 + m[3][0] * b1) * inv_det;
+    temp[2][1] = (-m[0][3] * a5 + m[2][3] * a2 - m[3][3] * a1) * inv_det;
+    temp[3][1] = ( m[0][2] * a5 - m[2][2] * a2 + m[3][2] * a1) * inv_det;
+
+    temp[0][2] = ( m[0][1] * b4 - m[1][1] * b2 + m[3][1] * b0) * inv_det;
+    temp[1][2] = (-m[0][0] * b4 + m[1][0] * b2 - m[3][0] * b0) * inv_det;
+    temp[2][2] = ( m[0][3] * a4 - m[1][3] * a2 + m[3][3] * a0) * inv_det;
+    temp[3][2] = (-m[0][2] * a4 + m[1][2] * a2 - m[3][2] * a0) * inv_det;
+
+    temp[0][3] = (-m[0][1] * b3 + m[1][1] * b1 - m[2][1] * b0) * inv_det;
+    temp[1][3] = ( m[0][0] * b3 - m[1][0] * b1 + m[2][0] * b0) * inv_det;
+    temp[2][3] = (-m[0][3] * a3 + m[1][3] * a1 - m[2][3] * a0) * inv_det;
+    temp[3][3] = ( m[0][2] * a3 - m[1][2] * a1 + m[2][2] * a0) * inv_det;
+
+    memcpy(m, temp, sizeof(atgMatrix));
+
+    return *this;
+}
+
+atgMatrix& atgMatrix::AffineInverse()
+{
+    float temp[4][4];
+    if (atgMath::IsFloatZero(m[3][0]) && atgMath::IsFloatZero(m[3][1]) && atgMath::IsFloatZero(m[3][2]) && atgMath::IsFloatZero(m[3][3] - 1.0f))
+    {
+        temp[0][0] = m[0][0]; temp[0][1] = m[1][0]; temp[0][2] = m[2][0];
+        temp[1][0] = m[0][1]; temp[1][1] = m[1][1]; temp[1][2] = m[2][1];
+        temp[2][0] = m[0][2]; temp[2][1] = m[1][2]; temp[2][2] = m[2][2];
+        temp[3][0] = 0.0f;    temp[3][1] = 0.0f;    temp[3][2] = 0.0f;   temp[3][3] = 1.0f;
+
+        float t[3]; t[0] = m[0][3]; t[1] = m[1][3]; t[2] = m[2][3];
+        temp[0][3] = -(temp[0][0] * t[0] + temp[0][1] * t[1], temp[0][2] * t[2]);
+        temp[1][3] = -(temp[1][0] * t[0] + temp[1][1] * t[1], temp[1][2] * t[2]);
+        temp[2][3] = -(temp[2][0] * t[0] + temp[2][1] * t[1], temp[2][2] * t[2]);
+
+        memcpy(m, temp, sizeof(atgMatrix));
+
+    }
+    return *this;
+}
+
+
+atgMatrix& atgMatrix::RotationZXY(float angleRoll, float anglePitch, float angleYaw)
+{
+    atgMatrix rollMat;
+    atgMatrix pitchMat;
+    atgMatrix yawMat;
+
+    rollMat.RotationZ(angleRoll);
+    pitchMat.RotationX(anglePitch);
+    yawMat.RotationY(angleYaw);
+
+    *this = yawMat * pitchMat * rollMat;
+    return *this;
+}
+
+bool atgMatrix::Get(atgQuaternion& q)
+{
+    float temp[4];
+    const float diag = m[0][0] + m[1][1] + m[2][2] + 1;
+
+    if( diag > 0.0f )
+    {
+        const float scale = sqrtf(diag) * 2.0f; // get scale from diagonal
+
+        // TODO: speed this up
+        temp[0] = (m[2][1] - m[1][2]) / scale;
+        temp[1] = (m[0][2] - m[2][0]) / scale;
+        temp[2] = (m[1][0] - m[0][1]) / scale;
+        temp[3] = 0.25f * scale;
+    }
+    else
+    {
+        if (m[0][0] > m[1][1] && m[0][0] > m[2][2])
+        {
+            // 1st element of diag is greatest value
+            // find scale according to 1st element, and double it
+            const float scale = sqrtf(1.0f + m[0][0] - m[1][1] - m[2][2]) * 2.0f;
+
+            // TODO: speed this up
+            temp[0] = 0.25f * scale;
+            temp[1] = (m[0][1] + m[1][0]) / scale;
+            temp[2] = (m[2][0] + m[0][2]) / scale;
+            temp[3] = (m[2][1] - m[1][2]) / scale;
+        }
+        else if (m[1][1] > m[2][2])
+        {
+            // 2nd element of diag is greatest value
+            // find scale according to 2nd element, and double it
+            const float scale = sqrtf(1.0f + m[1][1] - m[0][0] - m[2][2]) * 2.0f;
+
+            // TODO: speed this up
+            temp[0] = (m[0][1] + m[1][0]) / scale;
+            temp[1] = 0.25f * scale;
+            temp[2] = (m[1][2] + m[2][1]) / scale;
+            temp[3] = (m[0][2] - m[2][0]) / scale;
+        }
+        else
+        {
+            // 3rd element of diag is greatest value
+            // find scale according to 3rd element, and double it
+            const float scale = sqrtf(1.0f + m[2][2] - m[0][0] - m[1][1]) * 2.0f;
+
+            // TODO: speed this up
+            temp[0] = (m[0][2] + m[2][0]) / scale;
+            temp[1] = (m[1][2] + m[2][1]) / scale;
+            temp[2] = 0.25f * scale;
+            temp[3] = (m[1][0] - m[0][1]) / scale;
+        }
+    }
+
+    q.Set(temp);
+    return true;
+}
+
+float atgQuaternion::Length() const
+{
+    float lenght = m[0] * m[0] + m[1] * m[1] + m[2] * m[2] + m[3] * m[3];
+    return sqrtf(lenght);
+}
+
+atgQuaternion& atgQuaternion::Normalize()
+{
+    float length = Length();
+    if(atgMath::FloatEqual(length, 1.0f))
+    {
+        return *this;
+    }
+
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatZero(length));
+#endif // _DEBUG
+
+    float invLength = 1.0f / length;
+    m[0] *= invLength;
+    m[1] *= invLength;
+    m[2] *= invLength;
+    m[3] *= invLength;
+
+    return *this;
+}
+
+atgQuaternion atgQuaternion::Normalize() const
+{
+    float length = Length();
+    if(atgMath::FloatEqual(length, 1.0f))
+    {
+        return *this;
+    }
+
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatZero(length));
+#endif // _DEBUG
+
+    float invLength = 1.0f / length;
+    
+    return atgQuaternion( x * invLength, 
+                          y * invLength,
+                          z * invLength,
+                          w * invLength);
+}
+
+atgQuaternion::atgQuaternion(float pitch, float yaw, float roll)
 {
     //////////////////////////////////////////////////////////////////////////
     //>copy from lrrlitch.
@@ -74,15 +299,15 @@ void atgMath::QuatFromEulerAngle( const float vec[3], float quat[4] )
 
     float angle;
 
-    angle = vec[0] * 0.5f;
+    angle = pitch * 0.5f;
     const float sx = sin(angle);
     const float cx = cos(angle);
 
-    angle = vec[1] * 0.5f;
+    angle = yaw * 0.5f;
     const float sy = sin(angle);
     const float cy = cos(angle);
 
-    angle = vec[2] * 0.5f;
+    angle = roll * 0.5f;
     const float sz = sin(angle);
     const float cz = cos(angle);
 
@@ -91,191 +316,107 @@ void atgMath::QuatFromEulerAngle( const float vec[3], float quat[4] )
     const float cysz = cy * sz;
     const float sysz = sy * sz;
 
-    quat[0] = (sx * cycz - cx * sysz);
-    quat[1] = (cx * sycz + sx * cysz);
-    quat[2] = (cx * cysz - sx * sycz);
+    m[0] = (sx * cycz - cx * sysz);
+    m[1] = (cx * sycz + sx * cysz);
+    m[2] = (cx * cysz - sx * sycz);
 
-    quat[3] = (cx * cycz + sx * sysz);
+    m[3] = (cx * cycz + sx * sysz);
 }
 
-void atgMath::QuatFromAxisAngle( const float axis[3], float angle, float quat[4] )
+atgQuaternion::atgQuaternion(const atgVec3& axis, float angle)
 {
-    float temp[3];
-    VecCopy(axis, temp);
-    VecNormalize(temp);
-    float halfAngle = DegreesToRadians(angle) * 0.5f;
+    atgVec3 temp(axis);
+    temp.Normalize();
+    float halfAngle = atgMath::DegreesToRadians(angle) * 0.5f;
     float sinHalfAngle = sinf(halfAngle);
     float cosHalfAngle = cosf(halfAngle);
-    quat[0] = temp[0] * sinHalfAngle;
-    quat[1] = temp[1] * sinHalfAngle;
-    quat[2] = temp[2] * sinHalfAngle;
-    quat[3] = cosHalfAngle;
+    m[0] = temp.x * sinHalfAngle;
+    m[1] = temp.y * sinHalfAngle;
+    m[2] = temp.z * sinHalfAngle;
+    m[3] = cosHalfAngle;
 }
 
-void atgMath::QuatFromTwoVector( const float start[3], const float end[3], float quat[4] )
+atgQuaternion::atgQuaternion(const atgVec3& from, const atgVec3& to)
 {
-    if (FloatEqualArray(&start[0], &end[0], 3))
+    if (atgMath::FloatEqualArray(from.m, to.m, 3))
     {
-        quat[0] = 0.0f, quat[1] = 0.0f;
-        quat[2] = 0.0f, quat[3] = 1.0f;
+        x = 0.0f; y = 0.0f; z = 0.0f; w = 1.0f;
         return;
     }
 
-    float normStart[3];
-    float normEnd[3];
-    VecCopy(start, normStart);
-    VecNormalize(normStart);
-    VecCopy(end, normEnd);
-    VecNormalize(normEnd);
-    float d = VecDot(normStart, normEnd);
+    atgVec3 normStart(from);
+    atgVec3 normEnd(to);
+    normStart.Normalize();
+    normEnd.Normalize();
+    float d = normStart.Dot(normEnd);
 
-    if (d > -1.0f + EPSILON)
+    if (d > -1.0f + atgMath::EPSILON)
     {
-        float c[3];
-        VecCross(normStart, normEnd, c);
+        atgVec3 c = normStart.Cross(normEnd);
         float s = sqrtf((1.0f + d) * 2.0f);
         float invS = 1.0f / s;
 
-        quat[0] = c[0] * invS;
-        quat[1] = c[1] * invS;
-        quat[2] = c[2] * invS;
-        quat[3] = 0.5f * s;
+        x = c.x * invS;
+        y = c.y * invS;
+        z = c.z * invS;
+        w = 0.5f * s;
     }
     else
     {
-        float axis[3];
-        VecCross(VectorRight, normStart, axis);
-        if (VecLength(axis) < EPSILON)
-            VecCross(VectorUp, normStart, axis);
-
-        QuatFromAxisAngle(axis, 180.0f, quat);
+        atgVec3 axis = Vec3Right.Cross(normStart);
+        if (axis.Length() < atgMath::EPSILON)
+            axis = Vec3Up.Cross(normStart);
+        
+        *this = atgQuaternion(axis, 180.0f);
     }
 }
 
-void atgMath::QuatMultiply( const float quat1[4], const float quat2[4], float result[4] )
+atgQuaternion& atgQuaternion::Slerp(const atgQuaternion& q1, const atgQuaternion& q2, float interpTime)
 {
-    result[0] = quat1[3] * quat2[0] + quat1[0] * quat2[3] + quat1[1] * quat2[2] - quat1[2] * quat2[1];
-    result[1] = quat1[3] * quat2[1] - quat1[0] * quat2[2] + quat1[1] * quat2[3] + quat1[2] * quat2[0];
-    result[2] = quat1[3] * quat2[2] + quat1[0] * quat2[1] - quat1[1] * quat2[0] + quat1[2] * quat2[3];
-    result[3] = quat1[3] * quat2[3] - quat1[0] * quat2[0] - quat1[1] * quat2[1] - quat1[2] * quat2[2];
-}
+    interpTime = atgMath::Clamp(interpTime, 0.0f, 1.0f);
 
-void atgMath::QuatToMat( const float quat[4], float matrix[4][4] )
-{
-    matrix[0][0] = 1.0f - 2.0f * quat[1] * quat[1] - 2.0f * quat[2] * quat[2];
-    matrix[1][0] = 2.0f * quat[0] * quat[1] + 2.0f * quat[3] * quat[2];
-    matrix[2][0] = 2.0f * quat[0] * quat[2] - 2.0f * quat[3] * quat[1];
-
-    matrix[0][1] = 2.0f * quat[0] * quat[1] - 2.0f * quat[3] * quat[2];
-    matrix[1][1] = 1.0f - 2.0f * quat[0] * quat[0] - 2.0f * quat[2] * quat[2];
-    matrix[2][1] = 2.0f * quat[1] * quat[2] + 2.0f * quat[3] * quat[0];
-
-    matrix[0][2] = 2.0f * quat[0] * quat[2] + 2.0f * quat[3] * quat[1];
-    matrix[1][2] = 2.0f * quat[1] * quat[2] - 2.0f * quat[3] * quat[0];
-    matrix[2][2] = 1.0f - 2.0f * quat[0] * quat[0] - 2.0f * quat[1] * quat[1];
-
-    matrix[3][0] = 0.0f;
-    matrix[3][1] = 0.0f;
-    matrix[3][2] = 0.0f;
-
-    matrix[0][3] = 0.0f;
-    matrix[1][3] = 0.0f;
-    matrix[2][3] = 0.0f;
-
-    matrix[3][3] = 1.0f;
-}
-
-void atgMath::QuatToEulerAngle(const float quat[4], float euler[3])
-{
-    float X = quat[0];
-    float Y = quat[1];
-    float Z = quat[2];
-    float W = quat[3];
-    
-    //////////////////////////////////////////////////////////////////////////
-    //>copy from lrrlitch.
-    //////////////////////////////////////////////////////////////////////////
-
-    const double sqw = W*W;
-    const double sqx = X*X;
-    const double sqy = Y*Y;
-    const double sqz = Z*Z;
-    const double test = 2.0 * (Y*W - X*Z);
-
-    if (DoubleEqual(test, 1.0, 0.000001))
+    if(atgMath::FloatEqual(interpTime, 0.0f))
     {
-        // heading = rotation about z-axis
-        euler[2] = (float) (-2.0*atan2(X, W));
-        // bank = rotation about x-axis
-        euler[0] = 0;
-        // attitude = rotation about y-axis
-        euler[1] = PI_DIV_2;
+        x = q1.x; 
+        y = q1.y;
+        z = q1.z;
+        w = q1.w;
+        return *this;
     }
-    else if (DoubleEqual(test, -1.0, 0.000001))
+    else if(atgMath::FloatEqual(interpTime, 1.0f))
     {
-        // heading = rotation about z-axis
-        euler[2] = (float) (2.0*atan2(X, W));
-        // bank = rotation about x-axis
-        euler[0] = 0;
-        // attitude = rotation about y-axis
-        euler[1] = -PI_DIV_2;
-    }
-    else
-    {
-        // heading = rotation about z-axis
-        euler[2] = (float) atan2(2.0 * (X*Y +Z*W),(sqx - sqy - sqz + sqw));
-        // bank = rotation about x-axis
-        euler[0] = (float) atan2(2.0 * (Y*Z +X*W),(-sqx - sqy + sqz + sqw));
-        // attitude = rotation about y-axis
-        euler[1] = (float) asin( atgMath::Clamp(test, -1.0, 1.0) );
-    }
-};
-
-void atgMath::QuatSlerp( const float quat1[4], const float quat2[4], float interpTime, float result[4] )
-{
-    assert(interpTime >= 0.0f && interpTime <= 1.0f && "interpTime must be between [0 - 1] space.");
-    if(FloatEqual(interpTime, 0.0f))
-    {
-        result[0] = quat1[0]; 
-        result[1] = quat1[1];
-        result[2] = quat1[2];
-        result[3] = quat1[3];
-        return;
-    }
-    else if(FloatEqual(interpTime, 1.0f))
-    {
-        result[0] = quat2[0]; 
-        result[1] = quat2[1];
-        result[2] = quat2[2];
-        result[3] = quat2[3];
-        return;
-    }
-    if (FloatEqual(quat1[0],quat2[0]) && FloatEqual(quat1[1],quat2[1]) &&
-        FloatEqual(quat1[2],quat2[2]) && FloatEqual(quat1[3],quat2[3]) )
-    {
-        result[0] = quat1[0]; 
-        result[1] = quat1[1];
-        result[2] = quat1[2];
-        result[3] = quat1[3];
-        return;
+        x = q2.x; 
+        y = q2.y;
+        z = q2.z;
+        w = q2.w;
+        return *this;
     }
 
-    float cosOmega = Vec4Dot(quat1, quat2);
+    if (atgMath::FloatEqualArray(q1.m, q2.m, 4))
+    {
+        x = q1.x; 
+        y = q1.y;
+        z = q1.z;
+        w = q1.w;
+        return *this;
+    }
+
+    float cosOmega = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
     float temp[4];
     // make sure we use the short rotation
     if(cosOmega < 0.0f)
     {
-        temp[0] = -quat2[0];
-        temp[1] = -quat2[1];
-        temp[2] = -quat2[2];
-        temp[3] = -quat2[3];
+        temp[0] = -q2.x;
+        temp[1] = -q2.y;
+        temp[2] = -q2.z;
+        temp[3] = -q2.w;
         cosOmega = -cosOmega;
     }else
     {
-        temp[0] = quat2[0];
-        temp[1] = quat2[1];
-        temp[2] = quat2[2];
-        temp[3] = quat2[3];
+        temp[0] = q2.x;
+        temp[1] = q2.y;
+        temp[2] = q2.w;
+        temp[3] = q2.w;
     }
 
     float k0, k1;
@@ -298,10 +439,11 @@ void atgMath::QuatSlerp( const float quat1[4], const float quat2[4], float inter
         k0 = 1.0f - interpTime;
         k1 = interpTime;
     }
-    result[0] = quat1[0] * k0 + temp[0] * k1;
-    result[1] = quat1[1] * k0 + temp[1] * k1;
-    result[2] = quat1[2] * k0 + temp[2] * k1;
-    result[3] = quat1[3] * k0 + temp[3] * k1;
+
+    x = q1.x * k0 + temp[0] * k1;
+    y = q1.y * k0 + temp[1] * k1;
+    z = q1.z * k0 + temp[2] * k1;
+    w = q1.w * k0 + temp[3] * k1;
 
     // half-life / Valve
     //int i;
@@ -355,264 +497,84 @@ void atgMath::QuatSlerp( const float quat1[4], const float quat2[4], float inter
     //        result[i] = sclp * quat1[i] + sclq * result[i];
     //    }
     //}
+
+    return *this;
 }
 
-
-void SlerpForSquad( const float quat1[4], const float quat2[4], float interpTime, float result[4])
+bool atgQuaternion::GetEulerAngle(atgVec3& euler) const
 {
-    assert(result);
+    float X = x;
+    float Y = y;
+    float Z = z;
+    float W = w;
 
-    // cos(omega) = q1 * q2;
-    // slerp(q1, q2, t) = (q1*sin((1-t)*omega) + q2*sin(t*omega))/sin(omega);
-    // q1 = +- q2, slerp(q1,q2,t) = q1.
-    // This is a straight-forward implementation of the formula of slerp. It does not do any sign switching.
-    float c = atgMath::Vec4Dot(quat1, quat2);
+    const double sqw = W*W;
+    const double sqx = X*X;
+    const double sqy = Y*Y;
+    const double sqz = Z*Z;
+    const double test = 2.0 * (Y*W - X*Z);
 
-    if (fabs(c) >= 1.0f)
+    if (atgMath::DoubleEqual(test, 1.0, 0.000001))
     {
-        result[0] = quat2[0];
-        result[1] = quat2[1];
-        result[2] = quat2[2];
-        result[3] = quat2[3];
-        return;
+        // heading = rotation about z-axis
+        euler.z = (float) (-2.0*atan2(X, W));
+        // bank = rotation about x-axis
+        euler.x = 0;
+        // attitude = rotation about y-axis
+        euler.y = atgMath::PI_DIV_2;
     }
-
-    float omega = acos(c);
-    float s = sqrt(1.0f - c * c);
-    if (fabs(s) <= 0.00001f)
+    else if (atgMath::DoubleEqual(test, -1.0, 0.000001))
     {
-        result[0] = quat1[0];
-        result[1] = quat1[1];
-        result[2] = quat1[2];
-        result[3] = quat1[3];
-        return;
+        // heading = rotation about z-axis
+        euler.z = (float) (2.0*atan2(X, W));
+        // bank = rotation about x-axis
+        euler.x = 0;
+        // attitude = rotation about y-axis
+        euler.y = -atgMath::PI_DIV_2;
     }
-
-    float r1 = sin((1 - interpTime) * omega) / s;
-    float r2 = sin(interpTime * omega) / s;
-    result[0] = (quat1[0] * r1 + quat2[0] * r2);
-    result[1] = (quat1[1] * r1 + quat2[1] * r2);
-    result[2] = (quat1[2] * r1 + quat2[2] * r2);
-    result[3] = (quat1[3] * r1 + quat2[3] * r2);
-}
-
-void atgMath::QuatSquad( const float quat1[4], const float quat2[4], const float ctrl1[4], const float ctrl2[4], float interpTime, float result[4] )
-{
-    assert(interpTime >= 0.0f && interpTime <= 1.0f && "interpTime must be between [0 - 1] space.");
-
-    float dstQ[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    float dstS[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-    SlerpForSquad(quat1, quat2, interpTime, dstQ);
-    SlerpForSquad(ctrl1, ctrl2, interpTime, dstS);
-    SlerpForSquad(dstQ, dstS, 2.0f * interpTime * (1.0f - interpTime), result);
-}
-
-bool atgMath::MatAffineInverse( const float src[4][4], float dst[4][4] )
-{
-    float temp[4][4];
-    if (IsFloatZero(src[3][0]) && IsFloatZero(src[3][1]) && IsFloatZero(src[3][2]) && IsFloatZero(src[3][3] - 1.0f))
+    else
     {
-        temp[0][0] = src[0][0]; temp[0][1] = src[1][0]; temp[0][2] = src[2][0];
-        temp[1][0] = src[0][1]; temp[1][1] = src[1][1]; temp[1][2] = src[2][1];
-        temp[2][0] = src[0][2]; temp[2][1] = src[1][2]; temp[2][2] = src[2][2];
-        temp[3][0] = 0.0f;      temp[3][1] = 0.0f;      temp[3][2] = 0.0f;      temp[3][3] = 1.0f;
-
-        float t[3]; t[0] = src[0][3]; t[1] = src[1][3]; t[2] = src[2][3];
-        temp[0][3] = -VecDot(temp[0], t);
-        temp[1][3] = -VecDot(temp[1], t);
-        temp[2][3] = -VecDot(temp[2], t);
-        memcpy(dst, temp, MATRIX44_SIZE());
-        return true;
+        // heading = rotation about z-axis
+        euler.z = (float) atan2(2.0 * (X*Y +Z*W),(sqx - sqy - sqz + sqw));
+        // bank = rotation about x-axis
+        euler.x = (float) atan2(2.0 * (Y*Z +X*W),(-sqx - sqy + sqz + sqw));
+        // attitude = rotation about y-axis
+        euler.y = (float) asin( atgMath::Clamp(test, -1.0, 1.0) );
     }
-    return false;
-}
-
-
-bool atgMath::MatInverse(const float src[4][4], float dst[4][4])
-{
-    float temp[4][4];
-
-    float a0 = src[0][0] * src[1][1] - src[1][0] * src[0][1];
-    float a1 = src[0][0] * src[2][1] - src[2][0] * src[0][1];
-    float a2 = src[0][0] * src[3][1] - src[3][0] * src[0][1];
-    float a3 = src[1][0] * src[2][1] - src[2][0] * src[1][1];
-    float a4 = src[1][0] * src[3][1] - src[3][0] * src[1][1];
-    float a5 = src[2][0] * src[3][1] - src[3][0] * src[2][1];
-    float b0 = src[0][2] * src[1][3] - src[1][2] * src[0][3];
-    float b1 = src[0][2] * src[2][3] - src[2][2] * src[0][3];
-    float b2 = src[0][2] * src[3][3] - src[3][2] * src[0][3];
-    float b3 = src[1][2] * src[2][3] - src[2][2] * src[1][3];
-    float b4 = src[1][2] * src[3][3] - src[3][2] * src[1][3];
-    float b5 = src[2][2] * src[3][3] - src[3][2] * src[2][3];
-
-    // Calculate the determinant.
-    float det = a0 * b5 - a1 * b4 + a2 * b3 + a3 * b2 - a4 * b1 + a5 * b0;
-
-    // Close to zero, can't invert.
-    if (fabs(det) <= EPSILON)
-        return false;
-
-    // Support the case where m == dst.
-    float inv_det = 1.0f / det;
-    temp[0][0] = ( src[1][1] * b5 - src[2][1] * b4 + src[3][1] * b3) * inv_det;
-    temp[1][0] = (-src[1][0] * b5 + src[2][0] * b4 - src[3][0] * b3) * inv_det;
-    temp[2][0] = ( src[1][3] * a5 - src[2][3] * a4 + src[3][3] * a3) * inv_det;
-    temp[3][0] = (-src[1][2] * a5 + src[2][2] * a4 - src[3][2] * a3) * inv_det;
-
-    temp[0][1] = (-src[0][1] * b5 + src[2][1] * b2 - src[3][1] * b1) * inv_det;
-    temp[1][1] = ( src[0][0] * b5 - src[2][0] * b2 + src[3][0] * b1) * inv_det;
-    temp[2][1] = (-src[0][3] * a5 + src[2][3] * a2 - src[3][3] * a1) * inv_det;
-    temp[3][1] = ( src[0][2] * a5 - src[2][2] * a2 + src[3][2] * a1) * inv_det;
-
-    temp[0][2] = ( src[0][1] * b4 - src[1][1] * b2 + src[3][1] * b0) * inv_det;
-    temp[1][2] = (-src[0][0] * b4 + src[1][0] * b2 - src[3][0] * b0) * inv_det;
-    temp[2][2] = ( src[0][3] * a4 - src[1][3] * a2 + src[3][3] * a0) * inv_det;
-    temp[3][2] = (-src[0][2] * a4 + src[1][2] * a2 - src[3][2] * a0) * inv_det;
-
-    temp[0][3] = (-src[0][1] * b3 + src[1][1] * b1 - src[2][1] * b0) * inv_det;
-    temp[1][3] = ( src[0][0] * b3 - src[1][0] * b1 + src[2][0] * b0) * inv_det;
-    temp[2][3] = (-src[0][3] * a3 + src[1][3] * a1 - src[2][3] * a0) * inv_det;
-    temp[3][3] = ( src[0][2] * a3 - src[1][2] * a1 + src[2][2] * a0) * inv_det;
-    memcpy(dst, temp, MATRIX44_SIZE());
 
     return true;
 }
 
-void atgMath::MatToQuat( const float mat[4][4], float quat[4] )
-{
-    float temp[4];
-    const float diag = mat[0][0] + mat[1][1] + mat[2][2] + 1;
-
-    if( diag > 0.0f )
-    {
-        const float scale = sqrtf(diag) * 2.0f; // get scale from diagonal
-
-        // TODO: speed this up
-        temp[0] = (mat[2][1] - mat[1][2]) / scale;
-        temp[1] = (mat[0][2] - mat[2][0]) / scale;
-        temp[2] = (mat[1][0] - mat[0][1]) / scale;
-        temp[3] = 0.25f * scale;
-    }
-    else
-    {
-        if (mat[0][0] > mat[1][1] && mat[0][0] > mat[2][2])
-        {
-            // 1st element of diag is greatest value
-            // find scale according to 1st element, and double it
-            const float scale = sqrtf(1.0f + mat[0][0] - mat[1][1] - mat[2][2]) * 2.0f;
-
-            // TODO: speed this up
-            temp[0] = 0.25f * scale;
-            temp[1] = (mat[0][1] + mat[1][0]) / scale;
-            temp[2] = (mat[2][0] + mat[0][2]) / scale;
-            temp[3] = (mat[2][1] - mat[1][2]) / scale;
-        }
-        else if (mat[1][1] > mat[2][2])
-        {
-            // 2nd element of diag is greatest value
-            // find scale according to 2nd element, and double it
-            const float scale = sqrtf(1.0f + mat[1][1] - mat[0][0] - mat[2][2]) * 2.0f;
-
-            // TODO: speed this up
-            temp[0] = (mat[0][1] + mat[1][0]) / scale;
-            temp[1] = 0.25f * scale;
-            temp[2] = (mat[1][2] + mat[2][1]) / scale;
-            temp[3] = (mat[0][2] - mat[2][0]) / scale;
-        }
-        else
-        {
-            // 3rd element of diag is greatest value
-            // find scale according to 3rd element, and double it
-            const float scale = sqrtf(1.0f + mat[2][2] - mat[0][0] - mat[1][1]) * 2.0f;
-
-            // TODO: speed this up
-            temp[0] = (mat[0][2] + mat[2][0]) / scale;
-            temp[1] = (mat[1][2] + mat[2][1]) / scale;
-            temp[2] = 0.25f * scale;
-            temp[3] = (mat[1][0] - mat[0][1]) / scale;
-        }
-    }
-
-    return QuatNormalize(temp, quat);
-}
-
-void atgMath::MatConcatenate( const float mat1[4][4], const float mat2[4][4],float result[4][4] )
-{
-    float temp[4][4];
-    temp[0][0] = mat1[0][0] * mat2[0][0] + mat1[0][1] * mat2[1][0] +
-                 mat1[0][2] * mat2[2][0] + mat1[0][3] * mat2[3][0];
-    temp[0][1] = mat1[0][0] * mat2[0][1] + mat1[0][1] * mat2[1][1] +
-                 mat1[0][2] * mat2[2][1] + mat1[0][3] * mat2[3][1];
-    temp[0][2] = mat1[0][0] * mat2[0][2] + mat1[0][1] * mat2[1][2] +
-                 mat1[0][2] * mat2[2][2] + mat1[0][3] * mat2[3][2];
-    temp[0][3] = mat1[0][0] * mat2[0][3] + mat1[0][1] * mat2[1][3] +
-                 mat1[0][2] * mat2[2][3] + mat1[0][3] * mat2[3][3];
-    temp[1][0] = mat1[1][0] * mat2[0][0] + mat1[1][1] * mat2[1][0] +
-                 mat1[1][2] * mat2[2][0] + mat1[1][3] * mat2[3][0];
-    temp[1][1] = mat1[1][0] * mat2[0][1] + mat1[1][1] * mat2[1][1] +
-                 mat1[1][2] * mat2[2][1] + mat1[1][3] * mat2[3][1];
-    temp[1][2] = mat1[1][0] * mat2[0][2] + mat1[1][1] * mat2[1][2] +
-                 mat1[1][2] * mat2[2][2] + mat1[1][3] * mat2[3][2];
-    temp[1][3] = mat1[1][0] * mat2[0][3] + mat1[1][1] * mat2[1][3] +
-                 mat1[1][2] * mat2[2][3] + mat1[1][3] * mat2[3][3];
-    temp[2][0] = mat1[2][0] * mat2[0][0] + mat1[2][1] * mat2[1][0] +
-                 mat1[2][2] * mat2[2][0] + mat1[2][3] * mat2[3][0];
-    temp[2][1] = mat1[2][0] * mat2[0][1] + mat1[2][1] * mat2[1][1] +
-                 mat1[2][2] * mat2[2][1] + mat1[2][3] * mat2[3][1];
-    temp[2][2] = mat1[2][0] * mat2[0][2] + mat1[2][1] * mat2[1][2] +
-                 mat1[2][2] * mat2[2][2] + mat1[2][3] * mat2[3][2];
-    temp[2][3] = mat1[2][0] * mat2[0][3] + mat1[2][1] * mat2[1][3] +
-                 mat1[2][2] * mat2[2][3] + mat1[2][3] * mat2[3][3];
-    temp[3][0] = mat1[3][0] * mat2[0][0] + mat1[3][1] * mat2[1][0] +
-                 mat1[3][2] * mat2[2][0] + mat1[3][3] * mat2[3][0];
-    temp[3][1] = mat1[3][0] * mat2[0][1] + mat1[3][1] * mat2[1][1] +
-                 mat1[3][2] * mat2[2][1] + mat1[3][3] * mat2[3][1];
-    temp[3][2] = mat1[3][0] * mat2[0][2] + mat1[3][1] * mat2[1][2] +
-                 mat1[3][2] * mat2[2][2] + mat1[3][3] * mat2[3][2];
-    temp[3][3] = mat1[3][0] * mat2[0][3] + mat1[3][1] * mat2[1][3] +
-                 mat1[3][2] * mat2[2][3] + mat1[3][3] * mat2[3][3];
-
-    memcpy(result, temp, MATRIX44_SIZE());
-}
-
-void atgMath::VecRotate( const float vec[3], const float quat[4], float result[3] )
+atgVec3 operator* (const atgQuaternion& q, const atgVec3& v)
 {
     if(0)
     {
         // normal method
-        float q1[4], q2[4], q3[4];
-        q1[0] = quat[0]; q1[1] = quat[1]; q1[2] = quat[2]; q1[3] = quat[3];
-        q2[0] =  vec[0]; q2[1] =  vec[1]; q2[2] =  vec[2]; q2[3] = 0.0f;
-        q3[0] =  -q1[0]; q3[1] =  -q1[0]; q3[2] =  -q1[2]; q3[3] = q1[3];
+        atgQuaternion q1(q);
+        atgQuaternion q2(v.x, v.y, v.z, 0.0f);
+        atgQuaternion q3(q.conjugate());
 
-        float temp[4];
-        QuatMultiply(q1, q2, temp);
-        QuatMultiply(temp, q3, q1);
-        result[0] = q1[0];
-        result[1] = q1[1];
-        result[2] = q1[2];
-        return;
+        atgQuaternion t = (q1 * q2) * q3;
+        return atgVec3(t.x, t.y, t.z); 
     }
 
     // nVidia SDK implementation
 
-    float uv[3];
-    float uuv[3];
-    float qvec[3];
-    qvec[0] = quat[0];
-    qvec[1] = quat[1];
-    qvec[2] = quat[2];
+    atgVec3 uv;
+    atgVec3 uuv;
+    atgVec3 qvec(q.x, q.y, q.z);
 
-    VecCross(qvec, vec, uv);
-    VecCross(qvec, uv, uuv);
+    uv = qvec.Cross(v);
+    uuv = qvec.Cross(uv);
 
-    float halfW = 2.0f * quat[3];
+    float halfW = 2.0f * q.w;
 
-    result[0] = vec[0] + uv[0] * halfW + uuv[0] * 2.0f;
-    result[1] = vec[1] + uv[1] * halfW + uuv[1] * 2.0f;
-    result[2] = vec[2] + uv[2] * halfW + uuv[2] * 2.0f;
+    return atgVec3(v.x + uv.x * halfW + uuv.x * 2.0f,
+                   v.y + uv.y * halfW + uuv.y * 2.0f,
+                   v.z + uv.z * halfW + uuv.z * 2.0f);
 }
+
+#include "atgRenderer.h"
 
 bool atgMath::IsBetween0And1ForClipZ()
 {

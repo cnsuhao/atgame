@@ -258,6 +258,23 @@ bool atgIndexBuffer::IsLocked() const
     return false;
 }
 
+bool atgIndexBuffer::Bind()
+{
+    if (_impl)
+    {
+        return _impl->Bind();
+    }
+    return false;
+}
+
+void atgIndexBuffer::Unbind()
+{
+    if (_impl)
+    {
+        _impl->Unbind();
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //
@@ -378,8 +395,24 @@ class atgVertexBufferImpl
 public:
     atgVertexBufferImpl():pDXVB(NULL),pDXVD(NULL),accessMode(BAM_Static),locked(false){}
     ~atgVertexBufferImpl(){ SAFE_RELEASE(pDXVB); SAFE_RELEASE(pDXVD); }
-    bool Bind();
-    bool Unbind();
+
+    bool Bind()
+    {
+        if (pDXVB && pDXVD)
+        {
+            DX_ASSERT( g_pd3dDevice->SetStreamSource(0, pDXVB, 0, decl.GetElementsStride()) );
+            DX_ASSERT( g_pd3dDevice->SetVertexDeclaration(pDXVD) );
+            return true;
+        }
+        return false;
+    }
+
+    void Unbind()
+    {
+        DX_ASSERT( g_pd3dDevice->SetStreamSource(0, NULL, 0, 0) );
+        DX_ASSERT( g_pd3dDevice->SetVertexDeclaration(NULL) );
+    }
+
 public:
     atgVertexDecl decl;
     IDirect3DVertexBuffer9* pDXVB;
@@ -387,21 +420,6 @@ public:
     BufferAccessMode accessMode;
     bool locked;
 };
-
-bool atgVertexBufferImpl::Bind()
-{
-    DX_ASSERT( g_pd3dDevice->SetStreamSource(0, pDXVB, 0, decl.GetElementsStride()) );
-    DX_ASSERT( g_pd3dDevice->SetVertexDeclaration(pDXVD) );
-
-    return true;
-}
-
-bool atgVertexBufferImpl::Unbind()
-{
-    DX_ASSERT( g_pd3dDevice->SetStreamSource(0, NULL, 0, 0) );
-    DX_ASSERT( g_pd3dDevice->SetVertexDeclaration(NULL) );
-    return true;
-}
 
 atgVertexBuffer::atgVertexBuffer():_impl(0)
 {
@@ -651,33 +669,48 @@ bool atgVertexBuffer::IsLocked() const
     return false;
 }
 
+bool atgVertexBuffer::Bind()
+{
+    if (_impl)
+    {
+        return _impl->Bind();
+    }
+    return false;
+}
+
+void atgVertexBuffer::Unbind()
+{
+    if (_impl)
+    {
+        _impl->Unbind();
+    }
+}
+
 class atgTextureImpl
 {
 public:
     atgTextureImpl():pDXTX(NULL),locked(false),accessMode(BAM_Static) {}
     ~atgTextureImpl() { locked = false; SAFE_RELEASE(pDXTX); }
-    bool Bind(uint8 index);
-    static bool Unbind(uint8 index);
+    bool Bind(uint8 index)
+    {
+        if (index >= atgRenderer::MaxNumberBindTexture)
+            return false;
+
+        DX_ASSERT( g_pd3dDevice->SetTexture(index, pDXTX) );
+        return true;
+    }
+    void Unbind(uint8 index)
+    {
+        if (index >= atgRenderer::MaxNumberBindTexture)
+            return;
+
+        DX_ASSERT( g_pd3dDevice->SetTexture(index, NULL) );
+    }
 public:
     IDirect3DTexture9* pDXTX;
     bool locked;
     BufferAccessMode accessMode;
 };
-
-bool atgTextureImpl::Bind(uint8 index)
-{
-    if (index >= 8)
-        return false;
-
-    DX_ASSERT( g_pd3dDevice->SetTexture(index, pDXTX) );
-    return true;
-}
-
-bool atgTextureImpl::Unbind(uint8 index)
-{
-    DX_ASSERT( g_pd3dDevice->SetTexture(index, NULL) );
-    return true;
-}
 
 atgTexture::atgTexture():_width(0),_height(0),_format(TF_R8G8B8A8),_impl(NULL)
 {
@@ -947,6 +980,114 @@ void atgTexture::SetAddressMode(TextureCoordinate coordinate, TextureAddressMode
     _address[coordinate] = address;
 }
 
+bool atgTexture::Bind(uint8 index)
+{
+    if (_impl && _impl->Bind(index))
+    {
+        switch (_filter)
+        {
+        case TFM_FILTER_NEAREST:
+            {
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_POINT) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_POINT) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_POINT) );
+            }break;
+        case TFM_FILTER_BILINEAR:
+            {
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_POINT) );
+            }break;
+        case TFM_FILTER_TRILINEAR:
+            {
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_PYRAMIDALQUAD) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_PYRAMIDALQUAD) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
+            }break;
+        case TFM_FILTER_ANISOTROPIC:
+            {
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
+            }break;
+        case TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR:
+            {
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
+                DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
+            }break;
+        case TFM_FILTER_DEFAULT:
+            {
+                //>什么也不做
+                break;
+            }
+        default:
+            break;
+        }
+
+        if (_address[TC_COORD_U] != MAX_ADDRESSMODES)
+        {
+            switch (_address[TC_COORD_U])
+            {
+            case TAM_ADDRESS_WRAP:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP) );
+                }break;
+            case TAM_ADDRESS_MIRROR:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_MIRROR) );
+                }break;
+            case TAM_ADDRESS_CLAMP:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP) );
+                }break;
+            case TAM_ADDRESS_BORDER:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER) );
+                }break;
+            default:
+                break;
+            }
+        }
+
+        if (_address[TC_COORD_V] != MAX_ADDRESSMODES)
+        {
+            switch (_address[TC_COORD_V])
+            {
+            case TAM_ADDRESS_WRAP:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP) );
+                }break;
+            case TAM_ADDRESS_MIRROR:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_MIRROR) );
+                }break;
+            case TAM_ADDRESS_CLAMP:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP) );
+                }break;
+            case TAM_ADDRESS_BORDER:
+                {
+                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER) );
+                }break;
+            default:
+                break;
+            }
+        }
+        return true;
+    }
+
+    return false;
+}
+
+void atgTexture::Unbind(uint8 index)
+{
+    if (_impl)
+    {
+        _impl->Unbind(index);
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////
 atgResourceShader::atgResourceShader(ResourceShaderType Type):compiled(false)
 {
@@ -967,7 +1108,20 @@ public:
     IDirect3DVertexShader9* pDXVS;
     ID3DXConstantTable*     pTable;
 
-    inline void             Bind();
+    bool Bind()
+    {
+        if (pDXVS)
+        {
+            DX_ASSERT( g_pd3dDevice->SetVertexShader(pDXVS) );
+            return true;
+        }
+        return false;
+    }
+
+    void Unbind()
+    {
+        DX_ASSERT( g_pd3dDevice->SetVertexShader(NULL) );
+    }
 
     inline bool             SetInt(const char* var_name, int value);
     inline bool             SetFloat(const char* var_name, float value);
@@ -976,14 +1130,6 @@ public:
     inline bool             SetFloat4(const char* var_name, const float f[4]);
     inline bool             SetMatrix4x4(const char* var_name, const float mat[4][4]);
 };
-
-inline void atgVertexShaderImpl::Bind()
-{
-    if (pDXVS)
-    {
-        DX_ASSERT( g_pd3dDevice->SetVertexShader(pDXVS) );
-    }
-}
 
 inline bool atgVertexShaderImpl::SetInt(const char* var_name, int value)
 {
@@ -1172,7 +1318,20 @@ public:
     IDirect3DPixelShader9* pDXPS;
     ID3DXConstantTable*     pTable;
 
-    inline void             Bind();
+    bool Bind()
+    {
+        if (pDXPS)
+        {
+            DX_ASSERT( g_pd3dDevice->SetPixelShader(pDXPS) );
+            return true;
+        }
+        return false;
+    }
+
+    void Unbind()
+    {
+        DX_ASSERT( g_pd3dDevice->SetPixelShader(NULL) );
+    }
 
     inline bool             SetInt(const char* var_name, int value);
     inline bool             SetFloat(const char* var_name, float value);
@@ -1182,13 +1341,6 @@ public:
     inline bool             SetMatrix4x4(const char* var_name, const float mat[4][4]);
 };
 
-inline void atgFragmentShaderImpl::Bind()
-{
-    if (pDXPS)
-    {
-        DX_ASSERT( g_pd3dDevice->SetPixelShader(pDXPS) );
-    }
-}
 
 bool atgFragmentShaderImpl::SetInt(const char* var_name, int value)
 {
@@ -1443,16 +1595,46 @@ bool atgPass::Destory()
     return true;
 }
 
-void atgPass::Bind()
+bool atgPass::Bind()
 {
-    if (_impl->pVS->_impl)
+    if (_impl ==  0)
+        return false;
+
+    bool rs1 = false; 
+    bool rs2 = false;
+    if (_impl->pVS && _impl->pVS->_impl)
     {
-        _impl->pVS->_impl->Bind();
+        rs1 = _impl->pVS->_impl->Bind();
     }
-    if (_impl->pPS->_impl)
+    if (_impl->pPS && _impl->pPS->_impl)
     {
-        _impl->pPS->_impl->Bind();
+        rs2 = _impl->pPS->_impl->Bind();
     }
+
+    if (rs1 && rs2)
+    {
+        BeginContext(NULL);
+    }
+
+    return (rs1 && rs2);
+}
+
+void atgPass::Unbind()
+{
+    if (_impl ==  0)
+        return;
+
+    EndContext(NULL);
+
+    if (_impl->pVS && _impl->pVS->_impl)
+    {
+        _impl->pVS->_impl->Unbind();
+    }
+    if (_impl->pPS && _impl->pPS->_impl)
+    {
+        _impl->pPS->_impl->Unbind();
+    }
+
 }
 
 bool atgPass::Link()
@@ -1492,7 +1674,7 @@ bool atgPass::SetFloat(const char* var_name, float value)
     return rt;
 }
 
-bool atgPass::SetFloat2(const char* var_name, const float f[2])
+bool atgPass::SetFloat2(const char* var_name, const atgVec2& f)
 {
     bool rt = SetVsFloat2(var_name, f);
     if (!rt)
@@ -1508,7 +1690,7 @@ bool atgPass::SetFloat2(const char* var_name, const float f[2])
     return rt;
 }
 
-bool atgPass::SetFloat3(const char* var_name, const float f[3])
+bool atgPass::SetFloat3(const char* var_name, const atgVec3& f)
 {
     bool rt = SetVsFloat3(var_name, f);
     if (!rt)
@@ -1524,7 +1706,7 @@ bool atgPass::SetFloat3(const char* var_name, const float f[3])
     return rt;
 }
 
-bool atgPass::SetFloat4(const char* var_name, const float f[4])
+bool atgPass::SetFloat4(const char* var_name, const atgVec4& f)
 {
     bool rt = SetVsFloat4(var_name, f);
     if (!rt)
@@ -1540,11 +1722,11 @@ bool atgPass::SetFloat4(const char* var_name, const float f[4])
     return rt;
 }
 
-bool atgPass::SetMatrix4x4(const char* var_name, const Matrix& mat)
+bool atgPass::SetMatrix4x4(const char* var_name, const atgMatrix& mat)
 {
     // 需要矩阵转置
-    static float matTemp[4][4]; 
-    atgMath::MatTranspose(mat.m, matTemp); 
+    atgMatrix matTemp(mat); 
+    matTemp.Transpose(); 
 
     bool rt = SetVsMatrix4x4(var_name, matTemp);
     if (!rt)
@@ -1580,41 +1762,41 @@ bool atgPass::SetVsFloat(const char* var_name, float value)
     return false;
 }
 
-bool  atgPass::SetVsFloat2(const char* var_name, const float f[2])
+bool  atgPass::SetVsFloat2(const char* var_name, const atgVec2& f)
 {
     if (_impl->pVS->_impl)
     {
-        return _impl->pVS->_impl->SetFloat2(var_name, f);
+        return _impl->pVS->_impl->SetFloat2(var_name, f.m);
     }
 
     return false;
 }
 
-bool atgPass::SetVsFloat3(const char* var_name, const float f[3])
+bool atgPass::SetVsFloat3(const char* var_name, const atgVec3& f)
 {
     if (_impl->pVS->_impl)
     {
-        return _impl->pVS->_impl->SetFloat3(var_name, f);
+        return _impl->pVS->_impl->SetFloat3(var_name, f.m);
     }
 
     return false;
 }
 
-bool atgPass::SetVsFloat4(const char* var_name, const float f[4])
+bool atgPass::SetVsFloat4(const char* var_name, const atgVec4& f)
 {
     if (_impl->pVS->_impl)
     {
-        return _impl->pVS->_impl->SetFloat4(var_name, f);
+        return _impl->pVS->_impl->SetFloat4(var_name, f.m);
     }
 
     return false;
 }
 
-bool atgPass::SetVsMatrix4x4(const char* var_name, const float mat[4][4])
+bool atgPass::SetVsMatrix4x4(const char* var_name, const atgMatrix& mat)
 {
     if (_impl->pVS->_impl)
     {
-        return _impl->pVS->_impl->SetMatrix4x4(var_name, mat);
+        return _impl->pVS->_impl->SetMatrix4x4(var_name, mat.m);
     }
 
     return false;
@@ -1640,41 +1822,41 @@ bool atgPass::SetPsFloat(const char* var_name, float value)
     return false;
 }
 
-bool atgPass::SetPsFloat2(const char* var_name, const float f[2])
+bool atgPass::SetPsFloat2(const char* var_name, const atgVec2& f)
 {
     if (_impl->pPS->_impl)
     {
-        return _impl->pPS->_impl->SetFloat2(var_name, f);
+        return _impl->pPS->_impl->SetFloat2(var_name, f.m);
     }
 
     return false;
 }
 
-bool atgPass::SetPsFloat3(const char* var_name, const float f[3])
+bool atgPass::SetPsFloat3(const char* var_name, const atgVec3& f)
 {
     if (_impl->pPS->_impl)
     {
-        return _impl->pPS->_impl->SetFloat3(var_name, f);
+        return _impl->pPS->_impl->SetFloat3(var_name, f.m);
     }
 
     return false;
 }
 
-bool atgPass::SetPsFloat4(const char* var_name, const float f[4])
+bool atgPass::SetPsFloat4(const char* var_name, const atgVec4& f)
 {
     if (_impl->pPS->_impl)
     {
-        return _impl->pPS->_impl->SetFloat4(var_name, f);
+        return _impl->pPS->_impl->SetFloat4(var_name, f.m);
     }
 
     return false;
 }
 
-bool atgPass::SetPsMatrix4x4(const char* var_name, const float mat[4][4])
+bool atgPass::SetPsMatrix4x4(const char* var_name, const atgMatrix& mat)
 {
     if (_impl->pPS->_impl)
     {
-        return _impl->pPS->_impl->SetMatrix4x4(var_name, mat);
+        return _impl->pPS->_impl->SetMatrix4x4(var_name, mat.m);
     }
 
     return false;
@@ -1687,15 +1869,14 @@ bool atgPass::SetTexture(const char* var_name, uint8 index)
 
 void atgPass::BeginContext(void* data)
 {
-    Matrix WVP;
-    Matrix Wrld;
-    Matrix View;
-    Matrix Proj;
+    atgMatrix WVP;
+    atgMatrix Wrld;
+    atgMatrix View;
+    atgMatrix Proj;
     g_Renderer->GetMatrix(Wrld, MD_WORLD);
     g_Renderer->GetMatrix(View, MD_VIEW);
     g_Renderer->GetMatrix(Proj, MD_PROJECTION);
-    View.Concatenate(Wrld, WVP);
-    Proj.Concatenate(WVP, WVP);
+    WVP = Proj * View * Wrld;
     SetMatrix4x4(UNF_M_WVP, WVP);
 }
 
@@ -1723,14 +1904,10 @@ public:
     bool Bind(uint8 index_, IDirect3DTexture9* pRenderTexture, IDirect3DTexture9* pDepthStencil)
     {
         if (pRenderTexture == NULL)
-        {
             return false;
-        }
 
         if (pDepthStencil == NULL)
-        {
             return false;
-        }
 
         index = index_;
         IDirect3DSurface9* pSurface;
@@ -1831,7 +2008,7 @@ bool atgRenderTarget::Destory()
     return true;
 }
 
-bool atgRenderTarget::Active(uint8 index)
+bool atgRenderTarget::Bind(uint8 index)
 {
 
     if (!_colorBuffer.empty())
@@ -1869,7 +2046,7 @@ bool atgRenderTarget::Active(uint8 index)
     }
     return false;
 }
-void atgRenderTarget::Deactive()
+void atgRenderTarget::Unbind()
 {
     if (_impl)
     {
@@ -2013,7 +2190,7 @@ void atgRenderer::GetViewPort( uint32& offsetX, uint32& offsetY, uint32& width, 
     height  = viewport.Height;
 }
 
-void atgRenderer::SetMatrix(MatrixDefine index, const Matrix& mat)
+void atgRenderer::SetMatrix(MatrixDefine index, const atgMatrix& mat)
 {
     switch(index)
     {
@@ -2039,7 +2216,7 @@ void atgRenderer::SetMatrix(MatrixDefine index, const Matrix& mat)
     }
 }
 
-void atgRenderer::GetMatrix(Matrix& mat, MatrixDefine index) const
+void atgRenderer::GetMatrix(atgMatrix& mat, MatrixDefine index) const
 {
     if (MD_WORLD <= index && index < MD_NUMBER)
     {
@@ -2231,14 +2408,6 @@ void atgRenderer::EndFrame()
 {
     // End the scene
     DX_ASSERT( g_pd3dDevice->EndScene() );
-
-    for (int i = 0; i < MaxNumberBindTexture; ++i)
-        BindTexture(i, NULL);
-
-    BindVertexBuffer(NULL);
-    BindIndexBuffer(NULL);
-    BindPass(NULL);
-    BindMaterial(NULL);
 }
 
 
@@ -2333,152 +2502,6 @@ bool atgRenderer::DrawIndexedPrimitive( PrimitveType pt, uint32 primitveCount, u
     }
     
     return false;
-}
-
-void atgRenderer::BindPass( atgPass* pass )
-{
-    if (_bindPass)
-    {
-        _bindPass->EndContext(NULL);
-    }
-
-    _bindPass = pass;
-
-    if(_bindPass)
-    {
-        _bindPass->Bind();
-        _bindPass->BeginContext(NULL);
-    }else
-    {
-        DX_ASSERT( g_pd3dDevice->SetVertexShader(NULL) );
-        DX_ASSERT( g_pd3dDevice->SetPixelShader(NULL) );
-    }
-}
-
-void atgRenderer::BindIndexBuffer( atgIndexBuffer* indexBuffer )
-{
-    _bindIndexBuffer = indexBuffer;
-
-    if (_bindIndexBuffer)
-    {
-        DX_ASSERT( _bindIndexBuffer->_impl->Bind() );
-    }
-}
-
-void atgRenderer::BindVertexBuffer( atgVertexBuffer* vertexBuffer )
-{
-    if (vertexBuffer)
-    {
-        DX_ASSERT( vertexBuffer->_impl->Bind() );
-    }
-
-    return;
-}
-
-void atgRenderer::BindTexture( uint8 index, atgTexture* texture )
-{
-    if (0 <= index && index < MaxNumberBindTexture)
-    {
-        _bindTexture[index] = texture;
-        if (texture)
-        {
-            DX_ASSERT( texture->_impl->Bind(index) );
-            switch (texture->_filter)
-            {
-            case TFM_FILTER_NEAREST:
-                {
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_POINT) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_POINT) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_POINT) );
-                }break;
-            case TFM_FILTER_BILINEAR:
-                {
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_POINT) );
-                }break;
-            case TFM_FILTER_TRILINEAR:
-                {
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_PYRAMIDALQUAD) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_PYRAMIDALQUAD) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
-                }break;
-            case TFM_FILTER_ANISOTROPIC:
-                {
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
-                }break;
-            case TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR:
-                {
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_LINEAR) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
-                    DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
-                }break;
-            case TFM_FILTER_DEFAULT:
-                {
-                    //>什么也不做
-                    break;
-                }
-            default:
-                break;
-            }
-
-            if (texture->_address[TC_COORD_U] != MAX_ADDRESSMODES)
-            {
-                switch (texture->_address[TC_COORD_U])
-                {
-                case TAM_ADDRESS_WRAP:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP) );
-                    }break;
-                case TAM_ADDRESS_MIRROR:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_MIRROR) );
-                    }break;
-                case TAM_ADDRESS_CLAMP:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP) );
-                    }break;
-                case TAM_ADDRESS_BORDER:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER) );
-                    }break;
-                default:
-                    break;
-                }
-            }
-
-            if (texture->_address[TC_COORD_V] != MAX_ADDRESSMODES)
-            {
-                switch (texture->_address[TC_COORD_V])
-                {
-                case TAM_ADDRESS_WRAP:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP) );
-                    }break;
-                case TAM_ADDRESS_MIRROR:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_MIRROR) );
-                    }break;
-                case TAM_ADDRESS_CLAMP:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP) );
-                    }break;
-                case TAM_ADDRESS_BORDER:
-                    {
-                        DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER) );
-                    }break;
-                default:
-                    break;
-                }
-            }
-
-        }else
-        {
-            atgTextureImpl::Unbind(index);
-        }
-    }
 }
 
 void atgRenderer::SetPointSize(float size)

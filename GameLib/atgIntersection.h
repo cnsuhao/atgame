@@ -10,13 +10,13 @@ enum IntersectionType
     IT_Cross,   //>½»²æ
 };
 
-struct AABBox
+struct atgAABBox
 {
-    AABBox() { }
-    AABBox(float minx, float miny, float minz, float maxx, float maxy, float maxz):vMin(minx,miny,minz),vMax(maxx,maxy,maxz) {}
-    AABBox(const Vec3& minPoint, const Vec3& maxPoint):vMin(minPoint),vMax(minPoint) {}
+    atgAABBox() { }
+    atgAABBox(float minx, float miny, float minz, float maxx, float maxy, float maxz):vMin(minx,miny,minz),vMax(maxx,maxy,maxz) {}
+    atgAABBox(const atgVec3& minPoint, const atgVec3& maxPoint):vMin(minPoint),vMax(minPoint) {}
 
-    AABBox& Merge(const AABBox& other)
+    atgAABBox& Merge(const atgAABBox& other)
     {
         vMin.x = atgMath::Min(vMin.x, other.vMin.x);
         vMin.y = atgMath::Min(vMin.y, other.vMin.y);
@@ -29,7 +29,7 @@ struct AABBox
         return *this;
     }
 
-    AABBox& Merge(const Vec3& point)
+    atgAABBox& Merge(const atgVec3& point)
     {
         vMin.x = atgMath::Min(vMin.x, point.x);
         vMin.y = atgMath::Min(vMin.y, point.y);
@@ -42,7 +42,7 @@ struct AABBox
         return *this;
     }
 
-    AABBox& Merge(const float point[3])
+    atgAABBox& Merge(const float point[3])
     {
         vMin.x = atgMath::Min(vMin.x, point[0]);
         vMin.y = atgMath::Min(vMin.y, point[1]);
@@ -55,21 +55,19 @@ struct AABBox
         return *this;
     }
 
-    Vec3 GetCenter()
+    atgVec3 GetCenter()
     {
-        Vec3 center = vMin.Add(vMax);
-        center.Scale(0.5f);
-        return center;
+        atgVec3 center = vMin + vMax;
+        return center * 0.5f;
     }
 
-    Vec3 GetSize()
+    atgVec3 GetSize()
     {
-        Vec3 center = vMax.Sub(vMin);
-        center.Scale(0.5f);
-        return center;
+        atgVec3 center = vMax - vMin;
+        return center * 0.5f;
     }
 
-    bool IsInner(const AABBox& other) const
+    bool IsInner(const atgAABBox& other) const
     {
         if(IsInner(other.vMin) && IsInner(other.vMax))
         {
@@ -79,7 +77,7 @@ struct AABBox
         return false;
     }
 
-    bool IsInner(const Vec3& point) const
+    bool IsInner(const atgVec3& point) const
     {
         if (vMin.x < point.x && vMin.y < point.y && vMin.z < point.z && 
             point.x < vMax.x && point.y < vMax.y && point.z < vMax.z)
@@ -90,7 +88,7 @@ struct AABBox
         return false;
     }
 
-    IntersectionType Intersect(const AABBox& other)
+    IntersectionType Intersect(const atgAABBox& other)
     {
         if (IsInner(other))
         {
@@ -104,8 +102,8 @@ struct AABBox
             return IT_Exclude;
     }
 
-    Vec3 vMin;
-    Vec3 vMax;
+    atgVec3 vMin;
+    atgVec3 vMax;
 };
 
 // We create an enum of the sides so we don't have to call each side 0 or 1.   
@@ -127,7 +125,7 @@ public:
     atgFrustum();
     ~atgFrustum();
 
-    void BuildFrustumPlanes(const float modelview[4][4], const float projection[4][4]);
+    void BuildFrustumPlanes(const atgMatrix& modelview, const atgMatrix projection);
 
     bool IsPointInFrustum(const float v[3]);
     
@@ -135,12 +133,12 @@ public:
 
     bool IsCubeInFrustum(const float center[3], float size);
 
-    bool IsAABBoxInFurstum(const AABBox& bbox);
+    bool IsAABBoxInFurstum(const atgAABBox& bbox);
 
     void DebugRender();
 protected:
 
-    Plane _frustum[SIDE_NUMBER];
+    atgPlane    _frustum[SIDE_NUMBER];
 };
 
 

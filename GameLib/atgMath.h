@@ -34,16 +34,6 @@ public:
     
     //> 误差常量
     static const float EPSILON;    //> 1e-5f
-    
-    //> 向量常量
-    static const float VectorZero[3];   // { 0.0f,  0.0f,  0.0f };
-    static const float VectorOne[3];    // { 1.0f,  1.0f,  1.0f };
-    static const float VectorLeft[3];   // {-1.0f,  0.0f,  0.0f };
-    static const float VectorRight[3];  // { 1.0f,  0.0f,  0.0f };
-    static const float VectorUp[3];     // { 0.0f,  1.0f,  0.0f };
-    static const float VectorDown[3];   // { 0.0f, -1.0f,  0.0f };
-    static const float VectorForward[3];// { 0.0f,  0.0f,  1.0f };
-    static const float VectorBack[3];   // { 0.0f,  0.0f, -1.0f };
 
     template<class T> 
     static inline T         Min(T a, T b);
@@ -57,18 +47,15 @@ public:
     template <class T>
     static inline T         Clamp(T v, T min, T max);
 
-    static size_t           VEC3_SIZE() { return (sizeof(float)*3); }
-    static size_t           VEC4_SIZE() { return (sizeof(float)*4); }
-    static size_t           QUAT_SIZE() { return (sizeof(float)*4); }
-    static size_t           MATRIX44_SIZE() { return (sizeof(float)*16); }
-
     static inline bool      FloatEqual(float a, float b, float deviation=EPSILON);
 
-    static inline bool      DoubleEqual(double a, float b, double deviation=0.000000001);
+    static inline bool      DoubleEqual(double a, float b, double deviation=0.0000000001);
 
     static inline bool      FloatEqualArray(const float* a, const float* b, int size);
 
     static inline bool      IsFloatZero(float value);
+
+    static inline bool      IsFloatArray(const float* a, int size); 
 
     static inline float     DegreesToRadians(float degrees);
 
@@ -95,117 +82,6 @@ public:
     static inline float     InterpolationBezier(float v1, float v2, float c1, float c2, float factor);
 
     static inline void      InterpolationBezier(const float v1[3], const float v2[3], const float c1[3], const float c2[3], float factor, float dst[3]);
-
-
-    // vector {x, y, z}
-    static inline float     VecDot(const float v0[3], const float v1[3]);
-
-    static inline void      VecCross(const float v0[3], const float v1[3], float result[3]);
-
-    static inline void      VecProj(const float v0[3], const float v1[3], float result[3]);
-
-    static inline void      VecAdd(const float v0[3], const float v1[3], float result[3]);
-
-    static inline void      VecAdd(float v0[3], const float v1[3]);
-
-    static inline void      VecSub(const float v0[3], const float v1[3], float result[3]);
-
-    static inline void      VecSub(float v0[3], const float v1[3]);
-
-    static inline void      VecZero(float v[3]);
-
-    static inline void      VecScale(const float v[3], float scale, float result[3]);
-
-    static inline void      VecScale(float v[3], float scale);
-
-    static inline void      VecCopy(const float scr[3], float dst[3]);
-
-    static inline float     VecLength(const float v[3]);
-
-    static inline void      VecNormalize(float v[3]);
-
-    static inline void      VecNormalize(const float v[3], float result[3]);
-
-
-    // quaternion or vector4, plane { x , y, z, w }
-    static void             QuatNormalize(const float quatSrc[4], float quatDst[4]);
-
-    static void             QuatFromEulerAngle(const float vec[3], float quat[4]);
-
-    static void             QuatFromAxisAngle(const float axis[3], float angle, float quat[4]);
-
-    static void             QuatFromTwoVector(const float start[3], const float end[3], float quat[4]);
-
-    static void             QuatMultiply(const float quat1[4], const float quat2[4], float result[4]);
-
-    static void             QuatToMat(const float quat[4], float matrix[4][4]);
-
-    static void             QuatToEulerAngle(const float quat[4], float vec[3]);
-
-    static void             QuatSlerp(const float quat1[4], const float quat2[4], float interpTime, float result[4]);
-
-    static void             QuatSquad(const float quat1[4], const float quat2[4],  const float ctrl1[4], const float ctrl2[4], float interpTime, float result[4]);
-
-    static inline void      QuatCopy(float dst[4], const float scr[4]);
-
-    static inline float     Vec4Dot(const float v0[4], const float v1[4]);
-
-
-    // Matrix as major column 4x4
-    static inline void      MatIdentity(float dst[4][4]);
-
-    static inline void      MatTranspose(const float src[4][4], float dst[4][4]);
-
-    static bool             MatAffineInverse(const float src[4][4], float dst[4][4]); //>仿射矩阵求逆
-
-    static bool             MatInverse(const float src[4][4], float dst[4][4]); //>通用矩阵求逆
-
-    static inline void      MatTranslation(float tx, float ty, float tz, float dst[4][4]);
-
-    static inline void      MatScaling(float sx, float sy, float sz, float dst[4][4]);
-
-    static inline void      MatRotationX(float angle, float dst[4][4]);
-
-    static inline void      MatRotationY(float angle, float dst[4][4]);
-
-    static inline void      MatRotationZ(float angle, float dst[4][4]);
-
-    static void             MatToQuat(const float matrix[4][4], float quat[4]);
-
-    static void             MatConcatenate(const float mat1[4][4], const float mat2[4][4], float result[4][4]);
-
-
-    // transform function
-    static inline void      VecRotate(const float vec[3], const float mat[4][4], float result[3]);
-
-    static void             VecRotate(const float vec[3], const float quat[4], float result[3]);
-
-    static inline void      VecIRotate(const float vec[3], const float mat[4][4], float result[3]);
-
-    static inline void      VecTransform(const float vec[3], const float mat[4][4], float result[3]);
-
-    static inline void      Vec4Transform(const float vec[4], const float mat[4][4], float result[4]);
-
-    static inline void      VecITransform(const float vec[3], const float mat[4][4], float result[3]);
-
-    //perspective matrix
-    static inline void      LookAt(const float eyePos[3], const float lookAt[3], const float up[3], float result[4][4]);
-
-    static inline void      LookAtLH(const float eyePos[3], const float lookAt[3], const float up[3], float result[4][4]);
-
-    static inline void      LookAtRH(const float eyePos[3], const float lookAt[3], const float up[3], float result[4][4]);
-    // width / height = aspect;
-    static inline void      Perspective(float fov_y, float aspect, float zNear, float zFar, float result[4][4]);
-
-    static inline void      PerspectiveLH(float fov_y, float aspect, float zNear, float zFar, float result[4][4]);
-
-    static inline void      PerspectiveRH(float fov_y, float aspect, float zNear, float zFar, float result[4][4]);
-
-    static inline void      OrthoProject(float width, float height, float zNear, float zFar, float result[4][4]);
-
-    static inline void      OrthoProjectLH(float width, float height, float zNear, float zFar, float result[4][4]);
-
-    static inline void      OrthoProjectRH(float width, float height, float zNear, float zFar, float result[4][4]);
 
     static bool             IsBetween0And1ForClipZ();
 };
@@ -292,6 +168,19 @@ inline bool atgMath::IsFloatZero(float value)
     return true;
 }
 
+inline bool atgMath::IsFloatArray(const float* a, int size)
+{
+    const float* pa = a;
+    for (int i = 0; i < size; ++i)
+    {
+        if (!IsFloatZero(*pa))
+        {
+            return false;
+        }
+        ++pa;
+    }
+}
+
 inline float atgMath::DegreesToRadians(float degrees)
 {
     return degrees * PI_DIV_180;
@@ -364,17 +253,9 @@ inline void atgMath::InterpolationHermite(const float v1[3], const float v2[3], 
     float factor3 = factorPow2 * (factor - 1.0f);
     float factor4 = factorPow2 * (3.0f - 2.0f * factor);
 
-    float factors[4];
-    factors[0] = factor1; factors[1] = factor2; factors[2] = factor3;  factors[3] = factor4;
-
-    float component0[4],component1[4],component2[4];
-    component0[0] = v1[0]; component0[1] = c1[0]; component0[2] = c2[0]; component0[3] = v2[0];
-    component1[0] = v1[1]; component1[1] = c1[1]; component1[2] = c2[1]; component1[3] = v2[1];
-    component2[0] = v1[2]; component2[1] = c1[2]; component2[2] = c2[2]; component2[3] = v2[2];
-
-    dst[0] = Vec4Dot(factors, component0);
-    dst[1] = Vec4Dot(factors, component1);
-    dst[2] = Vec4Dot(factors, component2);
+    dst[0] = v1[0] * factor1 + c1[0] * factor2 + c2[0] * factor3 + v2[0] * factor4;
+    dst[1] = v1[1] * factor1 + c1[1] * factor2 + c2[1] * factor3 + v2[1] * factor4; 
+    dst[2] = v1[2] * factor1 + c1[2] * factor2 + c2[2] * factor3 + v2[2] * factor4;
 }
 
 /*
@@ -410,485 +291,33 @@ inline void atgMath::InterpolationBezier(const float v1[3], const float v2[3], c
     float factor3 = 3.0f * factorPow2 * inverseFactor;
     float factor4 = factorPow2 * factor;
 
-    float factors[4];
-    factors[0] = factor1; factors[1] = factor2; factors[2] = factor3;  factors[3] = factor4;
-
-    float component0[4],component1[4],component2[4];
-    component0[0] = v1[0]; component0[1] = c1[0]; component0[2] = c2[0]; component0[3] = v2[0];
-    component1[0] = v1[1]; component1[1] = c1[1]; component1[2] = c2[1]; component1[3] = v2[1];
-    component2[0] = v1[2]; component2[1] = c1[2]; component2[2] = c2[2]; component2[3] = v2[2];
-
-    dst[0] = Vec4Dot(factors, component0);
-    dst[1] = Vec4Dot(factors, component1);
-    dst[2] = Vec4Dot(factors, component2);
+    dst[0] = v1[0] * factor1 + c1[0] * factor2 + c2[0] * factor3 + v2[0] * factor4;
+    dst[1] = v1[1] * factor1 + c1[1] * factor2 + c2[1] * factor3 + v2[1] * factor4; 
+    dst[2] = v1[2] * factor1 + c1[2] * factor2 + c2[2] * factor3 + v2[2] * factor4;
 }
 
 
-
-// v0 * v1 = |v0|*|v1|*cos(a)
-inline float atgMath::VecDot(const float v0[3], const float v1[3])
+struct atgVec2
 {
-    return v0[0]*v1[0] + v0[1]*v1[1] + v0[2]*v1[2];
-}
-
-// v0 x v1 = |v0|*|v1|*sin(a) * n
-inline void atgMath::VecCross(const float v0[3], const float v1[3], float result[3])
-{
-    float temp[3];
-    temp[0] = v0[1] * v1[2] - v0[2] * v1[1];
-    temp[1] = v0[2] * v1[0] - v0[0] * v1[2];
-    temp[2] = v0[0] * v1[1] - v0[1] * v1[0];
-    memcpy(result, temp, VEC3_SIZE());
-}
-
-// Vproj = length(v0) * cos(a) * normalize(v1) =>
-// => ((v0 dot v1) / length(v1)) * (v1 / length(v1));
-inline void atgMath::VecProj(const float v0[3], const float v1[3], float result[3])
-{
-    float p = VecDot(v0, v1);
-    float LenSqure = VecDot(v1, v1);
-    float invLenSq = 1.0f / LenSqure;
-    result[0] = (p * v1[0]) * invLenSq;
-    result[1] = (p * v1[1]) * invLenSq;
-    result[2] = (p * v1[2]) * invLenSq;
-}
-
-// Vproj = ((v0 dot v1) / length(v1)) * (v1 / length(v1)) 
-// if v1 is normalized , so length(v1) euq 1.0 => (v0 dot v1) * v1 
-//=> (v0 dot v1Nomralized) * v1Nomralized
-//inline void VecProj(const float v0[3], const float v1Nomralized[3], float result[3])
-//{
-//    float p = VecDot(v0, v1Nomralied);
-//    VecScale(v1Nomralied, p, result);
-//}
-
-inline void atgMath::VecAdd(const float v0[3], const float v1[3], float result[3])
-{
-    result[0] = v0[0] + v1[0];
-    result[1] = v0[1] + v1[1];
-    result[2] = v0[2] + v1[2];
-}
-
-inline void atgMath::VecAdd(float v0[3], const float v1[3])
-{
-    v0[0] += v1[0];
-    v0[1] += v1[1];
-    v0[2] += v1[2];
-}
-
-inline void atgMath::VecSub(const float v0[3], const float v1[3], float result[3])
-{
-    result[0] = v0[0] - v1[0];
-    result[1] = v0[1] - v1[1];
-    result[2] = v0[2] - v1[2];
-}
-
-inline void atgMath::VecSub(float v0[3], const float v1[3])
-{
-    v0[0] -= v1[0];
-    v0[1] -= v1[1];
-    v0[2] -= v1[2];
-}
-
-inline void atgMath::VecZero(float v[3])
-{
-    v[0] = 0;
-    v[1] = 0;
-    v[2] = 0;
-}
-
-inline void atgMath::VecScale(const float v[3], float scale, float result[3])
-{
-    result[0] = v[0] * scale;
-    result[1] = v[1] * scale;
-    result[2] = v[2] * scale;
-}
-
-inline void atgMath::VecScale(float v[3], float scale)
-{
-    v[0] *= scale;
-    v[1] *= scale;
-    v[2] *= scale;
-}
-
-inline void atgMath::VecCopy(const float scr[3], float dst[3])
-{
-    dst[0] = scr[0];
-    dst[1] = scr[1];
-    dst[2] = scr[2];
-}
-
-inline float atgMath::VecLength(const float v[3])
-{
-    return (sqrtf(VecDot(v,v)));
-}
-
-inline void atgMath::VecNormalize(float v[3])
-{
-    float length = VecLength(v);
-    if (FloatEqual(length, 1.0f))
-        return;
-#ifdef _DEBUG
-    assert(!IsFloatZero(length));
-#endif // _DEBUG
-
-    if (length < EPSILON) length = EPSILON;
-    const float invLen = 1 / length;
-    v[0] *= invLen;
-    v[1] *= invLen;
-    v[2] *= invLen;
-}
-
-inline void atgMath::VecNormalize(const float v[3], float result[3])
-{
-    float length = VecLength(v);
-#ifdef _DEBUG
-    assert(!IsFloatZero(length));
-#endif // _DEBUG
-    if (length < EPSILON) length = EPSILON;
-    const float invLen = 1 / length;
-    result[0] = v[0] * invLen;
-    result[1] = v[1] * invLen;
-    result[2] = v[2] * invLen;
-}
-
-inline float atgMath::Vec4Dot(const float v0[4], const float v1[4])
-{
-    return v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2]+ v0[3] * v1[3];
-}
-
-inline void atgMath::MatIdentity(float dst[4][4])
-{
-    dst[0][0] = 1.0f; dst[0][1] = 0.0f; dst[0][2] = 0.0f; dst[0][3] = 0.0f;
-    dst[1][0] = 0.0f; dst[1][1] = 1.0f; dst[1][2] = 0.0f; dst[1][3] = 0.0f;
-    dst[2][0] = 0.0f; dst[2][1] = 0.0f; dst[2][2] = 1.0f; dst[2][3] = 0.0f;
-    dst[3][0] = 0.0f; dst[3][1] = 0.0f; dst[3][2] = 0.0f; dst[3][3] = 1.0f;
-}
-
-inline void atgMath::MatTranspose(const float src[4][4], float dst[4][4])
-{
-    float temp[4][4];
-    temp[0][0] = src[0][0]; temp[0][1] = src[1][0]; temp[0][2] = src[2][0]; temp[0][3] = src[3][0];
-    temp[1][0] = src[0][1]; temp[1][1] = src[1][1]; temp[1][2] = src[2][1]; temp[1][3] = src[3][1];
-    temp[2][0] = src[0][2]; temp[2][1] = src[1][2]; temp[2][2] = src[2][2]; temp[2][3] = src[3][2];
-    temp[3][0] = src[0][3]; temp[3][1] = src[1][3]; temp[3][2] = src[2][3]; temp[3][3] = src[3][3];
-    memcpy(dst, temp, MATRIX44_SIZE());
-}
-
-inline void atgMath::MatTranslation(float tx, float ty, float tz, float dst[4][4])
-{
-    dst[0][0] = 1.0f; dst[0][1] = 0.0f; dst[0][2] = 0.0f; dst[0][3] = tx;
-    dst[1][0] = 0.0f; dst[1][1] = 1.0f; dst[1][2] = 0.0f; dst[1][3] = ty;
-    dst[2][0] = 0.0f; dst[2][1] = 0.0f; dst[2][2] = 1.0f; dst[2][3] = tz;
-    dst[3][0] = 0.0f; dst[3][1] = 0.0f; dst[3][2] = 0.0f; dst[3][3] = 1.0f;
-}
-
-inline void atgMath::MatScaling(float sx, float sy, float sz, float dst[4][4])
-{
-    dst[0][0] = sx;   dst[0][1] = 0.0f; dst[0][2] = 0.0f; dst[0][3] = 0.0f;
-    dst[1][0] = 0.0f; dst[1][1] = sy;   dst[1][2] = 0.0f; dst[1][3] = 0.0f;
-    dst[2][0] = 0.0f; dst[2][1] = 0.0f; dst[2][2] = sz;   dst[2][3] = 0.0f;
-    dst[3][0] = 0.0f; dst[3][1] = 0.0f; dst[3][2] = 0.0f; dst[3][3] = 1.0f;
-}
-
-inline void atgMath::MatRotationX(float angle, float dst[4][4])
-{
-    float cos = cosf(DegreesToRadians(angle));
-    float sin = sinf(DegreesToRadians(angle));
-    float temp[4][4];
-    temp[0][0] = 1.0f; temp[0][1] = 0.0f; temp[0][2] = 0.0f; temp[0][3] = 0.0f;
-    temp[1][0] = 0.0f; temp[1][1] =  cos; temp[1][2] = -sin; temp[1][3] = 0.0f;
-    temp[2][0] = 0.0f; temp[2][1] =  sin; temp[2][2] =  cos; temp[2][3] = 0.0f;
-    temp[3][0] = 0.0f; temp[3][1] = 0.0f; temp[3][2] = 0.0f; temp[3][3] = 1.0f;
-    memcpy(dst, temp, MATRIX44_SIZE());
-}
-
-inline void atgMath::MatRotationY(float angle, float dst[4][4])
-{
-    float cos = cosf(DegreesToRadians(angle));
-    float sin = sinf(DegreesToRadians(angle));
-    float temp[4][4];
-    temp[0][0] =  cos; temp[0][1] = 0.0f; temp[0][2] =  sin; temp[0][3] = 0.0f;
-    temp[1][0] = 0.0f; temp[1][1] = 1.0f; temp[1][2] = 0.0f; temp[1][3] = 0.0f;
-    temp[2][0] = -sin; temp[2][1] = 0.0f; temp[2][2] =  cos; temp[2][3] = 0.0f;
-    temp[3][0] = 0.0f; temp[3][1] = 0.0f; temp[3][2] = 0.0f; temp[3][3] = 1.0f;
-    memcpy(dst, temp, MATRIX44_SIZE());
-}
-
-inline void atgMath::MatRotationZ(float angle, float dst[4][4])
-{
-    float cos = cosf(DegreesToRadians(angle));
-    float sin = sinf(DegreesToRadians(angle));
-    float temp[4][4];
-    temp[0][0] =  cos; temp[0][1] = -sin; temp[0][2] = 0.0f; temp[0][3] = 0.0f;
-    temp[1][0] =  sin; temp[1][1] =  cos; temp[1][2] = 0.0f; temp[1][3] = 0.0f;
-    temp[2][0] = 0.0f; temp[2][1] = 0.0f; temp[2][2] = 1.0f; temp[2][3] = 0.0f;
-    temp[3][0] = 0.0f; temp[3][1] = 0.0f; temp[3][2] = 0.0f; temp[3][3] = 1.0f;
-    memcpy(dst, temp, MATRIX44_SIZE());
-}
-
-inline void atgMath::VecRotate(const float vec[3], const float mat[4][4], float result[3])
-{
-    float temp[3];
-    temp[0] = VecDot(mat[0], vec);
-    temp[1] = VecDot(mat[1], vec);
-    temp[2] = VecDot(mat[2], vec);
-    result[0] = temp[0];
-    result[1] = temp[1];
-    result[2] = temp[2];
-}
-
-// rotate by the inverse of the matrix
-inline void atgMath::VecIRotate(const float vec[3], const float mat[4][4], float result[3])
-{
-    float col1[3] = { mat[0][0], mat[1][0], mat[2][0] };
-    float col2[3] = { mat[0][1], mat[1][1], mat[2][1] };
-    float col3[3] = { mat[0][2], mat[1][2], mat[2][2] };
-    result[0] = VecDot(col1, vec);
-    result[1] = VecDot(col2, vec);
-    result[2] = VecDot(col3, vec);
-}
-
-inline void atgMath::VecTransform(const float vec[3], const float mat[4][4], float result[3])
-{
-    float d1 = VecDot(mat[0], vec);
-    float d2 = VecDot(mat[1], vec);
-    float d3 = VecDot(mat[2], vec);
-    result[0] = d1 + mat[0][3];
-    result[1] = d2 + mat[1][3];
-    result[2] = d3 + mat[2][3];
-}
-
-inline void atgMath::Vec4Transform(const float vec[4], const float mat[4][4], float result[4])
-{
-    float temp[4];
-    temp[0] = Vec4Dot(mat[0], vec);
-    temp[1] = Vec4Dot(mat[1], vec);
-    temp[2] = Vec4Dot(mat[2], vec);
-    temp[3] = Vec4Dot(mat[3], vec);
-    memcpy(result, temp, VEC4_SIZE());
-}
-
-inline void atgMath::VecITransform(const float vec[3], const float mat[4][4], float result[3])
-{
-    float temp[3];
-    temp[0] = vec[0] - mat[0][3];
-    temp[1] = vec[1] - mat[1][3];
-    temp[2] = vec[2] - mat[2][3];
-    VecIRotate(temp, mat, result);
-}
-
-inline void atgMath::LookAt(const float eyePos[3], const float lookAt[3], const float up[3], float result[4][4])
-{
-    LookAtRH(eyePos, lookAt, up, result);
-}
-
-inline void atgMath::LookAtLH(const float eyePos[3], const float lookAt[3], const float up[3], float result[4][4])
-{
-    float zaxis[3];
-    float yaxis[3];
-    float xaxis[3];
-
-    VecSub(lookAt, eyePos, zaxis);
-
-    VecNormalize(zaxis);
-    VecCopy(up, yaxis);
-    VecNormalize(yaxis);
-    VecCross(yaxis, zaxis, xaxis);
-    VecNormalize(xaxis);
-    VecCross(zaxis, xaxis, yaxis);
-    VecNormalize(yaxis);
-
-    result[0][0] = xaxis[0]; result[0][1] = xaxis[1]; result[0][2] = xaxis[2];
-    result[1][0] = yaxis[0]; result[1][1] = yaxis[1]; result[1][2] = yaxis[2];
-    result[2][0] = zaxis[0]; result[2][1] = zaxis[1]; result[2][2] = zaxis[2];
-
-    result[0][3] = -VecDot(xaxis, eyePos);
-    result[1][3] = -VecDot(yaxis, eyePos);
-    result[2][3] = -VecDot(zaxis, eyePos);
-
-    result[3][0] = 0.0f;
-    result[3][1] = 0.0f;
-    result[3][2] = 0.0f;
-    result[3][3] = 1.0f;
-}
-
-inline void atgMath::LookAtRH(const float eyePos[3], const float lookAt[3], const float up[3], float result[4][4])
-{
-    float zaxis[3];
-    float yaxis[3];
-    float xaxis[3];
-
-    VecSub(eyePos, lookAt, zaxis);
-
-    VecNormalize(zaxis);
-    VecCopy(up, yaxis);
-    VecNormalize(yaxis);
-    VecCross(yaxis, zaxis, xaxis);
-    VecNormalize(xaxis);
-    VecCross(zaxis, xaxis, yaxis);
-    VecNormalize(yaxis);
-
-    result[0][0] = xaxis[0]; result[0][1] = xaxis[1]; result[0][2] = xaxis[2];
-    result[1][0] = yaxis[0]; result[1][1] = yaxis[1]; result[1][2] = yaxis[2];
-    result[2][0] = zaxis[0]; result[2][1] = zaxis[1]; result[2][2] = zaxis[2];
-
-    result[0][3] = -VecDot(xaxis, eyePos);
-    result[1][3] = -VecDot(yaxis, eyePos);
-    result[2][3] = -VecDot(zaxis, eyePos);
-
-    result[3][0] = 0.0f;
-    result[3][1] = 0.0f;
-    result[3][2] = 0.0f;
-    result[3][3] = 1.0f;
-}
-
-//>顶点变换后,z/w的值在[0.0-1.0]为可见. 且w大于0.
-inline void atgMath::Perspective(float fov_y, float aspect, float zNear, float zFar, float result[4][4])
-{
-    PerspectiveRH(fov_y, aspect, zNear, zFar, result);
-}
-
-inline void atgMath::PerspectiveLH(float fov_y, float aspect, float zNear, float zFar, float result[4][4])
-{
-    assert(!FloatEqual(aspect, 0.0f));
-
-    if (zNear > zFar)
-        Swap(zNear, zFar);
-
-    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
+    union
     {
-        // Right Hand
-        float f_n = 1.0f / (zFar - zNear);
-        float yScale = Cot(DegreesToRadians(fov_y) * 0.5f);
-        float xScale = yScale / aspect;
+        float m[2];
+        struct
+        {
+            float x;
+            float y;
+        };
+    };
 
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = xScale;
-        result[1][1] = yScale;
-        result[2][2] = (zFar + zNear) * f_n;
-        result[3][2] = 1.0f;
-        result[2][3] = -2.0f * zFar * zNear * f_n;
-    }
-    else
-    {
-        // Left Hand
-        float f_n = 1.0f / (zFar - zNear);
-        float yScale = Cot(DegreesToRadians(fov_y) * 0.5f);
-        float xScale = yScale / aspect;
+    atgVec2():x(0.0f),y(0.0f) { }
+    atgVec2(float x, float y):x(x),y(y) { }
+    atgVec2(const float v[2]):x(v[0]),y(v[1]) { }
+    atgVec2(const atgVec2& v):x(v.x),y(v.y) { }
 
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = xScale;
-        result[1][1] = yScale;
-        result[2][2] = zFar * f_n;
-        result[3][2] = 1.0f;
-        result[2][3] = -zNear * zFar * f_n;
-    }
-}
+    atgVec2& operator =(const atgVec2& v){  x = v.x; y = v.y;  return *this; }
+};
 
-inline void atgMath::PerspectiveRH(float fov_y, float aspect, float zNear, float zFar, float result[4][4])
-{
-    assert(!FloatEqual(aspect, 0.0f));
-
-    if (zNear > zFar)
-        Swap(zNear, zFar);
-
-    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
-    {
-        float n_f = 1.0f / (zNear - zFar);
-        float yScale = Cot(DegreesToRadians(fov_y) * 0.5f);
-        float xScale = yScale / aspect;
-
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = xScale;
-        result[1][1] = yScale;
-        result[2][2] = (zFar + zNear) * n_f;
-        result[3][2] = -1.0f;
-        result[2][3] = 2.0f * zFar * zNear * n_f;
-    }
-    else
-    {
-        float n_f = 1.0f / (zNear - zFar);
-        float yScale = Cot(DegreesToRadians(fov_y) * 0.5f);
-        float xScale = yScale / aspect;
-
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = xScale;
-        result[1][1] = yScale;
-        result[2][2] = zFar * n_f;
-        result[3][2] = -1.0f;
-        result[2][3] = zNear * zFar * n_f;
-    }
-}
-
-inline void atgMath::OrthoProject(float width, float height, float zNear, float zFar, float result[4][4])
-{
-    OrthoProjectRH(width, height, zNear, zFar, result);
-}
-
-inline void atgMath::OrthoProjectLH(float width, float height, float zNear, float zFar, float result[4][4])
-{
-    assert(!FloatEqual(zNear, zFar));
-    if (zNear > zFar)
-        Swap(zNear, zFar);
-
-    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
-    {
-        float n_f = 1.0f / (zNear - zFar);
-
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = 2.0f / width;
-        result[1][1] = 2.0f / height;
-        result[2][2] = -2.0f * n_f;
-        result[2][3] = zFar + zNear * n_f;
-        result[3][3] = 1.0f;
-    }
-    else
-    {
-        float f_n = 1.0f / (zFar - zNear);
-
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = 2.0f / width;
-        result[1][1] = 2.0f / height;
-        result[2][2] = f_n;
-        result[2][3] = -zNear * f_n;
-        result[3][3] = 1.0f;
-    }
-}
-
-inline void atgMath::OrthoProjectRH(float width, float height, float zNear, float zFar, float result[4][4])
-{
-    assert(!FloatEqual(zNear, zFar));
-    if (zNear > zFar)
-        Swap(zNear, zFar);
-
-    if (false == IsBetween0And1ForClipZ()) // z=> -1 to 1.
-    {
-        float f_n = 1.0f / (zFar - zNear);
-
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = 2.0f / width;
-        result[1][1] = 2.0f / height;
-        result[2][2] = -2.0f * f_n;
-        result[2][3] = -(zFar + zNear) * f_n;
-        result[3][3] = 1.0f;
-    }
-    else
-    {
-        float n_f = 1.0f / (zNear - zFar);
-
-        memset(result, 0, MATRIX44_SIZE());
-        result[0][0] = 2.0f / width;
-        result[1][1] = 2.0f / height;
-        result[2][2] = n_f;
-        result[2][3] = zNear * n_f;
-        result[3][3] = 1.0f;
-    }
-}
-
-
-// normal struct define
-typedef struct Vec3_t
+struct atgVec3
 {
     union
     {
@@ -900,118 +329,173 @@ typedef struct Vec3_t
             float z;
         };
     };
-    Vec3_t():x(0.0f),y(0.0f),z(0.0f) { }
-    Vec3_t(float x, float y, float z):x(x),y(y),z(z) { }
-    Vec3_t(const float v[3]):x(v[0]),y(v[1]),z(v[2]) { }
+
+    atgVec3():x(0.0f),y(0.0f),z(0.0f) { }
+    atgVec3(float x, float y, float z):x(x),y(y),z(z) { }
+    atgVec3(const float v[3]):x(v[0]),y(v[1]),z(v[2]) { }
+    atgVec3(const atgVec3& v):x(v.x),y(v.y),z(v.z) { }
+
     void Set(const float p[3]) { x = p[0], y = p[1], z = p[2]; }
     void Set(float x, float y, float z) { m[0] = x; m[1] = y; m[2] = z; }
 
+    atgVec3& operator =(const atgVec3& v){  x = v.x; y = v.y; z = v.z;  return *this; }
 
-    inline Vec3_t& Normalize()
+    // v0 dot v1 = |v0|*|v1|*cos(a)
+    inline float Dot(const atgVec3& v) const
     {
-        atgMath::VecNormalize(m);
-        return *this;
+        return this->x*v.x + this->y*v.y + this->z*v.z;
     }
 
-    inline float Dot(const Vec3_t& v) const
+    // v0 cross v1 = |v0|*|v1|*sin(a) * n
+    inline atgVec3 Cross(const atgVec3& v) const
     {
-        return atgMath::VecDot(m, v.m);
-    }
+        float temp[3];
+        temp[0] = this->y * v.z - this->z * v.y;
+        temp[1] = this->z * v.x - this->x * v.z;
+        temp[2] = this->x * v.y - this->y * v.x;
 
-    inline Vec3_t Cross(const Vec3_t& v) const
-    {
-        Vec3_t temp;
-        atgMath::VecCross(m, v.m, temp.m);
-        return temp;
-    }
-
-    inline Vec3_t& Add(const Vec3_t& v)
-    {
-        atgMath::VecAdd(m, v.m);
-        return *this;
-    }
-
-    inline Vec3_t Add(const Vec3_t& v) const
-    {
-        Vec3_t temp;
-        atgMath::VecAdd(m, v.m, temp.m);
-        return temp;
-    }
-
-    inline Vec3_t& Sub(const Vec3_t& v)
-    {
-        atgMath::VecSub(m, v.m);
-        return *this;
-    }
-
-    inline Vec3_t Sub(const Vec3_t& v) const
-    {
-        Vec3_t temp;
-        atgMath::VecSub(m, v.m, temp.m);
-        return temp;
-    }
-
-    inline Vec3_t& Scale(float scale)
-    {
-        atgMath::VecScale(m, scale);
-        return *this;
-    }
-
-    inline Vec3_t Scale(float scale) const
-    {
-        Vec3_t temp;
-        atgMath::VecScale(m, scale, temp.m);
-        return temp;
+        return atgVec3(temp);
     }
 
     inline float Length()
     {
-        return atgMath::VecLength(m);
+        return sqrtf(Dot(*this));
     }
 
-    Vec3_t& operator =(const Vec3_t& v)
+    inline atgVec3& Normalize()
     {
-        memcpy(m, v.m, atgMath::VEC3_SIZE());
+
+        float length = Length();
+        if (atgMath::FloatEqual(length, 1.0f))
+            return *this;
+#ifdef _DEBUG
+        assert(!atgMath::IsFloatZero(length));
+#endif // _DEBUG
+
+        //if (length < atgMath::EPSILON) length = atgMath::EPSILON;
+        const float invLen = 1.0f / length;
+        x *= invLen;
+        y *= invLen;
+        z *= invLen;
+
         return *this;
     }
 
-    Vec3_t operator +(const Vec3_t& v) const
+    // Vproj = length(v0) * cos(a) * normalize(v1) =>
+    // => ((v0 dot v1) / length(v1)) * (v1 / length(v1));
+    inline atgVec3 Projction(const atgVec3& v0, const atgVec3& v1)
     {
-        Vec3_t t;
-        t = Add(v);
-        return t;
+        float p = v0.Dot(v1);
+        float LenSqure = v1.Dot(v1);
+        float invLenSq = 1.0f / LenSqure;
+        this->x = (p * v1.x) * invLenSq;
+        this->y = (p * v1.y) * invLenSq;
+        this->z = (p * v1.z) * invLenSq;
     }
 
-    Vec3_t operator *(float s) const
+    // Vproj = ((v0 dot v1) / length(v1)) * (v1 / length(v1)) 
+    // if v1 is normalized , so length(v1) euq 1.0 => (v0 dot v1) * v1 
+    //=> (v0 dot v1Nomralized) * v1Nomralized
+    //inline atgVec3 Projction(const atgVec3 v0, const float v1Nomralized)
+    //{
+    //    float p = v0.dot(v1Nomralied);
+    //    return v1Nomralied * p;
+    //}
+
+    atgVec3 operator -() const
     {
-        Vec3_t t;
-        atgMath::VecScale(this->m, s, t.m);
-        return t;
+        return atgVec3(-x, -y, -z);
     }
+};
 
-}Vec3;
 
-
-inline bool operator == (const Vec3& v1, const Vec3& v2)
+inline bool operator == (const atgVec3& v1, const atgVec3& v2)
 {
     return atgMath::FloatEqualArray(v1.m, v2.m, 3);
 }
 
-inline bool operator != (const Vec3& v1, const Vec3& v2)
+inline bool operator != (const atgVec3& v1, const atgVec3& v2)
 {
     return !atgMath::FloatEqualArray(v1.m, v2.m, 3);
 }
 
-extern const Vec3 Vec3One;      //{ 1.0f,  1.0f,  1.0f }
-extern const Vec3 Vec3Zero;     //{ 0.0f,  0.0f,  0.0f }
-extern const Vec3 Vec3Left;     //{-1.0f,  0.0f,  0.0f }
-extern const Vec3 Vec3Right;    //{ 1.0f,  0.0f,  0.0f }
-extern const Vec3 Vec3Up;       //{ 0.0f,  1.0f,  0.0f }
-extern const Vec3 Vec3Down;     //{ 0.0f, -1.0f,  0.0f }
-extern const Vec3 Vec3Forward;  //{ 0.0f,  0.0f,  1.0f }
-extern const Vec3 Vec3Back;     //{ 0.0f,  0.0f, -1.0f }
+inline atgVec3 operator +(const atgVec3& v1, const atgVec3& v2)
+{
+    return atgVec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+}
 
-typedef struct Vec4_t
+inline atgVec3 operator -(const atgVec3& v1, const atgVec3& v2)
+{
+    return atgVec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+}
+
+inline atgVec3 operator *(const atgVec3& v1, float s)
+{
+    return atgVec3(v1.x * s, v1.y * s, v1.z * s);
+}
+
+inline atgVec3 operator /(const atgVec3& v1, float s)
+{
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatZero(s));
+#endif // _DEBUG
+
+    return atgVec3(v1.x / s, v1.y / s, v1.z / s);
+}
+
+inline atgVec3 operator *(const atgVec3& v1, const atgVec3& v2)
+{
+    return atgVec3(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+}
+
+inline atgVec3 operator /(const atgVec3& v1, const atgVec3& v2)
+{
+
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatArray(v2.m, 3));
+#endif // _DEBUG
+
+    return atgVec3(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z);
+}
+
+inline atgVec3& operator +=(atgVec3& v1, const atgVec3& v2)
+{
+    v1.x += v2.x; v1.y += v2.y; v1.z += v2.z;
+    return v1;
+}
+
+inline atgVec3& operator -=(atgVec3& v1, const atgVec3& v2)
+{
+    v1.x -= v2.x; v1.y -= v2.y; v1.z -= v2.z;
+    return v1;
+}
+
+inline atgVec3& operator *=(atgVec3& v1, float s)
+{
+    v1.x *= s; v1.y *= s; v1.z *= s;
+    return v1;
+}
+
+inline atgVec3& operator /=(atgVec3& v1, float s)
+{
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatZero(s));
+#endif // _DEBUG
+
+    v1.x /= s, v1.y /= s, v1.z /= s;
+    return v1;
+}
+
+extern const atgVec3 Vec3One;      //{ 1.0f,  1.0f,  1.0f }
+extern const atgVec3 Vec3Zero;     //{ 0.0f,  0.0f,  0.0f }
+extern const atgVec3 Vec3Left;     //{-1.0f,  0.0f,  0.0f }
+extern const atgVec3 Vec3Right;    //{ 1.0f,  0.0f,  0.0f }
+extern const atgVec3 Vec3Up;       //{ 0.0f,  1.0f,  0.0f }
+extern const atgVec3 Vec3Down;     //{ 0.0f, -1.0f,  0.0f }
+extern const atgVec3 Vec3Forward;  //{ 0.0f,  0.0f,  1.0f }
+extern const atgVec3 Vec3Back;     //{ 0.0f,  0.0f, -1.0f }
+
+struct atgVec4
 {
     union
     {
@@ -1024,42 +508,117 @@ typedef struct Vec4_t
             float w;
         };
     };
-    Vec4_t():x(0.0f),y(0.0f),z(0.0f),w(0.0f) { }
-    Vec4_t(float x, float y, float z, float w):x(x),y(y),z(z),w(w) { }
-    Vec4_t(const float v[4]):x(v[0]),y(v[1]),z(v[2]),w(v[3]) { }
-    Vec4_t(const Vec3& v, float w):x(v.x),y(v.y),z(v.z),w(w) { }
-    void Set(const float p[4]) { x = p[0], y = p[1], z = p[2], w = p[3]; }
+
+    atgVec4():x(0.0f),y(0.0f),z(0.0f),w(0.0f) { }
+    atgVec4(float x, float y, float z, float w):x(x),y(y),z(z),w(w) { }
+    atgVec4(const float v[4]):x(v[0]),y(v[1]),z(v[2]),w(v[3]) { }
+    atgVec4(const atgVec3& v, float w):x(v.x),y(v.y),z(v.z),w(w) { }
+
+    void Set(const float p[4]) { x = p[0]; y = p[1]; z = p[2]; w = p[3]; }
     void Set(float x, float y, float z, float w) { m[0] = x; m[1] = y; m[2] = z, m[3] = w; }
 
-    Vec4_t& operator =(const Vec4_t& v)
-    {
-        memcpy(m, v.m, atgMath::VEC4_SIZE());
-        return *this;
-    }
+    atgVec4& operator =(const atgVec4& v) { x = v.x; y = v.y, z = v.z, w = v.w; return *this; }
 
-    Vec4_t operator *(float s) const
-    {
-        Vec4_t t;
-        t.x = x * s; t.y = y * s; t.z = z * s; t.w = w * s;
-        return t;
-    }
+};
 
-}Vec4;
 
-inline bool operator == (const Vec4& v1, const Vec4& v2)
+inline bool operator == (const atgVec4& v1, const atgVec4& v2)
 {
     return atgMath::FloatEqualArray(v1.m, v2.m, 4);
 }
 
-inline bool operator != (const Vec4& v1, const Vec4& v2)
+inline bool operator != (const atgVec4& v1, const atgVec4& v2)
 {
     return !atgMath::FloatEqualArray(v1.m, v2.m, 4);
 }
 
-extern const Vec4 Vec4One;
-extern const Vec4 Vec4Zero;
+inline atgVec4 operator +(const atgVec4& v1, const atgVec4& v2)
+{
+    return atgVec4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
+}
 
-typedef struct Quat_t
+inline atgVec4 operator -(const atgVec4& v1, const atgVec4& v2)
+{
+    return atgVec4(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);
+}
+
+inline atgVec4 operator *(const atgVec4& v1, float s)
+{
+    return atgVec4(v1.x * s, v1.y * s, v1.z * s, v1.w * s);
+}
+
+inline atgVec4 operator /(const atgVec4& v1, float s)
+{
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatZero(s));
+#endif // _DEBUG
+
+    return atgVec4(v1.x / s, v1.y / s, v1.z / s, v1.w / s);
+}
+
+inline atgVec4 operator *(const atgVec4& v1, const atgVec4& v2)
+{
+    return atgVec4(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w * v2.w);
+}
+
+inline atgVec4 operator /(const atgVec4& v1, const atgVec4& v2)
+{
+
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatArray(v2.m, 4));
+#endif // _DEBUG
+
+    return atgVec4(v1.x / v2.x, v1.y / v2.y, v1.z / v2.z, v1.w / v2.w);
+}
+
+inline atgVec4& operator +=(atgVec4& v1, const atgVec4& v2)
+{
+    v1.x += v2.x; v1.y += v2.y; v1.z += v2.z; v1.w += v2.w;
+    return v1;
+}
+
+inline atgVec4 operator -(atgVec4& v1, const atgVec4& v2)
+{
+    v1.x -= v2.x; v1.y -= v2.y; v1.z -= v2.z; v1.w -= v2.w;
+    return v1;
+}
+
+inline atgVec4 operator *(atgVec4& v1, float s)
+{
+    v1.x *= s; v1.y *= s; v1.z *= s; v1.w *= s;
+    return v1;
+}
+
+inline atgVec4 operator /(atgVec4& v1, float s)
+{
+#ifdef _DEBUG
+    assert(!atgMath::IsFloatZero(s));
+#endif // _DEBUG
+
+    v1.x /= s; v1.y /= s; v1.z /= s; v1.w /= s;
+    return v1;
+}
+
+
+inline atgVec4 Vec3ToVec4(const atgVec3& vec3)
+{
+    return atgVec4(vec3.x, vec3.y, vec3.z, 1.0f);
+}
+
+inline atgVec3 Vec4ToVec3(const atgVec4& vec4)
+{
+    if (vec4.w != 0.0f)
+    {
+        return atgVec3(vec4.x / vec4.w, vec4.y / vec4.w, vec4.z / vec4.w);
+    }
+    return Vec3Zero;
+}
+
+
+extern const atgVec4 Vec4One;
+extern const atgVec4 Vec4Zero;
+
+struct atgQuaternion
 {
     union
     {
@@ -1072,59 +631,83 @@ typedef struct Quat_t
             float w;
         };
     };
-    Quat_t():x(0.0f),y(0.0f),z(0.0f),w(0.0f) { }
-    Quat_t(float x, float y, float z, float w):x(x),y(y),z(z),w(w) { }
-    Quat_t(const float q[4]):x(q[0]),y(q[1]),z(q[2]),w(q[3]) { }
-    void Set(const float q[4]) { x = q[0], y = q[1], z = q[2], w = q[3]; }
-    void Set(float x, float y, float z, float w) { m[0] = x, m[1] = y, m[2] = z, m[3] = w; }
+    atgQuaternion():x(0.0f),y(0.0f),z(0.0f),w(0.0f) { }
+    atgQuaternion(float x, float y, float z, float w):x(x),y(y),z(z),w(w) { }
+    atgQuaternion(const float q[4]):x(q[0]),y(q[1]),z(q[2]),w(q[3]) { }
+    atgQuaternion(float pitch, float yaw, float roll);
+    atgQuaternion(const atgVec3& axis, float angle);
+    atgQuaternion(const atgVec3& from, const atgVec3& to);
 
-    Vec3 GetColumn0() { return Vec3(1.0f - 2.0f*(y*y + z*z), 2.0f*(x*y + w*z), 2.0f*(x*z - w*y)); }
-    Vec3 GetColumn1() { return Vec3(2.0f*(x*y - w*z), 1.0f - 2.0f*(x*x + z*z), 2.0f*(y*z + w*x)); }
-    Vec3 GetColumn2() { return Vec3(2.0f*(x*z + w*y), 2.0f*(y*z - w*x), 1.0f - 2.0f*(x*x + y*y)); }
-
-    Vec3 GetRow0() { return Vec3(1.0f - 2.0f*(y*y + z*z), 2.0f*(x*y - w*z), 2.0f*(w*y + x*z)); }
-    Vec3 GetRow1() { return Vec3(2.0f*(x*y + w*z), 1.0f - 2.0f*(x*x + z*z), 2.0f*(y*z - w*x)); }
-    Vec3 GetRow2() { return Vec3(2.0f*(x*z - w*y), 2.0f*(y*z + w*x), 1.0f - 2.0f*(x*x + y*y)); }
-
-    Quat_t& operator =(const Quat_t& q)
+    atgQuaternion& operator =(const atgQuaternion& q)
     {
-        memcpy(m, q.m, atgMath::QUAT_SIZE());
+        x = q.x; y = q.y; z = q.z; w = q.w;
         return *this;
     }
 
-}Quat;
+    void Set(const float q[4]) { x = q[0]; y = q[1]; z = q[2]; w = q[3]; }
+    void Set(float x, float y, float z, float w) { m[0] = x, m[1] = y, m[2] = z, m[3] = w; }
 
-extern const Quat QuatOne;
-extern const Quat QuatZero;
-extern const Quat QuatIdentity;
+    atgVec3 GetColumn0() const { return atgVec3(1.0f - 2.0f*(y*y + z*z), 2.0f*(x*y + w*z), 2.0f*(x*z - w*y)); }
+    atgVec3 GetColumn1() const { return atgVec3(2.0f*(x*y - w*z), 1.0f - 2.0f*(x*x + z*z), 2.0f*(y*z + w*x)); }
+    atgVec3 GetColumn2() const { return atgVec3(2.0f*(x*z + w*y), 2.0f*(y*z - w*x), 1.0f - 2.0f*(x*x + y*y)); }
 
-typedef struct Ray_t
+    atgVec3 GetRow0() const { return atgVec3(1.0f - 2.0f*(y*y + z*z), 2.0f*(x*y - w*z), 2.0f*(w*y + x*z)); }
+    atgVec3 GetRow1() const { return atgVec3(2.0f*(x*y + w*z), 1.0f - 2.0f*(x*x + z*z), 2.0f*(y*z - w*x)); }
+    atgVec3 GetRow2() const { return atgVec3(2.0f*(x*z - w*y), 2.0f*(y*z + w*x), 1.0f - 2.0f*(x*x + y*y)); }
+
+    atgQuaternion conjugate() const
+    {
+        return atgQuaternion(-x, -y, -z, w);
+    }
+
+    float Length() const;
+
+    atgQuaternion& Normalize();
+
+    atgQuaternion Normalize() const;
+
+    atgQuaternion& Slerp(const atgQuaternion& q1, const atgQuaternion& q2, float f);
+
+    bool GetEulerAngle(atgVec3& euler) const;
+
+};
+
+inline atgQuaternion operator *(const atgQuaternion& q1, const atgQuaternion& q2)
 {
-    Vec3 origin;
-    Vec3 dirction;
+    return atgQuaternion(q1.w*q2.x + q1.x*q2.w + q1.y*q2.z + q1.z*q2.y,
+                         q1.w*q2.y + q1.x*q2.z + q1.y*q2.w + q1.z*q2.x,
+                         q1.w*q2.z + q1.x*q2.y + q1.y*q2.x + q1.z*q2.w,
+                         q1.w*q2.w + q1.x*q2.x + q1.y*q2.y + q1.z*q2.z);
+}
+
+atgVec3 operator* (const atgQuaternion& q, const atgVec3& v);
 
 
-    Ray_t(const Vec3& o, const Vec3& dir):origin(o),dirction(dir)
-    {
+atgVec4 operator* (const atgQuaternion& q, const atgVec4& v);
 
-    }
+extern const atgQuaternion QuatOne;
+extern const atgQuaternion QuatZero;
+extern const atgQuaternion QuatIdentity;
 
-    Ray_t(const float o[3], const float dir[3]):origin(o[0], o[1], o[2]),dirction(dir[0], dir[1], dir[2])
-    {
+struct atgRay
+{
+    atgVec3 origin;
+    atgVec3 dirction;
 
-    }
+    atgRay(const atgVec3& o, const atgVec3& dir):origin(o),dirction(dir){ }
+    atgRay(const float o[3], const float dir[3]):origin(o[0], o[1], o[2]),dirction(dir[0], dir[1], dir[2]) { }
 
-    Ray_t& operator =(const Ray_t& r)
+    atgRay& operator =(const atgRay& r)
     {
         origin = r.origin;
         dirction = r.dirction;
         return *this;
     }
 
-}Ray;
+};
 
 
-typedef struct Plane_t
+struct atgPlane
 {
     union
     {
@@ -1138,8 +721,8 @@ typedef struct Plane_t
         };
         struct
         {
-            float n[3]; // normal
-            float d;    // D = -n * pointOnPlane
+            atgVec3 n; // normal
+            float   d;    // D = -n * pointOnPlane
         };
     };
 
@@ -1151,25 +734,22 @@ typedef struct Plane_t
     //    n[2] = normal.z;
     //    D = -distance;
     //}
-    Plane_t(void):A(0),B(0),C(0),D(0){}
 
-    Plane_t(Vec3_t& normal, Vec3_t& pointOnPlane)
+    atgPlane(void):A(0),B(0),C(0),D(0){}
+
+    atgPlane(atgVec3& normal, atgVec3& pointOnPlane)
     {
-        normal.Normalize();
-        n[0] = normal.x;
-        n[1] = normal.y;
-        n[2] = normal.z;
-        D = normal.Scale(-1.0f).Dot(pointOnPlane);
+        n = normal;
+        n.Normalize();
+        D = (-normal).Dot(pointOnPlane);
     }
 
-    Plane_t(const float p[4]):A(p[0]),B(p[1]),C(p[2]),D(p[3])
-    {
+    atgPlane(const float p[4]):A(p[0]),B(p[1]),C(p[2]),D(p[3]){ }
 
-    }
-
-    Plane_t& operator =(const Plane_t& p)
+    atgPlane& operator =(const atgPlane& p)
     {
-        memcpy(m, p.m, atgMath::VEC4_SIZE());
+        n = p.n;
+        d = p.d;
         return *this;
     }
 
@@ -1180,25 +760,25 @@ typedef struct Plane_t
     }
 
     //>点到平面的距离
-    float Resolve(const Vec3_t& v) const
+    float Resolve(const atgVec3& v) const
     {
-        return atgMath::VecDot(v.m, n) + D;
+        return v.Dot(n) + D;
     }
 
     //>点是否在平面的正面
-    bool IsFront(const Vec3_t& v) const
+    bool IsFront(const atgVec3& v) const
     {
-        return Resolve(v) > (atgMath::EPSILON);
+        return Resolve(v) > atgMath::EPSILON;
     }
 
     //>点是否在平面的背面
-    bool IsBack(const Vec3_t& v) const
+    bool IsBack(const atgVec3& v) const
     {
-        return Resolve(v) < (-atgMath::EPSILON);
+        return Resolve(v) < -atgMath::EPSILON;
     }
 
     //>点是否在平面上
-    bool OnPlane(const Vec3_t& v) const
+    bool OnPlane(const atgVec3& v) const
     {
         return atgMath::IsFloatZero(Resolve(v));
     }
@@ -1206,7 +786,7 @@ typedef struct Plane_t
     //>归一化参数平面
     void NormalizePlane()
     {
-        float magnitude = atgMath::VecLength(n);
+        float magnitude = n.Length();
         if (!atgMath::IsFloatZero(magnitude - 1.0f))
         {
             A /= magnitude;
@@ -1216,71 +796,22 @@ typedef struct Plane_t
         }
     }
 
-    Plane_t& FromPoints(const Vec3_t& p1, const Vec3_t& p2, const Vec3_t& p3) //>p1,p2,p3为顺时针围绕的三个点
+    atgPlane& FromPoints(const atgVec3& p1, const atgVec3& p2, const atgVec3& p3) //>p1,p2,p3为顺时针围绕的三个点
     {
-        Vec3_t normal = p1.Sub(p2).Cross(p3.Sub(p2));
-        atgMath::VecCopy(normal.Normalize().m, n);
-        D = -atgMath::VecDot(n, p2.m);
+        n = (p1 - p2).Cross(p3 - p2);
+        n.Normalize();
+        D = - n.Dot(p2);
         return *this;
     }
 
-    Plane_t& FromVectors(const Vec3_t& v1, const Vec3_t& v2, const Vec3_t& p) //>向量cross容易顺序出错. 建议不要用此函数构造平面
+    atgPlane& FromVectors(const atgVec3& v1, const atgVec3& v2, const atgVec3& p) //>向量cross容易顺序出错. 建议不要用此函数构造平面
     {
-        Vec3_t normal = v1.Cross(v2);
-        atgMath::VecCopy(normal.Normalize().m, n);
-        D = -atgMath::VecDot(n, p.m);
+        n = v1.Cross(v2);
+        n.Normalize();
+        D = - n.Dot(p);
         return *this;
     }
-
-    static bool Intersection(const Plane_t& p1, const Plane_t& p2, const Plane_t& p3, Vec4& result)
-    {
-        float v[3];
-        atgMath::VecCross(p2.n, p3.n, v);
-        if (atgMath::IsFloatZero(atgMath::VecDot(p1.n, v)))
-            return false;
-
-        float mat[4][4];
-        atgMath::MatIdentity(mat);
-        mat[0][0] = p1.n[0]; mat[0][1] = p1.n[1]; mat[0][2] = p1.n[2];
-        mat[1][0] = p2.n[0]; mat[1][1] = p2.n[1]; mat[1][2] = p2.n[2];
-        mat[2][0] = p3.n[0]; mat[2][1] = p3.n[1]; mat[2][2] = p3.n[2];
-
-        if(atgMath::MatInverse(mat, mat))
-        {
-            float v[4] = { -p1.D, -p2.D, -p3.D, 1.0f };
-            atgMath::Vec4Transform(v, mat, result.m);
-            return true;
-        }
-
-        return false;
-    }
-
-    static bool Intersection(const float p1[4] , const float p2[4], const float p3[4], float result[3])
-    {
-        float v[3];
-        atgMath::VecCross(p2, p3, v);
-        if (atgMath::IsFloatZero(atgMath::VecDot(p1, v)))
-            return false;
-
-        float mat[4][4];
-        atgMath::MatIdentity(mat);
-        mat[0][0] = p1[0]; mat[0][1] = p1[1]; mat[0][2] = p1[2];
-        mat[1][0] = p2[0]; mat[1][1] = p2[1]; mat[1][2] = p2[2];
-        mat[2][0] = p3[0]; mat[2][1] = p3[1]; mat[2][2] = p3[2];
-
-        if(atgMath::MatInverse(mat, mat))
-        {
-            float v[4] = { -p1[3], -p2[3], -p3[3], 1.0f };
-            float r[4];
-            atgMath::Vec4Transform(v, mat, r);
-            atgMath::VecCopy(r, result);
-            return true;
-        }
-
-        return false;
-    }
-
-}Plane;
+};
 
 // major-row memory. but vector is major-column,
 // so matrix is major-column.
@@ -1292,7 +823,7 @@ typedef struct Plane_t
 //>| m13 m23 m33 m41 |
 //>| m14 m24 m34 m41 |
 
-typedef struct Matrix_t
+struct atgMatrix
 {
     union
     {
@@ -1305,7 +836,7 @@ typedef struct Matrix_t
             float m41,m42,m43,m44;
         };
     };
-    Matrix_t()
+    atgMatrix()
     {
         m11 = m12 = m13 = m14 = 0.0f;
         m21 = m22 = m23 = m24 = 0.0f;
@@ -1313,7 +844,7 @@ typedef struct Matrix_t
         m41 = m42 = m43 = m44 = 0.0f;
     }
 
-    Matrix_t(float m1, float m2, float m3, float m4,
+    atgMatrix(float m1, float m2, float m3, float m4,
         float m5, float m6, float m7, float m8,
         float m9, float m10, float m11, float m12,
         float m13, float m24, float m15, float m16):
@@ -1324,12 +855,20 @@ typedef struct Matrix_t
     {
     }
 
-    Matrix_t(const Matrix_t& mat)
+    atgMatrix(const atgMatrix& mat)
     {
         *this = mat;
     }
 
-    void SetRow3(unsigned int index, const Vec3& v)
+    atgMatrix(const atgQuaternion& q);
+
+    atgMatrix& operator =(const atgMatrix& mat)
+    {
+        memcpy(m, mat.m, sizeof(atgMatrix));
+        return *this;
+    }
+
+    void SetRow3(unsigned int index, const atgVec3& v)
     {
         assert(index < 4);
         m[index][0] = v.x;
@@ -1337,7 +876,7 @@ typedef struct Matrix_t
         m[index][2] = v.z;
     }
 
-    void SetColumn3(unsigned int index,const Vec3& v)
+    void SetColumn3(unsigned int index,const atgVec3& v)
     {
         assert(index < 4);
         m[0][index] = v.x;
@@ -1345,7 +884,7 @@ typedef struct Matrix_t
         m[2][index] = v.z;
     }
 
-    void GetColumn3(unsigned int index, Vec3& v)
+    void GetColumn3(unsigned int index, atgVec3& v)
     {
         assert(index < 4);
         v.x = m[0][index];
@@ -1353,130 +892,421 @@ typedef struct Matrix_t
         v.z = m[2][index];
     }
 
-    inline Matrix_t& Identity()
+    inline atgMatrix& Identity()
     {
-        atgMath::MatIdentity(m);
+        m[0][0] = 1.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
+        m[1][0] = 0.0f; m[1][1] = 1.0f; m[1][2] = 0.0f; m[1][3] = 0.0f;
+        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 1.0f; m[2][3] = 0.0f;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
         return *this;
     }
 
-    inline Matrix_t& Concatenate(const Matrix_t& mat)
+    inline atgVec3 Transfrom(const atgVec3& v) const
     {
-        atgMath::MatConcatenate(m, mat.m, m);
+        atgVec4 temp;
+        temp = Transfrom(atgVec4(v, 1.0));
+        return atgVec3(temp.x / temp.w, temp.y / temp.w, temp.z / temp.w);
+    }
+
+    atgVec4 Transfrom(const atgVec4& v) const;
+
+    inline atgMatrix& Transpose()
+    {
+        atgMatrix temp;
+        temp.m[0][0] = m[0][0]; temp.m[0][1] = m[1][0]; temp.m[0][2] = m[2][0]; temp.m[0][3] = m[3][0];
+        temp.m[1][0] = m[0][1]; temp.m[1][1] = m[1][1]; temp.m[1][2] = m[2][1]; temp.m[1][3] = m[3][1];
+        temp.m[2][0] = m[0][2]; temp.m[2][1] = m[1][2]; temp.m[2][2] = m[2][2]; temp.m[2][3] = m[3][2];
+        temp.m[3][0] = m[0][3]; temp.m[3][1] = m[1][3]; temp.m[3][2] = m[2][3]; temp.m[3][3] = m[3][3];
+
+        *this = temp;
         return *this;
     }
 
-    inline Matrix_t Concatenate(const Matrix_t& mat) const
+    inline atgMatrix& Translation(const atgVec3& t)
     {
-        Matrix_t temp;
-        atgMath::MatConcatenate(m, mat.m, temp.m);
-        return temp;
-    }
+        m[0][0] = 1.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = t.x;
+        m[1][0] = 0.0f; m[1][1] = 1.0f; m[1][2] = 0.0f; m[1][3] = t.y;
+        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 1.0f; m[2][3] = t.z;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
 
-    inline void Concatenate(const Matrix_t& mat, Matrix_t& result) const
-    {
-        atgMath::MatConcatenate(m, mat.m, result.m);
-    }
-
-    inline Vec3 Transfrom(const Vec3& V)
-    {
-        Vec3 t;
-        atgMath::VecTransform(V.m, this->m, t.m);
-        return t;
-        //Vec4 t(V.x, V.y, V.z, 1.0f);
-        //Vec4Transform(t.m, this->m, t.m);
-        //return Vec3(t.x, t.y, t.z);
-    }
-
-    inline Vec4 Transfrom(const Vec4& V)
-    {
-        Vec4 t;
-        atgMath::Vec4Transform(V.m, this->m, t.m);
-        return t;
-    }
-
-    inline Matrix_t& Transpose()
-    {
-        atgMath::MatTranspose(m, m);
         return *this;
     }
 
-    inline bool CanInverse()
+    inline atgMatrix& Scaling(float s)
     {
-        Matrix_t t;
-        return atgMath::MatInverse(m, t.m);
-    }
+        m[0][0] = s;    m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
+        m[1][0] = 0.0f; m[1][1] = s;    m[1][2] = 0.0f; m[1][3] = 0.0f;
+        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = s;    m[2][3] = 0.0f;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
 
-    inline Matrix_t& AffineInverse()
-    {
-        atgMath::MatAffineInverse(m, m);
         return *this;
     }
 
-    inline Matrix_t& Inverse()
+    inline atgMatrix& Scaling(const atgVec3& s)
     {
-        atgMath::MatInverse(m, m);
+        m[0][0] = s.x;  m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
+        m[1][0] = 0.0f; m[1][1] = s.y;  m[1][2] = 0.0f; m[1][3] = 0.0f;
+        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = s.z;  m[2][3] = 0.0f;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
         return *this;
     }
 
-    inline Matrix_t& Translation(const Vec3& t)
+    inline atgMatrix& RotationX(float angle)
     {
-        atgMath::MatTranslation(t.x, t.y, t.z, m);
+        float cos = cosf(atgMath::DegreesToRadians(angle));
+        float sin = sinf(atgMath::DegreesToRadians(angle));
+
+        m[0][0] = 1.0f; m[0][1] = 0.0f; m[0][2] = 0.0f; m[0][3] = 0.0f;
+        m[1][0] = 0.0f; m[1][1] =  cos; m[1][2] = -sin; m[1][3] = 0.0f;
+        m[2][0] = 0.0f; m[2][1] =  sin; m[2][2] =  cos; m[2][3] = 0.0f;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
+
         return *this;
     }
 
-    inline Matrix_t& Scaling(float s)
+    inline atgMatrix& RotationY(float angle)
     {
-        atgMath::MatScaling(s, s, s, m);
+        float cos = cosf(atgMath::DegreesToRadians(angle));
+        float sin = sinf(atgMath::DegreesToRadians(angle));
+
+        m[0][0] =  cos; m[0][1] = 0.0f; m[0][2] =  sin; m[0][3] = 0.0f;
+        m[1][0] = 0.0f; m[1][1] = 1.0f; m[1][2] = 0.0f; m[1][3] = 0.0f;
+        m[2][0] = -sin; m[2][1] = 0.0f; m[2][2] =  cos; m[2][3] = 0.0f;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
+
         return *this;
     }
 
-    inline Matrix_t& Scaling(const Vec3& s)
+    inline atgMatrix& RotationZ(float angle)
     {
-        atgMath::MatScaling(s.x, s.y, s.z, m);
+        float cos = cosf(atgMath::DegreesToRadians(angle));
+        float sin = sinf(atgMath::DegreesToRadians(angle));
+
+        m[0][0] =  cos; m[0][1] = -sin; m[0][2] = 0.0f; m[0][3] = 0.0f;
+        m[1][0] =  sin; m[1][1] =  cos; m[1][2] = 0.0f; m[1][3] = 0.0f;
+        m[2][0] = 0.0f; m[2][1] = 0.0f; m[2][2] = 1.0f; m[2][3] = 0.0f;
+        m[3][0] = 0.0f; m[3][1] = 0.0f; m[3][2] = 0.0f; m[3][3] = 1.0f;
+
         return *this;
     }
 
-    inline Matrix_t& RotationX(float angle)
-    {
-        atgMath::MatRotationX(angle, m);
-        return *this;
-    }
+    bool CanInverse() const;
 
-    inline Matrix_t& RotationY(float angle)
-    {
-        atgMath::MatRotationY(angle, m);
-        return *this;
-    }
+    atgMatrix& Inverse();
 
-    inline Matrix_t& RotationZ(float angle)
-    {
-        atgMath::MatRotationZ(angle, m);
-        return *this;
-    }
+    atgMatrix& AffineInverse();
 
-    inline Matrix_t& RotationZXY(float angleRoll, float anglePitch, float angleYaw)
-    {
-        Matrix_t temp;
-        atgMath::MatRotationZ(angleRoll, temp.m);
-        atgMath::MatRotationX(anglePitch, m);
-        atgMath::MatConcatenate(m, temp.m, m);
-        atgMath::MatRotationY(angleYaw, temp.m);
-        atgMath::MatConcatenate(temp.m, m, m);
-        return *this;
-    }
+    atgMatrix& RotationZXY(float angleRoll, float anglePitch, float angleYaw);
 
-    Matrix_t& operator =(const Matrix_t& mat)
-    {
-        memcpy(m, mat.m, atgMath::MATRIX44_SIZE());
-        return *this;
-    }
+    bool Get(atgQuaternion& q);
 
     float operator [](unsigned char index) const
     {
         return m[index/4][index%4];
     }
 
-}Matrix;
 
+    //perspective matrix
+    static inline void      LookAt(const atgVec3& eyePos, const atgVec3& lookAt, const atgVec3& up, atgMatrix& result);
 
-extern const Matrix MatrixIdentity;
+    static inline void      LookAtLH(const atgVec3& eyePos, const atgVec3& lookAt, const atgVec3& up, atgMatrix& result);
+
+    static inline void      LookAtRH(const atgVec3& eyePos, const atgVec3& lookAt, const atgVec3& up, atgMatrix& result);
+
+    // width / height = aspect;
+    static inline void      Perspective(float fov_y, float aspect, float zNear, float zFar, atgMatrix& result);
+
+    static inline void      PerspectiveLH(float fov_y, float aspect, float zNear, float zFar, atgMatrix& result);
+
+    static inline void      PerspectiveRH(float fov_y, float aspect, float zNear, float zFar, atgMatrix& result);
+
+    static inline void      OrthoProject(float width, float height, float zNear, float zFar, atgMatrix& result);
+
+    static inline void      OrthoProjectLH(float width, float height, float zNear, float zFar, atgMatrix& result);
+
+    static inline void      OrthoProjectRH(float width, float height, float zNear, float zFar, atgMatrix& result);
+};
+
+inline void atgMatrix::LookAt(const atgVec3& eyePos, const atgVec3& lookAt, const atgVec3& up, atgMatrix& result)
+{
+    atgMatrix::LookAtRH(eyePos, lookAt, up, result);
+}
+
+inline void atgMatrix::LookAtLH(const atgVec3& eyePos, const atgVec3& lookAt, const atgVec3& up, atgMatrix& result)
+{
+    atgVec3 zaxis;
+    atgVec3 yaxis;
+    atgVec3 xaxis;
+
+    zaxis = lookAt - eyePos;
+    zaxis.Normalize();
+    yaxis = up;
+    yaxis.Normalize();
+    xaxis = yaxis.Cross(zaxis);
+    xaxis.Normalize();
+    yaxis = zaxis.Cross(xaxis);
+    yaxis.Normalize();
+
+    result.m[0][0] = xaxis.x; result.m[0][1] = xaxis.y; result.m[0][2] = xaxis.z;
+    result.m[1][0] = yaxis.x; result.m[1][1] = yaxis.y; result.m[1][2] = yaxis.z;
+    result.m[2][0] = zaxis.x; result.m[2][1] = zaxis.y; result.m[2][2] = zaxis.z;
+
+    result.m[0][3] = -xaxis.Dot(eyePos);
+    result.m[1][3] = -yaxis.Dot(eyePos);
+    result.m[2][3] = -zaxis.Dot(eyePos);
+
+    result.m[3][0] = 0.0f;
+    result.m[3][1] = 0.0f;
+    result.m[3][2] = 0.0f;
+    result.m[3][3] = 1.0f;
+}
+
+inline void atgMatrix::LookAtRH(const atgVec3& eyePos, const atgVec3& lookAt, const atgVec3& up, atgMatrix& result)
+{
+    atgVec3 zaxis;
+    atgVec3 yaxis;
+    atgVec3 xaxis;
+
+    zaxis = eyePos - lookAt;
+    zaxis.Normalize();
+    yaxis = up;
+    yaxis.Normalize();
+    xaxis = yaxis.Cross(zaxis);
+    xaxis.Normalize();
+    yaxis = zaxis.Cross(xaxis);
+    yaxis.Normalize();
+
+    result.m[0][0] = xaxis.x; result.m[0][1] = xaxis.y; result.m[0][2] = xaxis.z;
+    result.m[1][0] = yaxis.x; result.m[1][1] = yaxis.y; result.m[1][2] = yaxis.z;
+    result.m[2][0] = zaxis.x; result.m[2][1] = zaxis.y; result.m[2][2] = zaxis.z;
+
+    result.m[0][3] = -xaxis.Dot(eyePos);
+    result.m[1][3] = -yaxis.Dot(eyePos);
+    result.m[2][3] = -zaxis.Dot(eyePos);
+
+    result.m[3][0] = 0.0f;
+    result.m[3][1] = 0.0f;
+    result.m[3][2] = 0.0f;
+    result.m[3][3] = 1.0f;
+}
+
+// width / height = aspect;
+//>顶点变换后,z/w的值在[0.0-1.0]为可见. 且w大于0.
+inline void atgMatrix::Perspective(float fov_y, float aspect, float zNear, float zFar, atgMatrix& result)
+{
+    atgMatrix::PerspectiveRH(fov_y, aspect, zNear, zFar, result);
+}
+
+inline void atgMatrix::PerspectiveLH(float fov_y, float aspect, float zNear, float zFar, atgMatrix& result)
+{
+    assert(!atgMath::FloatEqual(aspect, 0.0f));
+
+    if (zNear > zFar)
+        atgMath::Swap(zNear, zFar);
+
+    if (false == atgMath::IsBetween0And1ForClipZ()) // z=> -1 to 1.
+    {
+        // Right Hand
+        float f_n = 1.0f / (zFar - zNear);
+        float yScale = atgMath::Cot(atgMath::DegreesToRadians(fov_y) * 0.5f);
+        float xScale = yScale / aspect;
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = xScale;
+        result.m[1][1] = yScale;
+        result.m[2][2] = (zFar + zNear) * f_n;
+        result.m[3][2] = 1.0f;
+        result.m[2][3] = -2.0f * zFar * zNear * f_n;
+    }
+    else
+    {
+        // Left Hand
+        float f_n = 1.0f / (zFar - zNear);
+        float yScale = atgMath::Cot(atgMath::DegreesToRadians(fov_y) * 0.5f);
+        float xScale = yScale / aspect;
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = xScale;
+        result.m[1][1] = yScale;
+        result.m[2][2] = zFar * f_n;
+        result.m[3][2] = 1.0f;
+        result.m[2][3] = -zNear * zFar * f_n;
+    }
+}
+
+inline void atgMatrix::PerspectiveRH(float fov_y, float aspect, float zNear, float zFar, atgMatrix& result)
+{
+    assert(!atgMath::FloatEqual(aspect, 0.0f));
+
+    if (zNear > zFar)
+        atgMath::Swap(zNear, zFar);
+
+    if (false == atgMath::IsBetween0And1ForClipZ()) // z=> -1 to 1.
+    {
+        float n_f = 1.0f / (zNear - zFar);
+        float yScale = atgMath::Cot(atgMath::DegreesToRadians(fov_y) * 0.5f);
+        float xScale = yScale / aspect;
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = xScale;
+        result.m[1][1] = yScale;
+        result.m[2][2] = (zFar + zNear) * n_f;
+        result.m[3][2] = -1.0f;
+        result.m[2][3] = 2.0f * zFar * zNear * n_f;
+    }
+    else
+    {
+        float n_f = 1.0f / (zNear - zFar);
+        float yScale = atgMath::Cot(atgMath::DegreesToRadians(fov_y) * 0.5f);
+        float xScale = yScale / aspect;
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = xScale;
+        result.m[1][1] = yScale;
+        result.m[2][2] = zFar * n_f;
+        result.m[3][2] = -1.0f;
+        result.m[2][3] = zNear * zFar * n_f;
+    }
+}
+
+inline void atgMatrix::OrthoProject(float width, float height, float zNear, float zFar, atgMatrix& result)
+{
+    atgMatrix::OrthoProjectRH(width, height, zNear, zFar, result);
+}
+
+inline void atgMatrix::OrthoProjectLH(float width, float height, float zNear, float zFar, atgMatrix& result)
+{
+    assert(!atgMath::FloatEqual(zNear, zFar));
+    if (zNear > zFar)
+        atgMath::Swap(zNear, zFar);
+
+    if (false == atgMath::IsBetween0And1ForClipZ()) // z=> -1 to 1.
+    {
+        float n_f = 1.0f / (zNear - zFar);
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = 2.0f / width;
+        result.m[1][1] = 2.0f / height;
+        result.m[2][2] = -2.0f * n_f;
+        result.m[2][3] = zFar + zNear * n_f;
+        result.m[3][3] = 1.0f;
+    }
+    else
+    {
+        float f_n = 1.0f / (zFar - zNear);
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = 2.0f / width;
+        result.m[1][1] = 2.0f / height;
+        result.m[2][2] = f_n;
+        result.m[2][3] = -zNear * f_n;
+        result.m[3][3] = 1.0f;
+    }
+}
+
+inline void atgMatrix::OrthoProjectRH(float width, float height, float zNear, float zFar, atgMatrix& result)
+{
+    assert(!atgMath::FloatEqual(zNear, zFar));
+    if (zNear > zFar)
+        atgMath::Swap(zNear, zFar);
+
+    if (false == atgMath::IsBetween0And1ForClipZ()) // z=> -1 to 1.
+    {
+        float f_n = 1.0f / (zFar - zNear);
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = 2.0f / width;
+        result.m[1][1] = 2.0f / height;
+        result.m[2][2] = -2.0f * f_n;
+        result.m[2][3] = -(zFar + zNear) * f_n;
+        result.m[3][3] = 1.0f;
+    }
+    else
+    {
+        float n_f = 1.0f / (zNear - zFar);
+
+        memset(result.m, 0, sizeof(atgMatrix));
+
+        result.m[0][0] = 2.0f / width;
+        result.m[1][1] = 2.0f / height;
+        result.m[2][2] = n_f;
+        result.m[2][3] = zNear * n_f;
+        result.m[3][3] = 1.0f;
+    }
+}
+
+inline atgVec4 operator *(const atgMatrix& mat, const atgVec4& vec)
+{
+    return mat.Transfrom(vec);
+}
+
+inline atgMatrix operator *(const atgMatrix& mat1, const atgMatrix& mat2)
+{
+    atgMatrix temp;
+    
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 4; ++j)
+        {
+            temp.m[i][j] = mat1.m[i][0] * mat2.m[0][j] 
+                         + mat1.m[i][1] * mat2.m[1][j]
+                         + mat1.m[i][2] * mat2.m[2][j]
+                         + mat1.m[i][3] * mat2.m[3][j];
+        }
+    }
+    
+    /*
+    temp.m[0][0] = mat1.m[0][0] * mat2.m[0][0] + mat1.m[0][1] * mat2.m[1][0] + mat1.m[0][2] * mat2.m[2][0] + mat1.m[0][3] * mat2.m[3][0];
+    temp.m[0][1] = mat1.m[0][0] * mat2.m[0][1] + mat1.m[0][1] * mat2.m[1][1] + mat1.m[0][2] * mat2.m[2][1] + mat1.m[0][3] * mat2.m[3][1];
+    temp.m[0][2] = mat1.m[0][0] * mat2.m[0][2] + mat1.m[0][1] * mat2.m[1][2] + mat1.m[0][2] * mat2.m[2][2] + mat1.m[0][3] * mat2.m[3][2];
+    temp.m[0][3] = mat1.m[0][0] * mat2.m[0][3] + mat1.m[0][1] * mat2.m[1][3] + mat1.m[0][2] * mat2.m[2][3] + mat1.m[0][3] * mat2.m[3][3];
+    temp.m[1][0] = mat1.m[1][0] * mat2.m[0][0] + mat1.m[1][1] * mat2.m[1][0] + mat1.m[1][2] * mat2.m[2][0] + mat1.m[1][3] * mat2.m[3][0];
+    temp.m[1][1] = mat1.m[1][0] * mat2.m[0][1] + mat1.m[1][1] * mat2.m[1][1] + mat1.m[1][2] * mat2.m[2][1] + mat1.m[1][3] * mat2.m[3][1];
+    temp.m[1][2] = mat1.m[1][0] * mat2.m[0][2] + mat1.m[1][1] * mat2.m[1][2] + mat1.m[1][2] * mat2.m[2][2] + mat1.m[1][3] * mat2.m[3][2];
+    temp.m[1][3] = mat1.m[1][0] * mat2.m[0][3] + mat1.m[1][1] * mat2.m[1][3] + mat1.m[1][2] * mat2.m[2][3] + mat1.m[1][3] * mat2.m[3][3];
+    temp.m[2][0] = mat1.m[2][0] * mat2.m[0][0] + mat1.m[2][1] * mat2.m[1][0] + mat1.m[2][2] * mat2.m[2][0] + mat1.m[2][3] * mat2.m[3][0];
+    temp.m[2][1] = mat1.m[2][0] * mat2.m[0][1] + mat1.m[2][1] * mat2.m[1][1] + mat1.m[2][2] * mat2.m[2][1] + mat1.m[2][3] * mat2.m[3][1];
+    temp.m[2][2] = mat1.m[2][0] * mat2.m[0][2] + mat1.m[2][1] * mat2.m[1][2] + mat1.m[2][2] * mat2.m[2][2] + mat1.m[2][3] * mat2.m[3][2];
+    temp.m[2][3] = mat1.m[2][0] * mat2.m[0][3] + mat1.m[2][1] * mat2.m[1][3] + mat1.m[2][2] * mat2.m[2][3] + mat1.m[2][3] * mat2.m[3][3];
+    temp.m[3][0] = mat1.m[3][0] * mat2.m[0][0] + mat1.m[3][1] * mat2.m[1][0] + mat1.m[3][2] * mat2.m[2][0] + mat1.m[3][3] * mat2.m[3][0];
+    temp.m[3][1] = mat1.m[3][0] * mat2.m[0][1] + mat1.m[3][1] * mat2.m[1][1] + mat1.m[3][2] * mat2.m[2][1] + mat1.m[3][3] * mat2.m[3][1];
+    temp.m[3][2] = mat1.m[3][0] * mat2.m[0][2] + mat1.m[3][1] * mat2.m[1][2] + mat1.m[3][2] * mat2.m[2][2] + mat1.m[3][3] * mat2.m[3][2];
+    temp.m[3][3] = mat1.m[3][0] * mat2.m[0][3] + mat1.m[3][1] * mat2.m[1][3] + mat1.m[3][2] * mat2.m[2][3] + mat1.m[3][3] * mat2.m[3][3];
+
+    */
+
+    return temp;
+}
+
+static bool Intersection(const atgPlane& p1, const atgPlane& p2, const atgPlane& p3, atgVec3& result)
+{
+    atgVec3 v;
+    v = p2.n.Cross(p3.n);
+    if (atgMath::IsFloatZero(p1.n.Dot(v)))
+        return false;
+
+    atgMatrix mat;
+    mat.m[0][0] = p1.n.x; mat.m[0][1] = p1.n.y; mat.m[0][2] = p1.n.z; mat.m[0][3] = 0.0f;
+    mat.m[1][0] = p2.n.x; mat.m[1][1] = p2.n.y; mat.m[1][2] = p2.n.z; mat.m[1][3] = 0.0f;
+    mat.m[2][0] = p3.n.x; mat.m[2][1] = p3.n.y; mat.m[2][2] = p3.n.z; mat.m[2][3] = 0.0f;
+    mat.m[3][0] = 0.0f;   mat.m[3][1] = 0.0f;   mat.m[3][2] = 0.0f;   mat.m[3][3] = 1.0f;
+
+    if(mat.CanInverse())
+    {
+        mat.Inverse();
+        atgVec4 v(-p1.D, -p2.D, -p3.D, 1.0f);
+        result = Vec4ToVec3( mat * v );
+        return true;
+    }
+
+    return false;
+}
+
+extern const atgMatrix MatrixIdentity;

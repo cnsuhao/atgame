@@ -4,6 +4,11 @@
 #include "atgCamera.h"
 #include "atgIntersection.h"
 
+inline atgVec3 Convert(const MiscVec3& v)
+{
+    return atgVec3(v.x, v.y, v.z);
+}
+
 
 atgFlyCamera::atgFlyCamera():_pCamera(0)
 {
@@ -30,39 +35,35 @@ void atgFlyCamera::OnKeyScanDown( Key::Scan keyscan )
     {
     case Key::W:
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
+            atgVec3 forward = _pCamera->GetForward() * moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
+            _pCamera->SetPosition(pos);
 
         }
         break;
     case Key::S:
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(-moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
+            atgVec3 forward = _pCamera->GetForward() * -moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
+            _pCamera->SetPosition(pos);
         }
         break;
     case Key::A:
         {
-            Vec3 right = _pCamera->GetRight();
-            Vec3 pos = _pCamera->GetPosition();
-            right.Scale(moveSpeed);
-            pos.Add(right.m);
-            _pCamera->SetPosition(pos.m);
+            atgVec3 right = _pCamera->GetRight() * moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += right;
+            _pCamera->SetPosition(pos);
         }
         break;
     case Key::D:
         {
-            Vec3 right = _pCamera->GetRight();
-            Vec3 pos = _pCamera->GetPosition();
-            right.Scale(-moveSpeed);
-            pos.Add(right.m);
-            _pCamera->SetPosition(pos.m);
+            atgVec3 right = _pCamera->GetRight() * -moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += right;
+            _pCamera->SetPosition(pos);
         }
         break;
     default:
@@ -93,19 +94,17 @@ void atgFlyCamera::OnPointerMove( uint8 id, int16 x, int16 y )
         float moveSpeed = 10.5f;
         if (x > 0)
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
+            atgVec3 forward = _pCamera->GetForward() * moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
+            _pCamera->SetPosition(pos);
         }
         else
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(-moveSpeed);
-            pos.Add(forward.m);
-            _pCamera->SetPosition(pos.m);
+            atgVec3 forward = _pCamera->GetForward() * -moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
+            _pCamera->SetPosition(pos);
         }
     }
     else
@@ -159,7 +158,7 @@ bool atgSampleDrawFrustum::Create()
     _pCamera = new atgCamera();
     _pCamera->SetClipNear(10);
     _pCamera->SetClipFar(400);
-    _pCamera->SetPosition(Vec3(0,150,300));
+    _pCamera->SetPosition(atgVec3(0,150,300));
 
     return true;
 }
@@ -167,7 +166,7 @@ bool atgSampleDrawFrustum::Create()
 void atgSampleDrawFrustum::Render()
 {
     atgFrustum f;
-    f.BuildFrustumPlanes(_pCamera->GetView().m,_pCamera->GetProj().m);
+    f.BuildFrustumPlanes(_pCamera->GetView(), _pCamera->GetProj());
     f.DebugRender();
 }
 
@@ -189,14 +188,14 @@ void atgSamlpeViewPortDrawAxis::Render( class atgCamera* sceneCamera )
     uint32 newVP[4] = {0, IsOpenGLGraph() ? 0 : oldVP[3] - 100, 100, 100 };
     g_Renderer->SetViewPort(newVP[0], newVP[1], newVP[2], newVP[3]);
 
-    Matrix oldWorld;
+    atgMatrix oldWorld;
     g_Renderer->GetMatrix(oldWorld, MD_WORLD);
     g_Renderer->SetMatrix(MD_WORLD, MatrixIdentity);
 
-    Matrix oldView;
+    atgMatrix oldView;
     g_Renderer->GetMatrix(oldView, MD_VIEW);
-    Matrix newView(MatrixIdentity);
-    Vec3 p(0.0f, 0.0f, 3.5f);
+    atgMatrix newView(MatrixIdentity);
+    atgVec3 p(0.0f, 0.0f, 3.5f);
     if (sceneCamera)
     {
         newView.SetColumn3(0, sceneCamera->GetRight());
@@ -207,20 +206,20 @@ void atgSamlpeViewPortDrawAxis::Render( class atgCamera* sceneCamera )
     }
     else
     {
-        atgMath::LookAt(p.m, Vec3Zero.m, Vec3Up.m, newView.m);
+        atgMatrix::LookAt(p, Vec3Zero, Vec3Up, newView);
     }
     g_Renderer->SetMatrix(MD_VIEW, newView);
 
-    Matrix oldProj;
+    atgMatrix oldProj;
     g_Renderer->GetMatrix(oldProj, MD_PROJECTION);
-    Matrix newProj;
-    atgMath::Perspective(37.5f,1.f,0.1f,500.0f,newProj.m);
+    atgMatrix newProj;
+    atgMatrix::Perspective(37.5f,1.f,0.1f,500.0f,newProj);
     g_Renderer->SetMatrix(MD_PROJECTION, newProj);
 
     g_Renderer->BeginLine();
-    g_Renderer->AddLine(Vec3Zero.m, Vec3Up.m, Vec3Up.m);
-    g_Renderer->AddLine(Vec3Zero.m, Vec3Right.m, Vec3Right.m);
-    g_Renderer->AddLine(Vec3Zero.m, Vec3Forward.m, Vec3Forward.m);
+    g_Renderer->AddLine(Vec3Zero, Vec3Up, Vec3Up);
+    g_Renderer->AddLine(Vec3Zero, Vec3Right, Vec3Right);
+    g_Renderer->AddLine(Vec3Zero, Vec3Forward, Vec3Forward);
     g_Renderer->EndLine();
 
     g_Renderer->SetMatrix(MD_WORLD, oldWorld);
@@ -288,7 +287,7 @@ void atgRippleShader::BeginContext(void* data)
     
     if (_primitiveTex)
     {
-        g_Renderer->BindTexture(0, _primitiveTex);
+        _primitiveTex->Bind(0);
         SetTexture("textureSampler", 0);
 
         TextureFormat format = _primitiveTex->GetTextureFormat();
@@ -301,10 +300,10 @@ void atgRippleShader::BeginContext(void* data)
     }
 
     
-    g_Renderer->BindTexture(1, _rippleTex);
+    _rippleTex->Bind(1);
     SetTexture("waterHeightSampler", 1);
 
-    Vec4 d(_dx, _dy, 1.0f, 1.0f);
+    atgVec4 d(_dx, _dy, 1.0f, 1.0f);
     SetFloat4("u_d", d.m);
 }
 
@@ -339,7 +338,7 @@ bool atgSampleWater::Create( int w, int h )
     _pDyncTexture->SetFilterMode(TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR);
 
     _pCamera = new atgCamera();
-    _pCamera->SetPosition(Vec3(0,0, 150));
+    _pCamera->SetPosition(atgVec3(0,0, 150));
     _pCamera->SetForward(Vec3Back);
 
     btn[0] = btn [1] = 0;
@@ -437,38 +436,34 @@ void atgSampleWater::OnKeyScanDown( Key::Scan keyscan )
     {
     case Key::W:
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(moveSpeed);
-            pos.Add(forward.m);
+            atgVec3 forward = _pCamera->GetForward() * moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
             _pCamera->SetPosition(pos.m);
 
         }
         break;
     case Key::S:
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            forward.Scale(-moveSpeed);
-            pos.Add(forward.m);
+            atgVec3 forward = _pCamera->GetForward() * -moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
             _pCamera->SetPosition(pos.m);
         }
         break;
     case Key::A:
         {
-            Vec3 right = _pCamera->GetRight();
-            Vec3 pos = _pCamera->GetPosition();
-            right.Scale(moveSpeed);
-            pos.Add(right.m);
+            atgVec3 right = _pCamera->GetRight() * moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += right.m;
             _pCamera->SetPosition(pos.m);
         }
         break;
     case Key::D:
         {
-            Vec3 right = _pCamera->GetRight();
-            Vec3 pos = _pCamera->GetPosition();
-            right.Scale(-moveSpeed);
-            pos.Add(right.m);
+            atgVec3 right = _pCamera->GetRight() * -moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += right.m;
             _pCamera->SetPosition(pos.m);
         }
         break;
@@ -514,18 +509,16 @@ void atgSampleWater::OnPointerMove( uint8 id, int16 x, int16 y )
         float moveSpeed = 10.5f;
         if (x > 0)
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            atgMath::VecScale(forward.m, moveSpeed, forward.m);
-            atgMath::VecAdd(pos.m, forward.m, pos.m);
+            atgVec3 forward = _pCamera->GetForward() * moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
             _pCamera->SetPosition(pos.m);
         }
         else
         {
-            Vec3 forward = _pCamera->GetForward();
-            Vec3 pos = _pCamera->GetPosition();
-            atgMath::VecScale(forward.m, -moveSpeed, forward.m);
-            atgMath::VecAdd(pos.m, forward.m, pos.m);
+            atgVec3 forward = _pCamera->GetForward() * -moveSpeed;
+            atgVec3 pos = _pCamera->GetPosition();
+            pos += forward;
             _pCamera->SetPosition(pos.m);
         }
     }
@@ -624,13 +617,13 @@ public:
 
     virtual bool			ConfingAndCreate();
 
-    void                    SetMatirxOfLightViewPojection(const Matrix& mat) { _ligthViewProj = mat; }
+    void                    SetMatirxOfLightViewPojection(const atgMatrix& mat) { _ligthViewProj = mat; }
     void                    SetOpenglDepthTextureOES(float f) { _opengl_depth_texture = f; }
 
 protected:
     virtual void			BeginContext(void* data);
     
-    Matrix                  _ligthViewProj;
+    atgMatrix               _ligthViewProj;
     float                    _opengl_depth_texture;
 };
 
@@ -689,26 +682,26 @@ public:
     virtual bool			ConfingAndCreate();
 
 
-    void                    SetMatirxOfLightViewPojection(const Matrix& mat) { _ligthViewProj = mat; }
+    void                    SetMatirxOfLightViewPojection(const atgMatrix& mat) { _ligthViewProj = mat; }
     void                    SetColorDepthTex(atgTexture* pTex) { _pColorDepthTex = pTex; }
 
-    void                    SetLight(const Vec3& ligPos, const Vec3& ligDir) { _ligPos = ligPos; _ligDir = ligDir; }
+    void                    SetLight(const atgVec3& ligPos, const atgVec3& ligDir) { _ligPos = ligPos; _ligDir = ligDir; }
     void                    SetSpotParam(float outerCone, float innerCone) { _spot_outer_cone = outerCone;  _spot_inner_cone = innerCone; }
-    void                    SetAmbientColor(const Vec4& color) { _ambientColor = color; }
+    void                    SetAmbientColor(const atgVec4& color) { _ambientColor = color; }
     void                    SetBias(float bias) { _bias = bias; }
     void                    SetOpenglDepthTextureOES(float f) { _opengl_depth_texture = f; }
 
 protected:
     virtual void			BeginContext(void* data);
 
-    Matrix                  _ligthViewProj;
+    atgMatrix                  _ligthViewProj;
     atgTexture*             _pColorDepthTex;
 
-    Vec3                    _ligPos;
-    Vec3                    _ligDir;
+    atgVec3                 _ligPos;
+    atgVec3                 _ligDir;
     float                   _spot_outer_cone;
     float                   _spot_inner_cone;
-    Vec4                    _ambientColor;
+    atgVec4                 _ambientColor;
     float                   _bias;
     float                   _opengl_depth_texture;
 };
@@ -757,7 +750,7 @@ void atgShaderShadowMapping::BeginContext(void* data)
     }
 
     // set texture
-    g_Renderer->BindTexture(0, _pColorDepthTex);
+    _pColorDepthTex->Bind(0);
     SetTexture("rtDepthSampler", 0);
 
     // set light
@@ -857,7 +850,7 @@ bool atgSimpleShadowMapping::Create()
     //lightDir.Set(-0.326f,-0.93f,0.166f);
 
     lightDir.Normalize();
-    atgMath::LookAt(lightPos.m, (lightPos + lightDir).m, Vec3Up.m, lightViewMatrix.m);
+    atgMatrix::LookAt(lightPos, (lightPos + lightDir), Vec3Up, lightViewMatrix);
 
     return true;
 }
@@ -954,10 +947,10 @@ void atgSimpleShadowMapping::DrawDepthTex(class atgCamera* sceneCamera)
         }
 
         //>fov在60度左右影子效果比较好.
-        Matrix projMat;
-        atgMath::Perspective(60.0f, 1.0f, d_near, d_far, projMat.m);
+        atgMatrix projMat;
+        atgMatrix::Perspective(60.0f, 1.0f, d_near, d_far, projMat);
         atgShaderRTSceenDepthColor* pDepthPass = (atgShaderRTSceenDepthColor*)pPass;
-        pDepthPass->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));
+        pDepthPass->SetMatirxOfLightViewPojection(projMat * lightViewMatrix);
         pDepthPass->SetOpenglDepthTextureOES(_opengl_depth_texture);
         
         DrawBox(RT_DEPTH_COLOR_PASS_IDENTITY);
@@ -982,12 +975,12 @@ void atgSimpleShadowMapping::DrawSceen(class atgCamera* sceneCamera)
     atgShaderShadowMapping* pShadowPass = (atgShaderShadowMapping*)pPass;
     
     //>fov在60度左右影子效果比较好.
-    Matrix projMat;
-    atgMath::Perspective(60.0f, 1.0f, d_near, d_far, projMat.m);
-    pShadowPass->SetMatirxOfLightViewPojection(projMat.Concatenate(lightViewMatrix));    
+    atgMatrix projMat;
+    atgMatrix::Perspective(60.0f, 1.0f, d_near, d_far, projMat);
+    pShadowPass->SetMatirxOfLightViewPojection(projMat * lightViewMatrix);    
     pShadowPass->SetColorDepthTex(pColorTex);
     //pShadowPass->SetAmbientColor(GetVec4Color(YD_COLOR_NAVAJO_WHITE));
-    pShadowPass->SetAmbientColor(Vec4(0.3f, 0.3f, 0.3f, 1.0f));
+    pShadowPass->SetAmbientColor(atgVec4(0.3f, 0.3f, 0.3f, 1.0f));
     pShadowPass->SetLight(lightPos, lightDir);
     pShadowPass->SetSpotParam(30.0f, 15.0f);
     pShadowPass->SetBias(bias);
@@ -1011,53 +1004,53 @@ void atgSimpleShadowMapping::DrawBox(const char* pPassIdentity /* = NULL */)
 {
     g_Renderer->BeginFullQuad();
 
-    Vec3 startPos;
+    atgVec3 startPos;
     float size = 100.0f;
 
-    Vec3 color = GetVec3Color(YD_COLOR_DARK_TURQUOISE).m;
+    atgVec3 color = Convert(GetVec3Color(YD_COLOR_DARK_TURQUOISE));
 
     //>前
-    g_Renderer->AddFullQuad( startPos.m,                            // 1
-                            (startPos + Vec3(size, 0, 0)).m,        // 2
-                            (startPos + Vec3(0, -size, 0)).m,       // 3
-                            (startPos + Vec3(size, -size, 0)).m,    // 4
+    g_Renderer->AddFullQuad( startPos,                            // 1
+                            (startPos + atgVec3(size, 0, 0)),        // 2
+                            (startPos + atgVec3(0, -size, 0)),       // 3
+                            (startPos + atgVec3(size, -size, 0)),    // 4
                              color.m); 
 
     //>后
-    g_Renderer->AddFullQuad((startPos + Vec3(0, 0, -size)).m,       // 5
-                            (startPos + Vec3(0, -size, -size)).m,   // 6
-                            (startPos + Vec3(size, 0, -size)).m,    // 7
-                            (startPos + Vec3(size, -size, -size)).m,// 8
-                             color.m);  
+    g_Renderer->AddFullQuad((startPos + atgVec3(0, 0, -size)),       // 5
+                            (startPos + atgVec3(0, -size, -size)),   // 6
+                            (startPos + atgVec3(size, 0, -size)),    // 7
+                            (startPos + atgVec3(size, -size, -size)),// 8
+                             color);  
 
     //>左
-    g_Renderer->AddFullQuad((startPos + Vec3(0, 0, -size)).m,       // 5
-                             startPos.m,                            // 1
-                            (startPos + Vec3(0, -size, -size)).m,   // 6
-                            (startPos + Vec3(0, -size, 0)).m,       // 3
-                             color.m);
+    g_Renderer->AddFullQuad((startPos + atgVec3(0, 0, -size)),       // 5
+                             startPos,                            // 1
+                            (startPos + atgVec3(0, -size, -size)),   // 6
+                            (startPos + atgVec3(0, -size, 0)),       // 3
+                             color);
 
     //>右
-    g_Renderer->AddFullQuad((startPos + Vec3(size, 0, 0)).m,        // 2
-                            (startPos + Vec3(size, 0, -size)).m,    // 7
-                            (startPos + Vec3(size, -size, 0)).m,    // 4
-                            (startPos + Vec3(size, -size, -size)).m,// 8
-                             color.m);
+    g_Renderer->AddFullQuad((startPos + atgVec3(size, 0, 0)),        // 2
+                            (startPos + atgVec3(size, 0, -size)),    // 7
+                            (startPos + atgVec3(size, -size, 0)),    // 4
+                            (startPos + atgVec3(size, -size, -size)),// 8
+                             color);
 
     //>顶
-    g_Renderer->AddFullQuad((startPos + Vec3(0, 0, -size)).m,       // 5
-                            (startPos + Vec3(size, 0, -size)).m,    // 7
-                             startPos.m,                            // 1
-                            (startPos + Vec3(size, 0, 0)).m,        // 2
-                            color.m);
+    g_Renderer->AddFullQuad((startPos + atgVec3(0, 0, -size)),       // 5
+                            (startPos + atgVec3(size, 0, -size)),    // 7
+                             startPos,                            // 1
+                            (startPos + atgVec3(size, 0, 0)),        // 2
+                            color);
 
 
     //>低
-    g_Renderer->AddFullQuad((startPos + Vec3(0, -size, 0)).m,       // 3
-                            (startPos + Vec3(size, -size, 0)).m,    // 4
-                            (startPos + Vec3(0, -size, -size)).m,   // 6
-                            (startPos + Vec3(size, -size, -size)).m,// 8
-                             color.m);
+    g_Renderer->AddFullQuad((startPos + atgVec3(0, -size, 0)),       // 3
+                            (startPos + atgVec3(size, -size, 0)),    // 4
+                            (startPos + atgVec3(0, -size, -size)),   // 6
+                            (startPos + atgVec3(size, -size, -size)),// 8
+                             color);
 
 
 
@@ -1068,16 +1061,16 @@ void atgSimpleShadowMapping::DrawPlane(const char* pPassIdentity /* = NULL */)
 {
     g_Renderer->BeginFullQuad();
 
-    Vec3 startPos(-250.f, -100.0f, 250.0f);
+    atgVec3 startPos(-250.f, -100.0f, 250.0f);
     float size = 500.0f;
 
-    Vec3 color = GetVec3Color(YD_COLOR_PERU).m;
+    atgVec3 color = Convert(GetVec3Color(YD_COLOR_PERU));
 
-    g_Renderer->AddFullQuad( startPos.m,                            // 1
-                            (startPos + Vec3(0, 0, -size)).m,       // 2
-                            (startPos + Vec3(size, 0, 0)).m,        // 3
-                            (startPos + Vec3(size, 0, -size)).m,    // 4
-                             color.m);
+    g_Renderer->AddFullQuad( startPos,                            // 1
+                            (startPos + atgVec3(0, 0, -size)),       // 2
+                            (startPos + atgVec3(size, 0, 0)),        // 3
+                            (startPos + atgVec3(size, 0, -size)),    // 4
+                             color);
 
     g_Renderer->EndFullQuad(pPassIdentity);
 }
@@ -1097,8 +1090,8 @@ MeshTest::~MeshTest()
 bool MeshTest::Init()
 {
     _light.SetRange(1000.0f);
-    _light.SetPosition(Vec3(3.0f, 37.0f, 8.0f));
-    _light.SetColor(Vec3(0.8f, 0.8f, 0.8f));
+    _light.SetPosition(atgVec3(3.0f, 37.0f, 8.0f));
+    _light.SetColor(atgVec3(0.8f, 0.8f, 0.8f));
     _light.SetSpecular(Vec3One);
     g_Renderer->AddBindLight(&_light);
     return atgBlenderImport::loadMesh("model\\powergirl hero156.fbx", _meshs);
@@ -1120,7 +1113,7 @@ void MeshTest::Render( class atgCamera* sceneCamera )
 
 void MeshTest::OnKeyScanDown( Key::Scan keyscan )
 {
-    Vec3 position = _light.GetPosition();
+    atgVec3 position = _light.GetPosition();
 
     switch (keyscan)
     {

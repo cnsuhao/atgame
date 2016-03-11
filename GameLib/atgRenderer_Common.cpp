@@ -30,20 +30,20 @@ bool atgRenderer_Private_BeginLine(std::vector<float>& drawLines)
     return true;
 }
 
-void atgRenderer_Private_AddLine(std::vector<float>& drawLines, const float point1[3], const float point2[3], const float color[3])
+void atgRenderer_Private_AddLine(std::vector<float>& drawLines, const atgVec3& point1, const atgVec3& point2, const atgVec3& color)
 {
-    drawLines.push_back(point1[0]);
-    drawLines.push_back(point1[1]);
-    drawLines.push_back(point1[2]);
-    drawLines.push_back(color[0]);
-    drawLines.push_back(color[1]);
-    drawLines.push_back(color[2]);
-    drawLines.push_back(point2[0]);
-    drawLines.push_back(point2[1]);
-    drawLines.push_back(point2[2]);
-    drawLines.push_back(color[0]);
-    drawLines.push_back(color[1]);
-    drawLines.push_back(color[2]);
+    drawLines.push_back(point1.x);
+    drawLines.push_back(point1.y);
+    drawLines.push_back(point1.z);
+    drawLines.push_back(color.x);
+    drawLines.push_back(color.y);
+    drawLines.push_back(color.x);
+    drawLines.push_back(point2.x);
+    drawLines.push_back(point2.y);
+    drawLines.push_back(point2.z);
+    drawLines.push_back(color.x);
+    drawLines.push_back(color.y);
+    drawLines.push_back(color.z);
 }
 
 void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
@@ -97,11 +97,11 @@ void  atgRenderer_Private_EndLine(std::vector<float>& drawLines)
         
         //g_Renderer->SetLightEnable(false);
         //g_Renderer->SetDepthTestEnable(false);
-        g_Renderer->BindPass(pColorPass);
-        g_Renderer->BindVertexBuffer(pVB);
+        pColorPass->Bind();
+        pVB->Bind();
         g_Renderer->DrawPrimitive(PT_LINES, lineCount, lineCount*2);
-        g_Renderer->BindVertexBuffer(NULL);
-        g_Renderer->BindPass(NULL);
+        pVB->Unbind();
+        pColorPass->Unbind();
         //g_Renderer->SetDepthTestEnable(true);
         //g_Renderer->SetLightEnable(true);
 
@@ -126,15 +126,7 @@ atgRenderer::atgRenderer(atgGame* game)
     for(int i = 0; i < MD_NUMBER; ++i)
         _matrixs[i].Identity();
 
-    _globalAmbientColor = Vec3(0.03f, 0.03f, 0.03f);
-
-    _bindMaterial = NULL;
-    _bindPass = NULL;
-    _bindIndexBuffer = NULL;
-    _bindVertexBuffer = NULL;
-
-    for (int ti = 0; ti < MaxNumberBindTexture; ti++)
-        _bindTexture[ti] = NULL;
+    _globalAmbientColor = atgVec3(0.03f, 0.03f, 0.03f);
 
     _VP_offsetX = 0;
     _VP_offsetY = 0;
@@ -234,25 +226,20 @@ void atgRenderer::ClearBindLight()
     _bindLights.clear();
 }
 
-void atgRenderer::BindMaterial( atgMaterial* material )
-{
-    _bindMaterial = material;
-}
-
 bool atgRenderer::BeginPoint()
 {
     _drawPoints.clear();
     return true;
 }
 
-void atgRenderer::AddPoint( const float center[3], const float color[3] )
+void atgRenderer::AddPoint(const atgVec3& center, const atgVec3& color)
 {
-    _drawPoints.push_back(center[0]);
-    _drawPoints.push_back(center[1]);
-    _drawPoints.push_back(center[2]);
-    _drawPoints.push_back(color[0]);
-    _drawPoints.push_back(color[1]);
-    _drawPoints.push_back(color[2]);
+    _drawPoints.push_back(center.x);
+    _drawPoints.push_back(center.y);
+    _drawPoints.push_back(center.z);
+    _drawPoints.push_back(color.x);
+    _drawPoints.push_back(color.y);
+    _drawPoints.push_back(color.z);
 }
 
 void atgRenderer::EndPoint()
@@ -303,12 +290,12 @@ void atgRenderer::EndPoint()
         }
 
         //g_Renderer->SetDepthTestEnable(false);
-        g_Renderer->BindPass(pColorPass);
-        g_Renderer->BindVertexBuffer(pVB);
+        pColorPass->Bind();
+        pVB->Bind();
 
         g_Renderer->DrawPrimitive(PT_POINTS, pointCount, pointCount);
-        g_Renderer->BindVertexBuffer(NULL);
-        g_Renderer->BindPass(NULL);
+        pVB->Unbind();
+        pColorPass->Unbind();
         //g_Renderer->SetDepthTestEnable(true);
     }
 }
@@ -318,7 +305,7 @@ bool atgRenderer::BeginLine()
     return atgRenderer_Private_BeginLine(_drawLines);
 }
 
-void atgRenderer::AddLine(const float point1[3], const float point2[3], const float color[3])
+void atgRenderer::AddLine(const atgVec3& point1, const atgVec3& point2, const atgVec3& color)
 {
     atgRenderer_Private_AddLine(_drawLines, point1, point2, color);
 }
@@ -337,76 +324,76 @@ bool atgRenderer::BeginQuad()
     return true;
 }
 
-void atgRenderer::AddQuad(const float point1[3], const float point2[3], const float point3[3], const float point4[3], const float color[3])
+void atgRenderer::AddQuad(const atgVec3& point1, const atgVec3& point2, const atgVec3& point3, const atgVec3& point4, const atgVec3& color)
 {
-    _drawQuads.push_back(point1[0]);
-    _drawQuads.push_back(point1[1]);
-    _drawQuads.push_back(point1[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point1.x);
+    _drawQuads.push_back(point1.y);
+    _drawQuads.push_back(point1.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 
-    _drawQuads.push_back(point2[0]);
-    _drawQuads.push_back(point2[1]);
-    _drawQuads.push_back(point2[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point2.x);
+    _drawQuads.push_back(point2.y);
+    _drawQuads.push_back(point2.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 
 #ifdef DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point2[0]);
-    _drawQuads.push_back(point2[1]);
-    _drawQuads.push_back(point2[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point2.x);
+    _drawQuads.push_back(point2.y);
+    _drawQuads.push_back(point2.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 
 #endif // DRAW_QUAD_USE_LINE_LIST
 
 
-    _drawQuads.push_back(point4[0]);
-    _drawQuads.push_back(point4[1]);
-    _drawQuads.push_back(point4[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point4.x);
+    _drawQuads.push_back(point4.y);
+    _drawQuads.push_back(point4.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 
 #ifdef DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point4[0]);
-    _drawQuads.push_back(point4[1]);
-    _drawQuads.push_back(point4[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point4.x);
+    _drawQuads.push_back(point4.y);
+    _drawQuads.push_back(point4.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 
 #endif // DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point3[0]);
-    _drawQuads.push_back(point3[1]);
-    _drawQuads.push_back(point3[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point3.x);
+    _drawQuads.push_back(point3.y);
+    _drawQuads.push_back(point3.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 
 #ifdef DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point3[0]);
-    _drawQuads.push_back(point3[1]);
-    _drawQuads.push_back(point3[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point3.x);
+    _drawQuads.push_back(point3.y);
+    _drawQuads.push_back(point3.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 
 #endif // DRAW_QUAD_USE_LINE_LIST
 
-    _drawQuads.push_back(point1[0]);
-    _drawQuads.push_back(point1[1]);
-    _drawQuads.push_back(point1[2]);
-    _drawQuads.push_back(color[0]);
-    _drawQuads.push_back(color[1]);
-    _drawQuads.push_back(color[2]);
+    _drawQuads.push_back(point1.x);
+    _drawQuads.push_back(point1.y);
+    _drawQuads.push_back(point1.z);
+    _drawQuads.push_back(color.x);
+    _drawQuads.push_back(color.y);
+    _drawQuads.push_back(color.z);
 }
 
 void atgRenderer::EndQuad()
@@ -467,8 +454,8 @@ void atgRenderer::EndQuad()
 
         //g_Renderer->SetLightEnable(false);
         //g_Renderer->SetDepthTestEnable(false);
-        g_Renderer->BindPass(pColorPass);
-        g_Renderer->BindVertexBuffer(pVB);
+        pColorPass->Bind();
+        pVB->Bind();
 
 #ifdef DRAW_QUAD_USE_LINE_LIST
         g_Renderer->DrawPrimitive(PT_LINES, quadCount*4, quadCount*numVertex);
@@ -479,8 +466,8 @@ void atgRenderer::EndQuad()
         }
 #endif // DRAW_QUAD_USE_LINE_LIST
 
-        g_Renderer->BindVertexBuffer(NULL);
-        g_Renderer->BindPass(NULL);
+        pVB->Unbind();
+        pColorPass->Unbind();
         //g_Renderer->SetDepthTestEnable(true);
         //g_Renderer->SetLightEnable(true);
     }
@@ -495,55 +482,55 @@ bool  atgRenderer::BeginFullQuad()
 //> 使用三角队列.比使用三角strip速度更快.但是浪费内存,以空间换时间 
 #define FULL_QUAD_USE_TRIANGLE_LIST
 
-void  atgRenderer::AddFullQuad(const float point1[3], const float point2[3], const float point3[3], const float point4[3], const float color[3])
+void  atgRenderer::AddFullQuad(const atgVec3& point1, const atgVec3& point2, const atgVec3& point3, const atgVec3& point4, const atgVec3& color)
 {
-    _drawFullQuads.push_back(point1[0]);
-    _drawFullQuads.push_back(point1[1]);
-    _drawFullQuads.push_back(point1[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
+    _drawFullQuads.push_back(point1.x);
+    _drawFullQuads.push_back(point1.y);
+    _drawFullQuads.push_back(point1.z);
+    _drawFullQuads.push_back(color.x);
+    _drawFullQuads.push_back(color.y);
+    _drawFullQuads.push_back(color.z);
 
-    _drawFullQuads.push_back(point2[0]);
-    _drawFullQuads.push_back(point2[1]);
-    _drawFullQuads.push_back(point2[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
+    _drawFullQuads.push_back(point2.x);
+    _drawFullQuads.push_back(point2.y);
+    _drawFullQuads.push_back(point2.z);
+    _drawFullQuads.push_back(color.x);
+    _drawFullQuads.push_back(color.y);
+    _drawFullQuads.push_back(color.z);
 
-    _drawFullQuads.push_back(point3[0]);
-    _drawFullQuads.push_back(point3[1]);
-    _drawFullQuads.push_back(point3[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
+    _drawFullQuads.push_back(point3.x);
+    _drawFullQuads.push_back(point3.y);
+    _drawFullQuads.push_back(point3.z);
+    _drawFullQuads.push_back(color.x);
+    _drawFullQuads.push_back(color.y);
+    _drawFullQuads.push_back(color.z);
 
 #ifdef FULL_QUAD_USE_TRIANGLE_LIST
 
-    _drawFullQuads.push_back(point2[0]);
-    _drawFullQuads.push_back(point2[1]);
-    _drawFullQuads.push_back(point2[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
+    _drawFullQuads.push_back(point2.x);
+    _drawFullQuads.push_back(point2.y);
+    _drawFullQuads.push_back(point2.z);
+    _drawFullQuads.push_back(color.x);
+    _drawFullQuads.push_back(color.y);
+    _drawFullQuads.push_back(color.z);
 
 #endif // FULL_QUAD_USE_TRIANGLE_LIST
 
-    _drawFullQuads.push_back(point4[0]);
-    _drawFullQuads.push_back(point4[1]);
-    _drawFullQuads.push_back(point4[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
+    _drawFullQuads.push_back(point4.x);
+    _drawFullQuads.push_back(point4.y);
+    _drawFullQuads.push_back(point4.z);
+    _drawFullQuads.push_back(color.x);
+    _drawFullQuads.push_back(color.y);
+    _drawFullQuads.push_back(color.z);
 
 #ifdef FULL_QUAD_USE_TRIANGLE_LIST
 
-    _drawFullQuads.push_back(point3[0]);
-    _drawFullQuads.push_back(point3[1]);
-    _drawFullQuads.push_back(point3[2]);
-    _drawFullQuads.push_back(color[0]);
-    _drawFullQuads.push_back(color[1]);
-    _drawFullQuads.push_back(color[2]);
+    _drawFullQuads.push_back(point3.x);
+    _drawFullQuads.push_back(point3.y);
+    _drawFullQuads.push_back(point3.z);
+    _drawFullQuads.push_back(color.x);
+    _drawFullQuads.push_back(color.y);
+    _drawFullQuads.push_back(color.z);
 
 #endif // FULL_QUAD_USE_TRIANGLE_LIST
 }
@@ -612,8 +599,8 @@ void   atgRenderer::EndFullQuad(const char* pPassIdentity /* = NULL */)
         }
 
         //g_Renderer->SetLightEnable(false);
-        g_Renderer->BindPass(pPass);
-        g_Renderer->BindVertexBuffer(pVB);
+        pPass->Bind();
+        pVB->Bind();
 
 #ifdef FULL_QUAD_USE_TRIANGLE_LIST
         g_Renderer->DrawPrimitive(PT_TRIANGLES, quadCount*2, quadCount*numVertex);
@@ -624,14 +611,14 @@ void   atgRenderer::EndFullQuad(const char* pPassIdentity /* = NULL */)
         }
 #endif // FULL_QUAD_USE_TRIANGLE_LIST
 
-        g_Renderer->BindVertexBuffer(NULL);
-        g_Renderer->BindPass(NULL);
+        pVB->Unbind();
+        pPass->Unbind();
         //g_Renderer->SetLightEnable(true);
     }
 }
 
 
-bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], atgTexture* pTexture)
+bool atgRenderer::DrawTexureQuad(const atgVec3& p1, const atgVec3& p2, const atgVec3& p3, const atgVec3& p4, const atgVec2& t1, const atgVec2& t2, const atgVec2& t3, const atgVec2& t4, atgTexture* pTexture)
 {
     AASSERT(pTexture != NULL);
 
@@ -646,14 +633,15 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
     static atgPass* pTexturePass = NULL;
     static atgVertexBuffer* pVB = NULL;
 
-    atgMath::VecCopy(p1, &QuadData[0]);
-    QuadData[3] = t1[0]; QuadData[4] = t1[1];
-    atgMath::VecCopy(p3, &QuadData[5]);
-    QuadData[8] = t3[0]; QuadData[9] = t3[1];
-    atgMath::VecCopy(p2, &QuadData[10]);
-    QuadData[13] = t2[0]; QuadData[14] = t2[1];
-    atgMath::VecCopy(p4, &QuadData[15]);
-    QuadData[18] = t4[0]; QuadData[19] = t4[1];
+    int sizeVec3 = sizeof(atgVec3);
+    memcpy(&QuadData[0], p1.m, sizeVec3);
+    QuadData[3] = t1.x; QuadData[4] = t1.y;
+    memcpy(&QuadData[5], p3.m, sizeVec3);
+    QuadData[8] = t3.x; QuadData[9] = t3.y;
+    memcpy(&QuadData[10], p2.m, sizeVec3);
+    QuadData[13] = t2.x; QuadData[14] = t2.y;
+    memcpy(&QuadData[15], p4.m, sizeVec3);
+    QuadData[18] = t4.x; QuadData[19] = t4.y;
     // create pass
     if (!pTexturePass || pTexturePass->IsLost())
     {
@@ -688,13 +676,15 @@ bool atgRenderer::DrawTexureQuad(const float p1[3], const float p2[3], const flo
         }
     }
     //g_Renderer->SetDepthTestEnable(false);
-    g_Renderer->BindTexture(0, pTexture);
-    g_Renderer->BindPass(pTexturePass);
-    g_Renderer->BindVertexBuffer(pVB);
+    pTexture->Bind(0);
+    pTexturePass->Bind();
+    pVB->Bind();
 
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
-    g_Renderer->BindVertexBuffer(NULL);
-    g_Renderer->BindPass(NULL);
+    pVB->Unbind();
+    pTexturePass->Unbind();
+    pTexture->Unbind(0);
+
     //g_Renderer->SetDepthTestEnable(true);
     return true;
 }
@@ -755,15 +745,15 @@ bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert/*=flas
         }
     }
 
-    Matrix oldWorld;
+    atgMatrix oldWorld;
     g_Renderer->GetMatrix(oldWorld, MD_WORLD);
     g_Renderer->SetMatrix(MD_WORLD, MatrixIdentity);
 
-    Matrix oldView;
+    atgMatrix oldView;
     g_Renderer->GetMatrix(oldView, MD_VIEW);
     g_Renderer->SetMatrix(MD_VIEW, MatrixIdentity);
 
-    Matrix oldProj;
+    atgMatrix oldProj;
     g_Renderer->GetMatrix(oldProj, MD_PROJECTION);
     //uint32 data[4];
     //g_Renderer->GetViewPort(data[0], data[1], data[2], data[3]);
@@ -773,10 +763,15 @@ bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert/*=flas
     g_Renderer->SetMatrix(MD_PROJECTION, MatrixIdentity);
 
     //g_Renderer->SetDepthTestEnable(false);
-    g_Renderer->BindTexture(0, pTexture);
-    g_Renderer->BindPass(pTexturePass);
-    g_Renderer->BindVertexBuffer(pVB);
+    pTexture->Bind(0);
+    pTexturePass->Bind();
+    pVB->Bind();
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
+
+    pTexture->Unbind(0);
+    pTexturePass->Unbind();
+    pVB->Unbind();
+
     //g_Renderer->SetDepthTestEnable(true);
 
     g_Renderer->SetMatrix(MD_WORLD, oldWorld);
@@ -786,7 +781,7 @@ bool atgRenderer::DrawFullScreenQuad(atgTexture* pTexture, bool uvConvert/*=flas
     return true;
 }
 
-bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const float p3[3], const float p4[3], const float t1[2], const float t2[2], const float t3[2], const float t4[2], const char* pPassIdentity)
+bool atgRenderer::DrawQuadByPass(const atgVec3& p1, const atgVec3& p2, const atgVec3& p3, const atgVec3& p4, const atgVec2& t1, const atgVec2& t2, const atgVec2& t3, const atgVec2& t4, const char* pPassIdentity)
 {
     AASSERT(pPassIdentity != NULL);
 
@@ -806,14 +801,15 @@ bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const flo
     static const int sizeOfQuadData = sizeof(QuadData);
     static atgVertexBuffer* pVB = NULL;
 
-    atgMath::VecCopy(p1, &QuadData[0]);
-    QuadData[3] = t1[0]; QuadData[4] = t1[1];
-    atgMath::VecCopy(p2, &QuadData[5]);
-    QuadData[8] = t2[0]; QuadData[9] = t2[1];
-    atgMath::VecCopy(p3, &QuadData[10]);
-    QuadData[13] = t3[0]; QuadData[14] = t3[1];
-    atgMath::VecCopy(p4, &QuadData[15]);
-    QuadData[18] = t4[0]; QuadData[19] = t4[1];
+    int sizeVec3 = sizeof(atgVec3);
+    memcpy(&QuadData[0], p1.m, sizeVec3);
+    QuadData[3] = t1.x; QuadData[4] = t1.y;
+    memcpy(&QuadData[5], p3.m, sizeVec3);
+    QuadData[8] = t3.x; QuadData[9] = t3.y;
+    memcpy(&QuadData[10], p2.m, sizeVec3);
+    QuadData[13] = t2.x; QuadData[14] = t2.y;
+    memcpy(&QuadData[15], p4.m, sizeVec3);
+    QuadData[18] = t4.x; QuadData[19] = t4.y;
 
 
     // create vertex buffer
@@ -841,13 +837,13 @@ bool atgRenderer::DrawQuadByPass(const float p1[3], const float p2[3], const flo
         }
     }
     //g_Renderer->SetDepthTestEnable(false);
-    g_Renderer->BindPass(pPass);
-    g_Renderer->BindVertexBuffer(pVB);
+    pPass->Bind();
+    pVB->Bind();
 
     g_Renderer->DrawPrimitive(PT_TRIANGLE_STRIP, 2, 4);
 
-    g_Renderer->BindVertexBuffer(NULL);
-    g_Renderer->BindPass(NULL);
+    pVB->Unbind();
+    pPass->Unbind();
     //g_Renderer->SetDepthTestEnable(true);
     return true;
 }
@@ -857,52 +853,52 @@ bool atgRenderer::BeginAABBoxLine()
     return atgRenderer_Private_BeginLine(_drawAABBoxs);
 }
 
-void atgRenderer::AddAABBoxLine(const float vMin[3], const float vMax[3], const float color[3])
+void atgRenderer::AddAABBoxLine(const atgVec3& vMin, const atgVec3& vMax, const atgVec3& color)
 {
     //  /6 - 7
     // 5 + 2 |
     // | 1 + 8
     // 3 - 4
 
-    float a[3];
-    float b[3];
+    atgVec3 a;
+    atgVec3 b;
 
-    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点3
+    a.x = vMin.x; a.y = vMin.y; a.z = vMax.z; //>顶点3
     atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点6
+    a.x = vMin.x; a.y = vMax.y; a.z = vMin.z; //>顶点6
     atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
-    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMin[2]; //>顶点8
+    a.x = vMax.x; a.y = vMin.y; a.z = vMin.z; //>顶点8
     atgRenderer_Private_AddLine(_drawAABBoxs, vMin, a,color);
 
-    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点7
+    a.x = vMax.x; a.y = vMax.y; a.z = vMin.z; //>顶点7
     atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
-    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点4
+    a.x = vMax.x; a.y = vMin.y; a.z = vMax.z; //>顶点4
     atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>顶点5
+    a.x = vMin.x; a.y = vMax.y; a.z = vMax.z; //>顶点5
     atgRenderer_Private_AddLine(_drawAABBoxs, vMax, a,color);
 
-    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点3
-    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMax[2]; //>顶点4
+    a.x = vMin.x; a.y = vMin.y; a.z = vMax.z; //>顶点3
+    b.x = vMax.x; b.y = vMin.y; b.z = vMax.z; //>顶点4
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMin[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点3
-    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMax[2]; //>顶点5
+    a.x = vMin.x; a.y = vMin.y; a.z = vMax.z; //>顶点3
+    b.x = vMin.x; b.y = vMax.y; b.z = vMax.z; //>顶点5
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMax[2]; //>顶点5
-    b[0] = vMin[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>顶点6
+    a.x = vMin.x; a.y = vMax.y; a.z = vMax.z; //>顶点5
+    b.x = vMin.x; b.y = vMax.y; b.z = vMin.z; //>顶点6
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMin[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点6
-    b[0] = vMax[0]; b[1] = vMax[1]; b[2] = vMin[2]; //>顶点7
+    a.x = vMin.x; a.y = vMax.y; a.z = vMin.z; //>顶点6
+    b.x = vMax.x; b.y = vMax.y; b.z = vMin.z; //>顶点7
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMax[0]; a[1] = vMax[1]; a[2] = vMin[2]; //>顶点7
-    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>顶点8
+    a.x = vMax.x; a.y = vMax.y; a.z = vMin.z; //>顶点7
+    b.x = vMax.x; b.y = vMin.y; b.z = vMin.z; //>顶点8
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 
-    a[0] = vMax[0]; a[1] = vMin[1]; a[2] = vMax[2]; //>顶点4
-    b[0] = vMax[0]; b[1] = vMin[1]; b[2] = vMin[2]; //>顶点8
+    a.x = vMax.x; a.y = vMin.y; a.z = vMax.z; //>顶点4
+    b.x = vMax.x; b.y = vMin.y; b.z = vMin.z; //>顶点8
     atgRenderer_Private_AddLine(_drawAABBoxs, a, b,color);
 }
 
@@ -1091,7 +1087,7 @@ void atgRenderer::PushRenderTarget(uint8 index, atgRenderTarget* pRenderTarget)
     if (pRenderTarget)
     {
         _renderTargetStack.push(pRenderTarget);
-        pRenderTarget->Active(index);
+        pRenderTarget->Bind(index);
     }
 }
 
@@ -1100,7 +1096,7 @@ void atgRenderer::PopRenderTarget(uint8 index)
     if (!_renderTargetStack.empty())
     {
         atgRenderTarget* pRenderTarget = _renderTargetStack.top();
-        pRenderTarget->Deactive();
+        pRenderTarget->Unbind();
         _renderTargetStack.pop();
     }
 }

@@ -159,6 +159,7 @@ void atgShaderNotLighteTexture::SetTexture( atgTexture* texture )
 atgShaderLightTexture::atgShaderLightTexture()
 {
     _usingTempLight = false;
+    _material = NULL;
 }
 
 atgShaderLightTexture::~atgShaderLightTexture()
@@ -180,8 +181,8 @@ bool atgShaderLightTexture::ConfingAndCreate()
     }
 
     _tempLight.SetRange(500.0f);
-    _tempLight.SetPosition(Vec3(0.0f, 0.0f, 0.0f));
-    _tempLight.SetColor(Vec3(0.8f, 0.8f, 0.8f));
+    _tempLight.SetPosition(atgVec3(0.0f, 0.0f, 0.0f));
+    _tempLight.SetColor(atgVec3(0.8f, 0.8f, 0.8f));
     _tempLight.SetSpecular(Vec3One);
     return rs;
 }
@@ -193,21 +194,21 @@ void atgShaderLightTexture::BeginContext( void* data )
     
 
     // set MVMatrix
-    Matrix WorldMatrix;
+    atgMatrix WorldMatrix;
     g_Renderer->GetMatrix(WorldMatrix, MD_WORLD);
 
-    Matrix WorldViewMatrix;
+    atgMatrix WorldViewMatrix;
     g_Renderer->GetMatrix(WorldViewMatrix, MD_VIEW);
-    WorldViewMatrix.Concatenate(WorldMatrix);
+    WorldViewMatrix = WorldViewMatrix * WorldMatrix;
     SetMatrix4x4("mat_world_view", WorldViewMatrix);
 
-    Matrix WorldViewMatrixInverseTranspose(WorldViewMatrix);
+    atgMatrix WorldViewMatrixInverseTranspose(WorldViewMatrix);
     WorldViewMatrixInverseTranspose.Inverse();
     WorldViewMatrixInverseTranspose.Transpose();
     SetMatrix4x4("mat_world_view_inverse_transpose", WorldViewMatrixInverseTranspose);
 
-    Vec4 lightData0;
-    Vec4 lightData1;
+    atgVec4 lightData0;
+    atgVec4 lightData1;
     // 如果到时候没有设置光， new 一个临时光让shader运行正常也不错。
     if (g_Renderer->GetBindLights().empty())
     {
@@ -231,7 +232,7 @@ void atgShaderLightTexture::BeginContext( void* data )
                 {
                     atgDirectionalLight* directionalLight = static_cast<atgDirectionalLight*>(light);
                     // set direction;
-                    Vec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(directionalLight->GetDirection());
+                    atgVec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(directionalLight->GetDirection());
                     lightDirection.Normalize();
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightDirection", i);
                     SetFloat3(uniformNameBuff, lightDirection.m);
@@ -241,7 +242,7 @@ void atgShaderLightTexture::BeginContext( void* data )
                     atgPointLight* pointLight = static_cast<atgPointLight*>(light);
                     // set position;
                     g_Renderer->GetMatrix(WorldViewMatrix, MD_VIEW);
-                    Vec3 lightPosition = WorldViewMatrix.Transfrom(pointLight->GetPosition());
+                    atgVec3 lightPosition = WorldViewMatrix.Transfrom(pointLight->GetPosition());
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightPosition", i);
                     SetFloat3(uniformNameBuff, lightPosition.m);
                     // set range
@@ -251,11 +252,11 @@ void atgShaderLightTexture::BeginContext( void* data )
                 {
                     // set position;
                     atgSpotLight* spotLight = static_cast<atgSpotLight*>(light);
-                    Vec3 lightPosition = WorldViewMatrix.Transfrom(spotLight->GetPosition());
+                    atgVec3 lightPosition = WorldViewMatrix.Transfrom(spotLight->GetPosition());
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightPosition", i);
                     SetFloat3(uniformNameBuff, lightPosition.m);
                     // set direction;
-                    Vec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(spotLight->GetDirection());
+                    atgVec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(spotLight->GetDirection());
                     lightDirection.Normalize();
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightDirection", i);
                     SetFloat3(uniformNameBuff, lightDirection.m);
@@ -294,13 +295,12 @@ void atgShaderLightTexture::BeginContext( void* data )
         }
     }
 
-    atgMaterial* material = g_Renderer->GetBindMaterial();
-    if (material)
+    if (_material)
     {
-        SetFloat3("u_materialAmbient", material->GetAmbientColor().m);
-        SetFloat3("u_materialDiffuse", material->GetDiffuseColor().m);
-        SetFloat3("u_materialSpecular", material->GetSpecularColor().m);
-        Vec4 materialData0(material->GetShininess(), 0.0f, 0.0f, 0.0f);
+        SetFloat3("u_materialAmbient", _material->GetAmbientColor().m);
+        SetFloat3("u_materialDiffuse", _material->GetDiffuseColor().m);
+        SetFloat3("u_materialSpecular", _material->GetSpecularColor().m);
+        atgVec4 materialData0(_material->GetShininess(), 0.0f, 0.0f, 0.0f);
         SetFloat4("u_materialData0", materialData0.m);
     }
 

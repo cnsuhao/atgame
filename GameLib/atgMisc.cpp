@@ -1221,24 +1221,24 @@ void Water::SetValue(float* buf, int x, int y, float value)
     buf[y * Width + x] = value;
 }
 
-Vec3 GetVec3Color(uint32 YD_COOLOR)
+MiscVec3 GetVec3Color(uint32 YD_COOLOR)
 {
     uint8 a = (YD_COOLOR & 0xff000000) >> 24;
     uint8 r = (YD_COOLOR & 0x00ff0000) >> 16;
     uint8 g = (YD_COOLOR & 0x0000ff00) >> 8;
     uint8 b = YD_COOLOR & 0x000000ff;
 
-    return Vec3(r / 255.0f, g / 255.0f, b / 255.0f);
+    return MiscVec3(r / 255.0f, g / 255.0f, b / 255.0f);
 }
 
-Vec4 GetVec4Color(uint32 YD_COOLOR)
+MiscVec4 GetVec4Color(uint32 YD_COOLOR)
 {
     uint8 a = (YD_COOLOR & 0xff000000) >> 24;
     uint8 r = (YD_COOLOR & 0x00ff0000) >> 16;
     uint8 g = (YD_COOLOR & 0x0000ff00) >> 8;
     uint8 b = YD_COOLOR & 0x000000ff;
 
-    return Vec4(r / 255.0f, g / 255.0f, b / 255.0f, 255.0f);
+    return MiscVec4(r / 255.0f, g / 255.0f, b / 255.0f, 255.0f);
 }
 
 namespace MdxSizeOf_Ns
@@ -2592,7 +2592,8 @@ void SmdModel::ParseSkeleton( std::istringstream & is, SmdAnimation & animation)
 
         float rotation[3];
         is>>rotation[0]>>rotation[1]>>rotation[2];
-        atgMath::QuatFromEulerAngle(rotation, jointkey.rotation);
+        atgQuaternion q(rotation);
+        //jointkey.rotation = q;
     }
 }
 
@@ -2605,7 +2606,7 @@ bool VertexCmp(SmdVertex &v1, SmdVertex &v2)
         abs(v1.texcoord[0]-v2.texcoord[0])<atgMath::EPSILON &&
         abs(v1.texcoord[1]-v2.texcoord[1])<atgMath::EPSILON)
     {
-        if (atgMath::VecDot(v1.normal, v2.normal) > 0.7f)
+        //if (atgMath::VecDot(v1.normal, v2.normal) > 0.7f)
             return true;
     }
 
@@ -2655,7 +2656,7 @@ void SmdModel::ParseTriangles( std::istringstream & is)
                 {
                     flag = index;
                     normalSet.insert(index); //记录需要重新计算法线的顶点
-                    atgMath::VecAdd(vertices[index].normal, vertex.normal, vertices[index].normal); //法线相加
+                    //atgMath::VecAdd(vertices[index].normal, vertex.normal, vertices[index].normal); //法线相加
                     break;
                 }
             }
@@ -2678,9 +2679,9 @@ void SmdModel::ParseTriangles( std::istringstream & is)
     }
 
     //归一化法线
-    set<int>::iterator it;
-    for (it=normalSet.begin(); it!=normalSet.end(); it++)
-        atgMath::VecNormalize(vertices[*it].normal);
+    //set<int>::iterator it;
+    //for (it=normalSet.begin(); it!=normalSet.end(); it++)
+    //    atgMath::VecNormalize(vertices[*it].normal);
 }
 
 

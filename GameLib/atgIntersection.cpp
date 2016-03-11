@@ -11,14 +11,14 @@ atgFrustum::~atgFrustum(void)
 {
 }
 
-void atgFrustum::BuildFrustumPlanes( const float modl[4][4], const float proj[4][4] )
+void atgFrustum::BuildFrustumPlanes(const atgMatrix& modl, const atgMatrix proj)
 {
-    float  clip[16];                               // This will hold the clipping planes
+    atgMatrix clip;                               // This will hold the clipping planes
 
     // Now that we have our modelview and projection matrix, if we combine these 2 matrices,
     // it will give us our clipping planes.  To combine 2 matrices, we multiply them.
 
-    atgMath::MatConcatenate(proj, modl, FPTR_TO_F4x4(clip));
+    clip = proj * modl;
 
     // Now we actually want to get the sides of the frustum.  To do this we take
     // the clipping planes we received above and extract the sides from them.
@@ -183,7 +183,7 @@ bool atgFrustum::IsCubeInFrustum( const float center[3], float size )
     return true;
 }
 
-bool atgFrustum::IsAABBoxInFurstum(const AABBox& bbox)
+bool atgFrustum::IsAABBoxInFurstum(const atgAABBox& bbox)
 {
     if (IsPointInFrustum(bbox.vMin.m) && IsPointInFrustum(bbox.vMax.m))
     {
@@ -195,60 +195,60 @@ bool atgFrustum::IsAABBoxInFurstum(const AABBox& bbox)
 
 void atgFrustum::DebugRender()
 {
-    float p1[3];
-    float p2[3];
+    atgVec3 p1;
+    atgVec3 p2;
     g_Renderer->BeginLine();
     //后上
-    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3One.m);
+    Intersection(_frustum[BACK], _frustum[TOP], _frustum[LEFT], p1);
+    Intersection(_frustum[BACK], _frustum[TOP], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3One);
     //后下
-    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3One.m);
+    Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[LEFT], p1);
+    Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3One);
     //后左
-    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3One.m);
+    Intersection(_frustum[BACK], _frustum[TOP], _frustum[LEFT], p1);
+    Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[LEFT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3One);
     //后右
-    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[RIGHT].m, p1);
-    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3One.m);
+    Intersection(_frustum[BACK], _frustum[TOP], _frustum[RIGHT], p1);
+    Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3One);
 
     //前上
-    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Right.m);
+    Intersection(_frustum[FRONT], _frustum[TOP], _frustum[LEFT], p1);
+    Intersection(_frustum[FRONT], _frustum[TOP], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Right);
     //前下
-    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Right.m);
+    Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[LEFT], p1);
+    Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Right);
     //前左
-    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Right.m);
+    Intersection(_frustum[FRONT], _frustum[TOP], _frustum[LEFT], p1);
+    Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[LEFT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Right);
     //前右
-    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[RIGHT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Right.m);
+    Intersection(_frustum[FRONT], _frustum[TOP], _frustum[RIGHT], p1);
+    Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Right);
 
 
     //左上
-    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[LEFT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Up.m);
+    Intersection(_frustum[BACK], _frustum[TOP], _frustum[LEFT], p1);
+    Intersection(_frustum[FRONT], _frustum[TOP], _frustum[LEFT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Up);
     //左下
-    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[LEFT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Up.m);
+    Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[LEFT], p1);
+    Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[LEFT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Up);
     //右上
-    Plane::Intersection(_frustum[BACK].m, _frustum[TOP].m, _frustum[RIGHT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[TOP].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Forward.m);
+    Intersection(_frustum[BACK], _frustum[TOP], _frustum[RIGHT], p1);
+    Intersection(_frustum[FRONT], _frustum[TOP], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Forward);
     //右下
-    Plane::Intersection(_frustum[BACK].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p1);
-    Plane::Intersection(_frustum[FRONT].m, _frustum[BOTTOM].m, _frustum[RIGHT].m, p2);
-    g_Renderer->AddLine(p1, p2, Vec3Forward.m);
+    Intersection(_frustum[BACK], _frustum[BOTTOM], _frustum[RIGHT], p1);
+    Intersection(_frustum[FRONT], _frustum[BOTTOM], _frustum[RIGHT], p2);
+    g_Renderer->AddLine(p1, p2, Vec3Forward);
 
     g_Renderer->EndLine();
 }
