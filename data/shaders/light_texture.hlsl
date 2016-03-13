@@ -8,13 +8,14 @@ matrix mat_world_inverse_transpose  : register(vs, c8);
 static const int c_numberOfLights = 8;
 
 float3 u_globalAmbient              :register(ps, c0);  // 全局环境光.
+float3 u_eyePosition				:register(ps, c1);	// 眼睛的位置 in world space
 
-float3 u_materialAmbient            :register(ps, c1);
-float3 u_materialDiffuse            :register(ps, c2);
-float3 u_materialSpecular           :register(ps, c3);
-float4 u_materialData0              :register(ps, c4);
+float3 u_materialAmbient            :register(ps, c2);
+float3 u_materialDiffuse            :register(ps, c3);
+float3 u_materialSpecular           :register(ps, c4);
+float4 u_materialData0              :register(ps, c5);
 
-float u_numberOfLights              :register(ps, c5);
+float u_numberOfLights              :register(ps, c6);
 
 float3 u_lightPosition[c_numberOfLights]              :register(ps, c10);  // transformed in view space.
 float3 u_lightDirection[c_numberOfLights]             :register(ps, c18);  // transformed in view space.
@@ -93,35 +94,29 @@ float4 ps_main(VS_OUTPUT input):COLOR0
                 attenuation = light_intensity * clamp((light_rang - length(vertexToLight)) / light_rang, 0.0, 1.0);
                 if(u_lightData0[i].x > 1.01) // is spot light
                 {
-                    //float cos_outer_cone = u_lightData1[i].z; // cos(radians_for_outer_cone_);
-                    //float cos_inner_cone = u_lightData1[i].w; // cos(radians_for_int_cone);
+                    float cos_outer_cone = u_lightData1[i].z; // cos(radians_for_outer_cone_);
+                    float cos_inner_cone = u_lightData1[i].w; // cos(radians_for_int_cone);
                     float con = dot(lightDirection, -vertexToLightDirection);
-                    //effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
-                    effect = smoothstep(u_lightData1[i].z, u_lightData1[i].w, con);
+                    effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
                 }
             }
             
-            float ndl = half_lambert(normalize(input.ps_vertexNormal), vertexToLightDirection, u_lightData0[i].y);
-            //float ndl = max(0.0, dot(normalize(input.ps_vertexNormal), vertexToLightDirection));
+			float3 vertexNormal = normalize(input.ps_vertexNormal);
+            float ndl = half_lambert(vertexNormal, vertexToLightDirection, u_lightData0[i].y);
             float3 diffuse = effect * u_materialDiffuse * u_lightDiffuse[i] * ndl;
-            diffuse = diffuse * tex2D(sampler_diffuse, input.ps_textureCoord).xyz;
-            diffuse_total += attenuation * diffuse;
+            diffuse_total += attenuation * diffuse * tex2D(sampler_diffuse, input.ps_textureCoord).xyz;
             
-            //float3 h = vertexToLightDirection + normalize(-input.ps_vertexPosition);
-            //h = normalize(h);
-            //float facing = max(0.0, dot(input.ps_vertexNormal, vertexToLightDirection));
-            //if(facing > 0.0)
-            //    facing = 1.0;
+            float3 h = vertexToLightDirection + normalize(u_eyePosition - input.ps_vertexPosition);
+            h = normalize(h);
             
             // u_materialData0.x is material shininess.
-            //float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
-            //                facing * pow(max(0.0, dot(input.ps_vertexNormal, h)), u_materialData0.x); 
+            float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
+							  pow(max(0.0, dot(vertexNormal, h)), u_materialData0.x); 
 
-            //specular_total += attenuation * specular;
+            specular_total += attenuation * specular;
         }
     }
     
-    //return float4(ambient + diffuse_total + specular_total, 1.0);
-    return float4(ambient + diffuse_total, 1.0);
+    return float4(ambient + diffuse_total + specular_total, 1.0);
 }
 
