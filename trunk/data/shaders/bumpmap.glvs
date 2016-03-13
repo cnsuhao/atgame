@@ -26,14 +26,16 @@
 
 attribute vec3 vs_vertexPosition;
 attribute vec3 vs_vertexNormal;
+attribute vec4 vs_vertexTangent;
 attribute vec2 vs_textureCoord;
 
 uniform mat4 mat_world;
 uniform mat4 mat_world_view_projection;
 uniform mat4 mat_world_inverse_transpose;
 
-varying vec3 ps_vertexPosition; // in world space
-varying vec3 ps_vertexNormal;	// in world space
+varying vec3 ps_vertexPosition; // in view space
+varying vec3 ps_vertexNormal;
+varying vec3 ps_vertexTangent;
 varying vec2 ps_textureCoord;
 
 ////////////////////////////////////////
@@ -44,5 +46,6 @@ void main()
     gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
     ps_vertexPosition = (mat_world * vec4(vs_vertexPosition, 1.0)).xyz;
     ps_vertexNormal = (mat_world_inverse_transpose * vec4(vs_vertexNormal, 1.0)).xyz;
+	ps_vertexTangent = (mat_world_inverse_transpose * vs_vertexTangent).xyz;
     ps_textureCoord = vs_textureCoord;
 }
