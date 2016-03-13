@@ -1,9 +1,9 @@
 ////////////////////////////////////////
 // Global variable
 ////////////////////////////////////////
-matrix mat_world_view_projection          : register(vs, c0);
-matrix mat_world_view                     : register(vs, c4);
-matrix mat_world_view_inverse_transpose   : register(vs, c8);
+matrix mat_world          			: register(vs, c0);
+matrix mat_world_view_projection    : register(vs, c4);
+matrix mat_world_inverse_transpose  : register(vs, c8);
 
 static const int c_numberOfLights = 8;
 
@@ -46,22 +46,22 @@ VS_OUTPUT vs_main(VS_INPUT input)
     VS_OUTPUT output = (VS_OUTPUT)0;
 
     output.ps_vertexFinalPosition = mul(input.vs_vertexPosition, mat_world_view_projection);
-    output.ps_vertexPosition = mul(input.vs_vertexPosition, mat_world_view).xyz;
-    output.ps_vertexNormal = mul(float4(input.vs_vertexNormal, 1.0), mat_world_view_inverse_transpose).xyz;
+    output.ps_vertexPosition = mul(input.vs_vertexPosition, mat_world).xyz;
+    output.ps_vertexNormal = mul(float4(input.vs_vertexNormal, 1.0), mat_world_inverse_transpose).xyz;
     output.ps_textureCoord = input.vs_textureCoord;
 
     return output;
 }
 
-sampler textureSampler : register(ps, s0);
+sampler sampler_diffuse : register(ps, s5);
 
 ////////////////////////////////////////
 float half_lambert( in float3 normalDir, 
-                    in float3 lightDir)
+                    in float3 lightDir, in float factor)
 {
     // Half-LambertÂþ·´Éä
     float NdotL = dot(normalDir, lightDir);
-    return max(0, (NdotL * 0.5 + 0.5));
+    return max(0, (NdotL * (1.0 - factor) + factor));
 }
 
 
@@ -70,7 +70,7 @@ float half_lambert( in float3 normalDir,
 ////////////////////////////////////////
 float4 ps_main(VS_OUTPUT input):COLOR0
 {
-    float3 ambient = u_globalAmbient * u_materialAmbient * tex2D(textureSampler, input.ps_textureCoord).xyz;
+    float3 ambient = u_globalAmbient * u_materialAmbient * tex2D(sampler_diffuse, input.ps_textureCoord).xyz;
     float3 diffuse_total = float3(0.0, 0.0, 0.0);
     float3 specular_total = float3(0.0, 0.0, 0.0);
     
@@ -101,27 +101,27 @@ float4 ps_main(VS_OUTPUT input):COLOR0
                 }
             }
             
-            //float ndl = half_lambert(normalize(input.ps_vertexNormal), vertexToLightDirection);
-            float ndl = max(0.0, dot(normalize(input.ps_vertexNormal), vertexToLightDirection));
+            float ndl = half_lambert(normalize(input.ps_vertexNormal), vertexToLightDirection, u_lightData0[i].y);
+            //float ndl = max(0.0, dot(normalize(input.ps_vertexNormal), vertexToLightDirection));
             float3 diffuse = effect * u_materialDiffuse * u_lightDiffuse[i] * ndl;
-            diffuse = diffuse * tex2D(textureSampler, input.ps_textureCoord).xyz;
+            diffuse = diffuse * tex2D(sampler_diffuse, input.ps_textureCoord).xyz;
             diffuse_total += attenuation * diffuse;
             
-            float3 h = vertexToLightDirection + normalize(-input.ps_vertexPosition);
-            h = normalize(h);
-            float facing = max(0.0, dot(input.ps_vertexNormal, vertexToLightDirection));
-            if(facing > 0.0)
-                facing = 1.0;
+            //float3 h = vertexToLightDirection + normalize(-input.ps_vertexPosition);
+            //h = normalize(h);
+            //float facing = max(0.0, dot(input.ps_vertexNormal, vertexToLightDirection));
+            //if(facing > 0.0)
+            //    facing = 1.0;
             
             // u_materialData0.x is material shininess.
-            float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
-                            facing * pow(max(0.0, dot(input.ps_vertexNormal, h)), u_materialData0.x); 
+            //float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
+            //                facing * pow(max(0.0, dot(input.ps_vertexNormal, h)), u_materialData0.x); 
 
-            specular_total += attenuation * specular;
+            //specular_total += attenuation * specular;
         }
     }
     
-    float4 color = float4(ambient + diffuse_total + specular_total, 1.0);
-    return color;
+    //return float4(ambient + diffuse_total + specular_total, 1.0);
+    return float4(ambient + diffuse_total, 1.0);
 }
 

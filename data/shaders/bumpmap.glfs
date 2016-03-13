@@ -61,16 +61,15 @@ uniform vec3 u_materialDiffuse;
 uniform vec3 u_materialSpecular;
 uniform vec4 u_materialData0;
 
-//uniform Light u_lights;         // ¹âÕÕ
-//uniform Material u_material;    // ²ÄÖÊ
-
 varying vec3 ps_vertexPosition; // in view space
 varying vec3 ps_vertexNormal;
+varying vec3 ps_vertexTangent;
 varying vec2 ps_textureCoord;
 
 
 // Values that stay constant for the whole mesh.
 uniform sampler2D sampler_diffuse;
+uniform sampler2D sampler_bumpmap;
 
 
 ////////////////////////////////////////
@@ -91,7 +90,7 @@ float half_lambert( vec3 normalDir,
 ////////////////////////////////////////
 void main()
 {
-    vec3 ambient = u_globalAmbient * u_materialAmbient * texture2D(sampler_diffuse, ps_textureCoord);
+    vec3 ambient = u_globalAmbient * u_materialAmbient * texture2D(sampler_diffuse, ps_textureCoord).xyz;
     vec3 diffuse_total = vec3(0.0, 0.0, 0.0);
     vec3 specular_total = vec3(0.0, 0.0, 0.0);
 
@@ -109,7 +108,13 @@ void main()
             if(u_lightData0[i].x > 0.01) // point light or spot light.
             {
                 vec3 vertexToLight = u_lightPosition[i] - ps_vertexPosition;
-                vertexToLightDirection = normalize(vertexToLight);
+                //vertexToLightDirection = normalize(vertexToLight);
+				
+				vec3 bitangent = dot(ps_vertexNormal, ps_vertexTangent);
+				mat3 matrix = mat3(ps_vertexTangent, bitangent, ps_vertexNormal);
+				vertexToLightDirection = normalize(matrix * vertexToLight);
+				lightDirection = matrix * lightDirection;
+				
                 float light_rang = u_lightData1[i].y;
                 attenuation = light_intensity * clamp((light_rang - length(vertexToLight)) / light_rang, 0.0, 1.0);
                 if(u_lightData0[i].x > 1.01)
@@ -121,26 +126,26 @@ void main()
                 }
             }
             
-            float ndl = half_lambert(normalize(ps_vertexNormal), vertexToLightDirection, u_lightData0[i].y);
-            //float ndl = max(0.0, dot(normalize(ps_vertexNormal), vertexToLightDirection)); // LambertÂþ·´Éä
+			vec3 finalVertexNormal = (texture2D(sampler_bumpmap, ps_textureCoord) * 2.0 - 1.0).xyz;
+            float ndl = half_lambert(finalVertexNormal, vertexToLightDirection, u_lightData0[i].y);
             vec3 diffuse = effect * u_materialDiffuse * u_lightDiffuse[i] * ndl;
-            diffuse = diffuse * texture2D(sampler_diffuse, ps_textureCoord);
-            diffuse_total += attenuation * diffuse;
+            diffuse_total += attenuation * diffuse * texture2D(sampler_diffuse, ps_textureCoord);
 
             //vec3 h = vertexToLightDirection + normalize(-ps_vertexPosition);
             //h = normalize(h);
-            //float facing = max(0.0, dot(ps_vertexNormal, vertexToLightDirection));
+            //float facing = max(0.0, dot(finalVertexNormal, vertexToLightDirection));
             //if(facing > 0.0)
             //    facing = 1.0;
             
             // u_materialData0.x is material shininess.
             //vec3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
-            //                facing * pow(max(0.0, dot(ps_vertexNormal, h)), u_materialData0.x); 
+            //                facing * pow(max(0.0, dot(finalVertexNormal, h)), u_materialData0.x); 
 
             //specular_total += attenuation * specular;
         }
     }
+	
+	gl_FragColor = vec4(ambient + diffuse_total, 1.0);
 
     //gl_FragColor = vec4(ambient + diffuse_total + specular_total, 1.0);
-	gl_FragColor = vec4(ambient + diffuse_total, 1.0);
 }
