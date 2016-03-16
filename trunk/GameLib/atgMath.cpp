@@ -10,6 +10,20 @@ const float atgMath::INV_PI_MUL_180 = (180.f / atgMath::PI);
 //> Îó²î³£Á¿
 const float atgMath::EPSILON        = 1e-5f;
 
+
+
+static uint32 gRandomSeed = 1;
+void atgMath::SetRandomSeed(uint32 seed)
+{
+    gRandomSeed = seed;
+}
+
+uint32 atgMath::Rand()
+{
+    gRandomSeed = gRandomSeed * 214013 + 2531011;
+    return (gRandomSeed >> 16) & 32767;
+}
+
 const atgVec3 Vec3One(1.0f,  1.0f,  1.0f);
 const atgVec3 Vec3Zero(0.0f,  0.0f,  0.0f);
 const atgVec3 Vec3Left(-1.0f,  0.0f,  0.0f);

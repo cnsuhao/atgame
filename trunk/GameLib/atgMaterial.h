@@ -5,6 +5,21 @@
 class atgTexture;
 class atgPass;
 
+enum TextureLayer
+{
+    TL_DIFFUSE,
+    TL_NORMAL,
+    TL_BUMPMAP,
+    TL_LIGHTMAP,
+    TL_SHADOWMAP,
+    TL_CUSTOM1,
+    TL_CUSTOM2,
+    TL_CUSTOM3,
+
+    TL_MAX = 8,
+};
+
+
 class atgMaterial
 {
 public:
@@ -32,13 +47,20 @@ public:
     inline void                 SetShininess(float shininess); // if factor < 0 is disable specular.
     inline float                GetShininess() const;
 
-    inline void                 AddTexture(atgTexture* texture);
-    inline void                 RemoveTexture(atgTexture* texture);
+    inline void                 AddTexture(TextureLayer layer, atgTexture* texture);
+    inline void                 RemoveTexture(TextureLayer layer);
     inline void                 ClearTexture();
 
 protected:
-    typedef std::vector<atgTexture*> TextureVector;
-    TextureVector _textures;
+
+    struct TextureInfo
+    {
+        atgTexture* texture;
+        uint8       samplerIndex;
+        TextureInfo():texture(0),samplerIndex(0) {}
+    };
+
+    TextureInfo _textures[TL_MAX];
     atgVec3    _diffuseColor;
     atgVec3    _specularColor;
     atgVec3    _ambientColor;
@@ -108,28 +130,28 @@ inline float atgMaterial::GetShininess() const
     return _shininess;
 }
 
-inline void atgMaterial::AddTexture(atgTexture* texture)
+inline void atgMaterial::AddTexture(TextureLayer layer, atgTexture* texture)
 {
-    if (texture)
-        _textures.push_back(texture);
+    if (layer < TL_MAX)
+    {
+        _textures[layer].texture = texture;
+        _textures[layer].samplerIndex = (uint8)layer;
+    }
 }
 
-inline void atgMaterial::RemoveTexture(atgTexture* texture)
+inline void atgMaterial::RemoveTexture(TextureLayer layer)
 {
-    TextureVector::iterator itEnd = _textures.end();
-    for (TextureVector::iterator it = _textures.begin();
-         it != itEnd; ++it)
+    if (layer < TL_MAX)
     {
-        if(*it ==  texture)
-        {
-            _textures.erase(it);
-            return;
-        }
+        _textures[layer].texture = 0;
     }
 }
 
 inline void atgMaterial::ClearTexture()
 {
-    _textures.clear();
+    for (int i = TL_DIFFUSE; i < TL_MAX; ++i)
+    {
+        _textures[i].texture = 0;
+    }
 }
 

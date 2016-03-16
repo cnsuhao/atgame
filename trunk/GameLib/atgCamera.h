@@ -6,7 +6,7 @@ class atgCamera
 {
 public:
     atgCamera(void);
-    ~atgCamera(void);
+    virtual ~atgCamera(void);
 
     void                SetLookAt(const atgVec3& Position, const atgVec3& Focus, const atgVec3& UpAxis);
     void                SetPosition(const atgVec3& Position);

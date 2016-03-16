@@ -52,23 +52,7 @@ public:
 void* CreateInterface(const char *pName, int *pReturnCode);
 
 /// Return millisecond
-extern uint64 GetAbsoluteMsecTime();
-
-/// Set random seed
-void SetRandomSeed(uint32 seed);
-/// Return a random integer between 0 and 32767.
-uint32 Rand();
-/// Return a random float between 0.0 (inclusive) and 1.0 (exclusive.)
-inline float Random() { return Rand() / 32768.0f; }
-/// Return a random float between 0.0 and range, inclusive from both ends.
-inline float Random(float range) { return Rand() * range / 32767.0f; }
-/// Return a random float between min and max, inclusive from both ends.
-inline float Random(float min, float max) { return Rand() * (max - min) / 32767.0f + min; }
-/// Return a random integer between 0 and range - 1.
-inline uint32 Random(uint32 range) { return (Rand() * (range - 1) + 16384) / 32767; }
-/// Return a random integer between min and max - 1.
-inline int Random(int min, int max) { return (Rand() * (max - min - 1) + 16384) / 32767 + min; }
-
+uint64 GetAbsoluteMsecTime();
 
 template <class T>
 class Handler
@@ -400,6 +384,7 @@ public:
     int getPropertyCount()	{return propertyVector.size();}
     std::string getKey(int i)	{return propertyVector[i].first;}
     std::string getString(int i)	{return propertyVector[i].second;}
+    bool hasKey(const std::string &key) const;
 
     bool getBool(const std::string &key) const;
     int getInt(const std::string &key) const;

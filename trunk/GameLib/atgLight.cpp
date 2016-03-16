@@ -8,6 +8,7 @@ atgLight::atgLight()
     _specular = Vec3Zero;
 
     _intensity = 1.0f;
+    _lambertFactor = 0.0f;
 }
 
 atgLight::~atgLight(void)

@@ -126,30 +126,26 @@ class atgIndexBufferImpl
 public:
     atgIndexBufferImpl():pDXIB(0),accessMode(BAM_Static),locked(0){}
     ~atgIndexBufferImpl() { SAFE_RELEASE(pDXIB); }
-    bool Bind();
-    bool Unbind();
+
+    bool Bind()
+    {
+        if(pDXIB)
+        {
+            DX_ASSERT( g_pd3dDevice->SetIndices(pDXIB) );
+            return true;
+        }
+        return false;
+    }
+
+    void Unbind()
+    {
+        DX_ASSERT( g_pd3dDevice->SetIndices(NULL) );
+    }
 public:
     IDirect3DIndexBuffer9* pDXIB;
     BufferAccessMode accessMode;
     bool locked;
 };
-
-bool atgIndexBufferImpl::Bind()
-{
-    if(pDXIB)
-    {
-        DX_ASSERT( g_pd3dDevice->SetIndices(pDXIB) );
-        return true;
-    }
-    return false;
-}
-
-bool atgIndexBufferImpl::Unbind()
-{
-    DX_ASSERT( g_pd3dDevice->SetIndices(NULL) );
-    return true;
-}
-
 
 atgIndexBuffer::atgIndexBuffer():_impl(NULL)
 {
@@ -162,18 +158,18 @@ atgIndexBuffer::~atgIndexBuffer()
     g_Renderer->RemoveGpuResource(this);
 }
 
-bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexFormat format, BufferAccessMode accessMode )
+bool atgIndexBuffer::Create( uint16 *pIndices, uint32 numIndices, IndexFormat format, BufferAccessMode accessMode )
 {
     Destory();
 
     _impl = new atgIndexBufferImpl;
     int indexSize = sizeof(uint16);
     D3DFORMAT d3dFormat = D3DFMT_INDEX16;
-    if(format == IFB_Index32)
-    {
-        indexSize = sizeof(uint32);
-        d3dFormat = D3DFMT_INDEX32;
-    }
+    //if(format == IFB_Index32)
+    //{
+    //    indexSize = sizeof(uint32);
+    //    d3dFormat = D3DFMT_INDEX32;
+    //}
     DWORD d3dUsage = D3DUSAGE_WRITEONLY;
     D3DPOOL d3dPool = D3DPOOL_DEFAULT;
     _impl->accessMode = accessMode;
@@ -357,6 +353,7 @@ bool atgVertexDecl::AppendElement( uint32 streamIndex, atgVertexDecl::VertexAttr
             break;
         }
     case atgVertexDecl::VA_Pos4:
+    case atgVertexDecl::VA_Tangent:
     case  atgVertexDecl::VA_BlendFactor4:
         {
             _impl->stride += 16;
@@ -474,6 +471,14 @@ bool atgVertexBuffer::Create( atgVertexDecl* decl, const void *pData, uint32 siz
                 pDXElement[i].Usage = D3DDECLUSAGE_NORMAL;
                 pDXElement[i].UsageIndex = 0;
                 elementStride = 12;
+                break;
+            }
+        case atgVertexDecl::VA_Tangent:
+            {
+                pDXElement[i].Type = D3DDECLTYPE_FLOAT4;
+                pDXElement[i].Usage = D3DDECLUSAGE_TANGENT;
+                pDXElement[i].UsageIndex = 0;
+                elementStride = 16;
                 break;
             }
         case atgVertexDecl::VA_Diffuse:
@@ -1339,6 +1344,7 @@ public:
     inline bool             SetFloat3(const char* var_name, const float f[3]);
     inline bool             SetFloat4(const char* var_name, const float f[4]);
     inline bool             SetMatrix4x4(const char* var_name, const float mat[4][4]);
+    uint8                   GetTexture(const char* var_name);
 };
 
 
@@ -1424,6 +1430,19 @@ inline bool atgFragmentShaderImpl::SetMatrix4x4(const char* var_name, const floa
         }
     }
     return false;
+}
+
+inline uint8 atgFragmentShaderImpl::GetTexture(const char* var_name)
+{
+    if (pTable)
+    {
+        D3DXHANDLE h = pTable->GetConstantByName(0, var_name);
+        if (h)
+        {
+            return pTable->GetSamplerIndex(h);
+        }
+    }
+    return uint8(-1);
 }
 
 atgFragmentShader::atgFragmentShader():atgResourceShader(RST_Fragment),_impl(NULL)
@@ -1593,6 +1612,16 @@ bool atgPass::Destory()
     SAFE_DELETE(_impl);
     
     return true;
+}
+
+bool atgPass::SetTexture(const char* var_name, uint8 index)
+{
+    return SetPsTexture(var_name, index);
+}
+
+uint8 atgPass::GetTexture(const char* var_name)
+{
+    return GetPsTexture(var_name);
 }
 
 bool atgPass::Bind()
@@ -1862,9 +1891,19 @@ bool atgPass::SetPsMatrix4x4(const char* var_name, const atgMatrix& mat)
     return false;
 }
 
-bool atgPass::SetTexture(const char* var_name, uint8 index)
+bool atgPass::SetPsTexture(const char* var_name, uint8 index)
 {
-    return true;
+    return false;
+}
+
+uint8 atgPass::GetPsTexture(const char* var_name)
+{
+    if (_impl->pPS->_impl)
+    {
+        return _impl->pPS->_impl->GetTexture(var_name);
+    }
+
+    return uint8(-1);
 }
 
 void atgPass::BeginContext(void* data)
@@ -2226,14 +2265,14 @@ void atgRenderer::GetMatrix(atgMatrix& mat, MatrixDefine index) const
 
 void atgRenderer::SetLightEnable(bool enable)
 {
-    if (enable)
-    {
-        DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE) );
-    }
-    else
-    {
-        DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE) );
-    }
+    //if (enable)
+    //{
+    //    DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE) );
+    //}
+    //else
+    //{
+    //    DX_ASSERT( g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE) );
+    //}
 }
 
 void atgRenderer::SetDepthTestEnable(bool enable)

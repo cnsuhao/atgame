@@ -4,6 +4,8 @@
 #include <cassert>
 #include <cstring>
 
+#include "atgTypeDef.h"
+
 //> 定义图形引擎坐标系。
 //> 图形引擎使用右手坐标系
 //     +y
@@ -65,6 +67,20 @@ public:
 
     static inline float     Cot(float x);
 
+    /// Set random seed
+    static void SetRandomSeed(uint32 seed);
+    /// Return a random integer between 0 and 32767.
+    static uint32 Rand();
+    /// Return a random float between 0.0 (inclusive) and 1.0 (exclusive.)
+    static inline float Random() { return Rand() / 32768.0f; }
+    /// Return a random float between 0.0 and range, inclusive from both ends.
+    static inline float Random(float range) { return Rand() * range / 32767.0f; }
+    /// Return a random float between min and max, inclusive from both ends.
+    static inline float Random(float min, float max) { return Rand() * (max - min) / 32767.0f + min; }
+    /// Return a random integer between 0 and range - 1.
+    static inline uint32 Random(uint32 range) { return (Rand() * (range - 1) + 16384) / 32767; }
+    /// Return a random integer between min and max - 1.
+    static inline int Random(int min, int max) { return (Rand() * (max - min - 1) + 16384) / 32767 + min; }
 
     // for example: (0,1) -> (-1, 1) usage: LinearMapping(0.0f, 0.1f, current, -1.0f, 1.0f);
     static inline float     LinearMapping(float from, float to, float current, float mapfrom, float mapto);
@@ -402,9 +418,16 @@ struct atgVec3
     //    return v1Nomralied * p;
     //}
 
+
+    float Distance(const atgVec3& v) const
+    {
+        atgVec3 n(v.x - this->x, v.y - this->y, v.z - this->z);
+        return n.Length();
+    }
+
     atgVec3 operator -() const
     {
-        return atgVec3(-x, -y, -z);
+        return atgVec3(-this->x, -this->y, -this->z);
     }
 };
 
@@ -430,6 +453,11 @@ inline atgVec3 operator -(const atgVec3& v1, const atgVec3& v2)
 }
 
 inline atgVec3 operator *(const atgVec3& v1, float s)
+{
+    return atgVec3(v1.x * s, v1.y * s, v1.z * s);
+}
+
+inline atgVec3 operator *(float s, const atgVec3& v1)
 {
     return atgVec3(v1.x * s, v1.y * s, v1.z * s);
 }
@@ -577,6 +605,12 @@ inline atgVec4& operator +=(atgVec4& v1, const atgVec4& v2)
     return v1;
 }
 
+inline atgVec4& operator +=(atgVec4& v1, const atgVec3& v2)
+{
+    v1.x += v2.x; v1.y += v2.y; v1.z += v2.z;
+    return v1;
+}
+
 inline atgVec4 operator -(atgVec4& v1, const atgVec4& v2)
 {
     v1.x -= v2.x; v1.y -= v2.y; v1.z -= v2.z; v1.w -= v2.w;
@@ -614,6 +648,10 @@ inline atgVec3 Vec4ToVec3(const atgVec4& vec4)
     return Vec3Zero;
 }
 
+inline atgVec3 Vec4ClipToVec3(const atgVec4& vec4)
+{
+    return atgVec3(vec4.x, vec4.y, vec4.z);
+}
 
 extern const atgVec4 Vec4One;
 extern const atgVec4 Vec4Zero;
@@ -709,22 +747,10 @@ struct atgRay
 
 struct atgPlane
 {
-    union
-    {
-        float m[4];
-        struct
-        {
-            float A; // normal x component
-            float B; // normal y component
-            float C; // normal z component
-            float D; // D = -n * pointOnPlane
-        };
-        struct
-        {
-            atgVec3 n; // normal
-            float   d;    // D = -n * pointOnPlane
-        };
-    };
+
+    atgVec3 n; // normal
+    float   d; // d = -n * pointOnPlane
+
 
     //Plane_t(Vec3_t& normal, float distance)  // distance to origin with sign(-/+).
     //{
@@ -735,16 +761,16 @@ struct atgPlane
     //    D = -distance;
     //}
 
-    atgPlane(void):A(0),B(0),C(0),D(0){}
+    atgPlane(void):d(0){}
 
     atgPlane(atgVec3& normal, atgVec3& pointOnPlane)
     {
         n = normal;
         n.Normalize();
-        D = (-normal).Dot(pointOnPlane);
+        d = -normal.Dot(pointOnPlane);
     }
 
-    atgPlane(const float p[4]):A(p[0]),B(p[1]),C(p[2]),D(p[3]){ }
+    atgPlane(const float p[4]){ n.x = p[0]; n.y = p[1]; n.z = p[2]; d = p[3]; }
 
     atgPlane& operator =(const atgPlane& p)
     {
@@ -756,13 +782,13 @@ struct atgPlane
     //>到原点的距离
     float GetOriginDistance() const
     {
-        return D;
+        return d;
     }
 
     //>点到平面的距离
     float Resolve(const atgVec3& v) const
     {
-        return v.Dot(n) + D;
+        return v.Dot(n) + d;
     }
 
     //>点是否在平面的正面
@@ -789,10 +815,10 @@ struct atgPlane
         float magnitude = n.Length();
         if (!atgMath::IsFloatZero(magnitude - 1.0f))
         {
-            A /= magnitude;
-            B /= magnitude;
-            C /= magnitude;
-            D /= magnitude;
+            n.x /= magnitude;
+            n.y /= magnitude;
+            n.z /= magnitude;
+            d /= magnitude;
         }
     }
 
@@ -800,7 +826,7 @@ struct atgPlane
     {
         n = (p1 - p2).Cross(p3 - p2);
         n.Normalize();
-        D = - n.Dot(p2);
+        d = - n.Dot(p2);
         return *this;
     }
 
@@ -808,7 +834,7 @@ struct atgPlane
     {
         n = v1.Cross(v2);
         n.Normalize();
-        D = - n.Dot(p);
+        d = - n.Dot(p);
         return *this;
     }
 };
@@ -1301,7 +1327,7 @@ static bool Intersection(const atgPlane& p1, const atgPlane& p2, const atgPlane&
     if(mat.CanInverse())
     {
         mat.Inverse();
-        atgVec4 v(-p1.D, -p2.D, -p3.D, 1.0f);
+        atgVec4 v(-p1.d, -p2.d, -p3.d, 1.0f);
         result = Vec4ToVec3( mat * v );
         return true;
     }

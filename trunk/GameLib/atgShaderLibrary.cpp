@@ -98,7 +98,7 @@ void atgShaderSolidColor::BeginContext( void* data )
 {
     atgPass::BeginContext(data);
     // set solid color.
-    SetFloat4("vec_solid_color", m_SolidColor.m);
+    SetFloat4("vec_solid_color", Vec3ToVec4(m_SolidColor));
 }
 
 
@@ -133,8 +133,6 @@ void atgShaderNotLighteTexture::BeginContext( void* data )
     // set texture Uniform 
     if (m_Texture)
     {
-        atgPass::SetTexture("textureSampler", 0);
-
         TextureFormat format = m_Texture->GetTextureFormat();
         if (format == TF_R4G4B4A4 || 
             format == TF_R8G8B8A8 ||
@@ -191,21 +189,25 @@ void atgShaderLightTexture::BeginContext( void* data )
 {
     
     atgShaderNotLighteTexture::BeginContext(data);
-    
 
     // set MVMatrix
     atgMatrix WorldMatrix;
     g_Renderer->GetMatrix(WorldMatrix, MD_WORLD);
+    SetMatrix4x4(UNF_M_W, WorldMatrix);
 
-    atgMatrix WorldViewMatrix;
-    g_Renderer->GetMatrix(WorldViewMatrix, MD_VIEW);
-    WorldViewMatrix = WorldViewMatrix * WorldMatrix;
-    SetMatrix4x4("mat_world_view", WorldViewMatrix);
+    atgMatrix ViewMatrix;
+    g_Renderer->GetMatrix(ViewMatrix, MD_VIEW);
+    SetMatrix4x4(UNF_M_V, ViewMatrix);
+    atgVec3 cameraPosition;
+    ViewMatrix.GetColumn3(3,cameraPosition);
+    atgVec4 temp(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z, 0);
+    temp = ViewMatrix.Transpose() * temp;
+    cameraPosition = Vec4ClipToVec3(temp);
 
-    atgMatrix WorldViewMatrixInverseTranspose(WorldViewMatrix);
-    WorldViewMatrixInverseTranspose.Inverse();
-    WorldViewMatrixInverseTranspose.Transpose();
-    SetMatrix4x4("mat_world_view_inverse_transpose", WorldViewMatrixInverseTranspose);
+    atgMatrix WorldMatrixInverseTranspose(WorldMatrix);
+    WorldMatrixInverseTranspose.Inverse();
+    WorldMatrixInverseTranspose.Transpose();
+    SetMatrix4x4(UNF_M_WIT, WorldMatrixInverseTranspose);
 
     atgVec4 lightData0;
     atgVec4 lightData1;
@@ -232,19 +234,18 @@ void atgShaderLightTexture::BeginContext( void* data )
                 {
                     atgDirectionalLight* directionalLight = static_cast<atgDirectionalLight*>(light);
                     // set direction;
-                    atgVec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(directionalLight->GetDirection());
+                    atgVec3 lightDirection = directionalLight->GetDirection();
                     lightDirection.Normalize();
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightDirection", i);
-                    SetFloat3(uniformNameBuff, lightDirection.m);
+                    SetFloat3(uniformNameBuff, lightDirection);
                 }break;
             case LT_Point:
                 {
                     atgPointLight* pointLight = static_cast<atgPointLight*>(light);
                     // set position;
-                    g_Renderer->GetMatrix(WorldViewMatrix, MD_VIEW);
-                    atgVec3 lightPosition = WorldViewMatrix.Transfrom(pointLight->GetPosition());
+                    atgVec3 lightPosition = pointLight->GetPosition();
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightPosition", i);
-                    SetFloat3(uniformNameBuff, lightPosition.m);
+                    SetFloat3(uniformNameBuff, lightPosition);
                     // set range
                     lightData1.y = pointLight->GetRange();
                 }break;
@@ -252,14 +253,14 @@ void atgShaderLightTexture::BeginContext( void* data )
                 {
                     // set position;
                     atgSpotLight* spotLight = static_cast<atgSpotLight*>(light);
-                    atgVec3 lightPosition = WorldViewMatrix.Transfrom(spotLight->GetPosition());
+                    atgVec3 lightPosition = spotLight->GetPosition();
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightPosition", i);
-                    SetFloat3(uniformNameBuff, lightPosition.m);
+                    SetFloat3(uniformNameBuff, lightPosition);
                     // set direction;
-                    atgVec3 lightDirection = WorldViewMatrixInverseTranspose.Transfrom(spotLight->GetDirection());
+                    atgVec3 lightDirection = spotLight->GetDirection();
                     lightDirection.Normalize();
                     sprintf(uniformNameBuff, "%s[%d]", "u_lightDirection", i);
-                    SetFloat3(uniformNameBuff, lightDirection.m);
+                    SetFloat3(uniformNameBuff, lightDirection);
                     // set range
                     lightData1.y = spotLight->GetRange();
                     // outer cone angle and inner cone angle
@@ -278,41 +279,71 @@ void atgShaderLightTexture::BeginContext( void* data )
 
             // set light type
             lightData0.x = static_cast<float>(light->GetType());
+            lightData0.y = light->GetLambertFactor();
             // set light intensity
             lightData1.x = light->GetIntensity();
 
             sprintf(uniformNameBuff, "%s[%d]", "u_lightData0", i);
-            SetFloat4(uniformNameBuff, lightData0.m);
+            SetFloat4(uniformNameBuff, lightData0);
             sprintf(uniformNameBuff, "%s[%d]", "u_lightData1", i);
-            SetFloat4(uniformNameBuff, lightData1.m);
+            SetFloat4(uniformNameBuff, lightData1);
 
             // set light diffuse color
             sprintf(uniformNameBuff, "%s[%d]", "u_lightDiffuse", i);
-            SetFloat3(uniformNameBuff, light->GetColor().m);
+            SetFloat3(uniformNameBuff, light->GetColor());
             // set light specular color
             sprintf(uniformNameBuff, "%s[%d]", "u_lightSpecular", i);
-            SetFloat3(uniformNameBuff, light->GetSpecular().m);
+            SetFloat3(uniformNameBuff, light->GetSpecular());
         }
     }
 
     if (_material)
     {
-        SetFloat3("u_materialAmbient", _material->GetAmbientColor().m);
-        SetFloat3("u_materialDiffuse", _material->GetDiffuseColor().m);
-        SetFloat3("u_materialSpecular", _material->GetSpecularColor().m);
+        SetFloat3("u_materialAmbient", _material->GetAmbientColor());
+        SetFloat3("u_materialDiffuse", _material->GetDiffuseColor());
+        SetFloat3("u_materialSpecular", _material->GetSpecularColor());
         atgVec4 materialData0(_material->GetShininess(), 0.0f, 0.0f, 0.0f);
-        SetFloat4("u_materialData0", materialData0.m);
+        SetFloat4("u_materialData0", materialData0);
     }
 
-    SetFloat3("u_globalAmbient", g_Renderer->GetGlobalAmbientColor().m);
+    SetFloat3("u_globalAmbient", g_Renderer->GetGlobalAmbientColor());
+
+    SetFloat3("u_eyePosition", cameraPosition);
 }
 
 void atgShaderLightTexture::EndContext( void* data )
 {
+    atgShaderNotLighteTexture::EndContext(data);
+
     if (_usingTempLight)
     {
         g_Renderer->RemoveBindLight(&_tempLight);
     }
 
     _usingTempLight = false;
+}
+
+atgShaderBumpMap::atgShaderBumpMap()
+{
+
+}
+
+atgShaderBumpMap::~atgShaderBumpMap()
+{
+
+}
+
+bool atgShaderBumpMap::ConfingAndCreate()
+{
+    bool rs = false;
+    if (IsOpenGLGraph())
+    {
+        rs = atgPass::Create("shaders/bumpmap.glvs", "shaders/bumpmap.glfs");
+    }
+    else
+    {
+        rs = atgPass::Create("shaders/bumpmap.dxvs", "shaders/bumpmap.dxps");
+    }
+
+    return rs;
 }

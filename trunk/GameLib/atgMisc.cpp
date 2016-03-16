@@ -46,9 +46,7 @@ void* CreateInterface(const char *pName, int *pReturnCode)
     extern AAssetManager* __assetManager;
 #endif
 
-
-
-extern uint64 GetAbsoluteMsecTime()
+uint64 GetAbsoluteMsecTime()
 {
 #ifdef _WIN32
     static bool Initialized = false;
@@ -68,18 +66,6 @@ extern uint64 GetAbsoluteMsecTime()
     clock_gettime(CLOCK_MONOTONIC, &queryTime);
     return (1000.0 * queryTime.tv_sec) + (0.000001 * queryTime.tv_nsec);
 #endif // _WIN32
-}
-
-static uint32 gRandomSeed = 1;
-void SetRandomSeed(uint32 seed)
-{
-    gRandomSeed = seed;
-}
-
-uint32 Rand()
-{
-    gRandomSeed = gRandomSeed * 214013 + 2531011;
-    return (gRandomSeed >> 16) & 32767;
 }
 
 atgReadFile::atgReadFile()
@@ -1086,6 +1072,18 @@ bool Properties::load( const std::string &path )
 
 bool Properties::save( const std::string &path ){
     return true;
+}
+
+bool Properties::hasKey(const std::string &key) const
+{
+    PropertyMap::const_iterator it;
+    it= propertyMap.find(key);
+    if(it==propertyMap.end()){
+        return false;
+    }
+    else{
+        return true;
+    }
 }
 
 bool Properties::getBool( const std::string &key ) const{
@@ -2852,6 +2850,7 @@ ImageLoader& ImageLoader::GetInstance()
 }
 
 #include <algorithm>
+#include <ctype.h>
 
 Image* ImageLoader::Load( const char* filename, bool yReversed, ColorOrder co /*= CO_RGBA*/ )
 {
@@ -2863,11 +2862,12 @@ Image* ImageLoader::Load( const char* filename, bool yReversed, ColorOrder co /*
         return NULL;
     }
 
+
     transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::tolower);
 
     uint32 loaderIdx = 0;
-    auto it = ImageLoader::loaders.begin();
-    for (auto end = ImageLoader::loaders.end(); 
+    std::vector<LoaderInterface*>::iterator it = ImageLoader::loaders.begin();
+    for (std::vector<LoaderInterface*>::iterator end = ImageLoader::loaders.end(); 
          it != end; ++it, loaderIdx++)
     {
         if((*it)->FileExt() == fileExt)
@@ -2918,6 +2918,12 @@ std::string ImageLoader::GetFilePath( const char* filename )
     std::string fileName(filename);
 
     size_t offset = fileName.find_last_of('\\');
+    if (offset != std::string::npos)
+    {
+        return fileName.substr(0, offset + 1);
+    }
+
+    offset = fileName.find_last_of('/');
     if (offset != std::string::npos)
     {
         return fileName.substr(0, offset + 1);
