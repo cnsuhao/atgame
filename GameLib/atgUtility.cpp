@@ -304,7 +304,7 @@ void atgRippleShader::BeginContext(void* data)
     SetTexture("waterHeightSampler", 1);
 
     atgVec4 d(_dx, _dy, 1.0f, 1.0f);
-    SetFloat4("u_d", d.m);
+    SetFloat4("u_d", d);
 }
 
 atgSampleWater::atgSampleWater(void):_pWater(0),_pDyncTexture(0),_pCamera(0)
@@ -439,7 +439,7 @@ void atgSampleWater::OnKeyScanDown( Key::Scan keyscan )
             atgVec3 forward = _pCamera->GetForward() * moveSpeed;
             atgVec3 pos = _pCamera->GetPosition();
             pos += forward;
-            _pCamera->SetPosition(pos.m);
+            _pCamera->SetPosition(pos);
 
         }
         break;
@@ -448,23 +448,23 @@ void atgSampleWater::OnKeyScanDown( Key::Scan keyscan )
             atgVec3 forward = _pCamera->GetForward() * -moveSpeed;
             atgVec3 pos = _pCamera->GetPosition();
             pos += forward;
-            _pCamera->SetPosition(pos.m);
+            _pCamera->SetPosition(pos);
         }
         break;
     case Key::A:
         {
             atgVec3 right = _pCamera->GetRight() * moveSpeed;
             atgVec3 pos = _pCamera->GetPosition();
-            pos += right.m;
-            _pCamera->SetPosition(pos.m);
+            pos += right;
+            _pCamera->SetPosition(pos);
         }
         break;
     case Key::D:
         {
             atgVec3 right = _pCamera->GetRight() * -moveSpeed;
             atgVec3 pos = _pCamera->GetPosition();
-            pos += right.m;
-            _pCamera->SetPosition(pos.m);
+            pos += right;
+            _pCamera->SetPosition(pos);
         }
         break;
     default:
@@ -512,14 +512,14 @@ void atgSampleWater::OnPointerMove( uint8 id, int16 x, int16 y )
             atgVec3 forward = _pCamera->GetForward() * moveSpeed;
             atgVec3 pos = _pCamera->GetPosition();
             pos += forward;
-            _pCamera->SetPosition(pos.m);
+            _pCamera->SetPosition(pos);
         }
         else
         {
             atgVec3 forward = _pCamera->GetForward() * -moveSpeed;
             atgVec3 pos = _pCamera->GetPosition();
             pos += forward;
-            _pCamera->SetPosition(pos.m);
+            _pCamera->SetPosition(pos);
         }
     }
 }
@@ -754,8 +754,8 @@ void atgShaderShadowMapping::BeginContext(void* data)
     SetTexture("rtDepthSampler", 0);
 
     // set light
-    SetFloat3("LightPosition", _ligPos.m);
-    SetFloat3("LightDirection", _ligDir.m);
+    SetFloat3("LightPosition", _ligPos);
+    SetFloat3("LightDirection", _ligDir);
     SetFloat("spot_outer_cone", _spot_outer_cone);
     SetFloat("spot_inner_cone", _spot_inner_cone);
 
@@ -763,7 +763,7 @@ void atgShaderShadowMapping::BeginContext(void* data)
     SetFloat("bias", _bias);
 
     // set ambient
-    SetFloat4("ambient", _ambientColor.m);
+    SetFloat4("ambient", _ambientColor);
 
     // set port size
     uint32 viewPort[4];
@@ -1014,7 +1014,7 @@ void atgSimpleShadowMapping::DrawBox(const char* pPassIdentity /* = NULL */)
                             (startPos + atgVec3(size, 0, 0)),        // 2
                             (startPos + atgVec3(0, -size, 0)),       // 3
                             (startPos + atgVec3(size, -size, 0)),    // 4
-                             color.m); 
+                             color); 
 
     //>ºó
     g_Renderer->AddFullQuad((startPos + atgVec3(0, 0, -size)),       // 5
@@ -1077,6 +1077,7 @@ void atgSimpleShadowMapping::DrawPlane(const char* pPassIdentity /* = NULL */)
 
 #include "atgBlenderImport.h"
 #include "atgMesh.h"
+#include "atgMaterial.h"
 
 MeshTest::MeshTest()
 {
@@ -1089,12 +1090,15 @@ MeshTest::~MeshTest()
 
 bool MeshTest::Init()
 {
-    _light.SetRange(1000.0f);
+    _light.SetRange(300.0f);
     _light.SetPosition(atgVec3(3.0f, 37.0f, 8.0f));
     _light.SetColor(atgVec3(0.8f, 0.8f, 0.8f));
     _light.SetSpecular(Vec3One);
+    _light.SetIntensity(1.0f);
     g_Renderer->AddBindLight(&_light);
-    return atgBlenderImport::loadMesh("model\\powergirl hero156.fbx", _meshs);
+    return atgBlenderImport::loadMesh("model/powergirl hero156.fbx", _meshs);
+    //return atgBlenderImport::loadMesh("model/modelBuilding_House1.fbx", _meshs);
+    //return atgBlenderImport::loadMesh("model/boxA.fbx", _meshs);
 }
 
 void MeshTest::Render( class atgCamera* sceneCamera )
@@ -1103,9 +1107,9 @@ void MeshTest::Render( class atgCamera* sceneCamera )
     g_Renderer->SetMatrix(MD_PROJECTION, sceneCamera->GetProj());
     g_Renderer->SetFaceCull(FCM_CW);
 
-    _light.DebugDraw();
+    //_light.DebugDraw();
 
-    for (auto it = _meshs.begin(); it != _meshs.end(); ++it)
+    for (std::vector<class atgMesh*>::iterator it = _meshs.begin(); it != _meshs.end(); ++it)
     {
         (*it)->Render();
     }
@@ -1145,14 +1149,66 @@ void MeshTest::OnKeyScanDown( Key::Scan keyscan )
             //bias += 0.000001f;
             //LOG("new bias[%f]\n", bias);
             position.z += 1.f;
-            LOG("new x[%f]\n", position.z);
+            LOG("new z[%f]\n", position.z);
         }break;
     case Key::RightBracket: //]
         {
             position.z -= 1.f;
-            LOG("new x[%f]\n", position.z);
+            LOG("new z[%f]\n", position.z);
             //bias -= 0.000001f;
             //LOG("new bias[%f]\n", bias);
+        }break;
+    
+    case Key::N:
+        {
+            float f = _light.GetLambertFactor();
+            f += 0.01f;
+            _light.SetLambertFactor(f);
+        }break;
+    case Key::M:
+        {
+            float f = _light.GetLambertFactor();
+            f -= 0.01f;
+            _light.SetLambertFactor(f);
+        }break;
+    case Key::T:
+        {
+            static bool drawTangentSpace = false;
+            drawTangentSpace = !drawTangentSpace;
+            for (uint32 i = 0; i < _meshs.size(); ++i)
+            {
+                _meshs[i]->SetDrawTanget(drawTangentSpace);
+            }
+        }break;
+    case Key::One:
+        {
+            for (uint32 i = 0; i < _meshs.size(); ++i)
+            {
+                for (uint32 j = 0; j < _meshs[i]->_materials.size(); j++)
+                {
+                    _meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(BUMP_MAP_PASS_IDENTITY));
+                }
+            }
+        }break;
+    case Key::Two:
+        {
+            for (uint32 i = 0; i < _meshs.size(); ++i)
+            {
+                for (uint32 j = 0; j < _meshs[i]->_materials.size(); j++)
+                {
+                    _meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(LIGHT_TEXTURE_PASS_IDENTITY));
+                }
+            }
+        }break;
+    case Key::Three:
+        {
+            for (uint32 i = 0; i < _meshs.size(); ++i)
+            {
+                for (uint32 j = 0; j < _meshs[i]->_materials.size(); j++)
+                {
+                    _meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(NOT_LIGNTE_TEXTURE_PASS_IDENTITY));
+                }
+            }
         }break;
     default:
         break;

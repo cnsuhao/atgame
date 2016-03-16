@@ -24,10 +24,10 @@ void atgFrustum::BuildFrustumPlanes(const atgMatrix& modl, const atgMatrix proj)
     // the clipping planes we received above and extract the sides from them.
 
     // This will extract the RIGHT side of the frustum
-    _frustum[RIGHT].A = clip[12] - clip[0];
-    _frustum[RIGHT].B = clip[13] - clip[1];
-    _frustum[RIGHT].C = clip[14] - clip[2];
-    _frustum[RIGHT].D = clip[15] - clip[3];
+    _frustum[RIGHT].n.x = clip[12] - clip[0];
+    _frustum[RIGHT].n.y = clip[13] - clip[1];
+    _frustum[RIGHT].n.z = clip[14] - clip[2];
+    _frustum[RIGHT].d = clip[15] - clip[3];
 
     // Now that we have a normal (A,B,C) and a distance (D) to the plane,
     // we want to normalize that normal and distance.
@@ -36,46 +36,46 @@ void atgFrustum::BuildFrustumPlanes(const atgMatrix& modl, const atgMatrix proj)
     _frustum[RIGHT].NormalizePlane();
 
     // This will extract the LEFT side of the frustum
-    _frustum[LEFT].A = clip[12] + clip[0];
-    _frustum[LEFT].B = clip[13] + clip[1];
-    _frustum[LEFT].C = clip[14] + clip[2];
-    _frustum[LEFT].D = clip[15] + clip[3];
+    _frustum[LEFT].n.x = clip[12] + clip[0];
+    _frustum[LEFT].n.y = clip[13] + clip[1];
+    _frustum[LEFT].n.z = clip[14] + clip[2];
+    _frustum[LEFT].d = clip[15] + clip[3];
 
     // Normalize the LEFT side
     _frustum[LEFT].NormalizePlane();
 
     // This will extract the BOTTOM side of the frustum
-    _frustum[BOTTOM].A = clip[12] + clip[4];
-    _frustum[BOTTOM].B = clip[13] + clip[5];
-    _frustum[BOTTOM].C = clip[14] + clip[6];
-    _frustum[BOTTOM].D = clip[15] + clip[7];
+    _frustum[BOTTOM].n.x = clip[12] + clip[4];
+    _frustum[BOTTOM].n.y = clip[13] + clip[5];
+    _frustum[BOTTOM].n.z = clip[14] + clip[6];
+    _frustum[BOTTOM].d = clip[15] + clip[7];
 
     // Normalize the BOTTOM side
     _frustum[BOTTOM].NormalizePlane();
 
     // This will extract the TOP side of the frustum
-    _frustum[TOP].A = clip[12] - clip[4];
-    _frustum[TOP].B = clip[13] - clip[5];
-    _frustum[TOP].C = clip[14] - clip[6];
-    _frustum[TOP].D = clip[15] - clip[7];
+    _frustum[TOP].n.x = clip[12] - clip[4];
+    _frustum[TOP].n.y = clip[13] - clip[5];
+    _frustum[TOP].n.z = clip[14] - clip[6];
+    _frustum[TOP].d = clip[15] - clip[7];
 
     // Normalize the TOP side
     _frustum[TOP].NormalizePlane();
 
     // This will extract the BACK side of the frustum
-    _frustum[BACK].A = clip[12] - clip[8];
-    _frustum[BACK].B = clip[13] - clip[9];
-    _frustum[BACK].C = clip[14] - clip[10];
-    _frustum[BACK].D = clip[15] - clip[11];
+    _frustum[BACK].n.x = clip[12] - clip[8];
+    _frustum[BACK].n.y = clip[13] - clip[9];
+    _frustum[BACK].n.z = clip[14] - clip[10];
+    _frustum[BACK].d = clip[15] - clip[11];
 
     // Normalize the BACK side
     _frustum[BACK].NormalizePlane();
 
     // This will extract the FRONT side of the frustum
-    _frustum[FRONT].A = clip[12] + clip[8];
-    _frustum[FRONT].B = clip[13] + clip[9];
-    _frustum[FRONT].C = clip[14] + clip[10];
-    _frustum[FRONT].D = clip[15] + clip[11];
+    _frustum[FRONT].n.x = clip[12] + clip[8];
+    _frustum[FRONT].n.y = clip[13] + clip[9];
+    _frustum[FRONT].n.z = clip[14] + clip[10];
+    _frustum[FRONT].d = clip[15] + clip[11];
 
     // Normalize the FRONT side
     _frustum[FRONT].NormalizePlane();
@@ -159,21 +159,21 @@ bool atgFrustum::IsCubeInFrustum( const float center[3], float size )
 
     for(int i = 0; i < 6; i++ )
     {
-        if(_frustum[i].A * (x - size) + _frustum[i].B * (y - size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x - size) + _frustum[i].n.y * (y - size) + _frustum[i].n.z * (z - size) + _frustum[i].d > 0)
             continue;
-        if(_frustum[i].A * (x + size) + _frustum[i].B * (y - size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x + size) + _frustum[i].n.y * (y - size) + _frustum[i].n.z * (z - size) + _frustum[i].d > 0)
             continue;
-        if(_frustum[i].A * (x - size) + _frustum[i].B * (y + size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x - size) + _frustum[i].n.y * (y + size) + _frustum[i].n.z * (z - size) + _frustum[i].d > 0)
             continue;
-        if(_frustum[i].A * (x + size) + _frustum[i].B * (y + size) + _frustum[i].C * (z - size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x + size) + _frustum[i].n.y * (y + size) + _frustum[i].n.z * (z - size) + _frustum[i].d > 0)
             continue;
-        if(_frustum[i].A * (x - size) + _frustum[i].B * (y - size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x - size) + _frustum[i].n.y * (y - size) + _frustum[i].n.z * (z + size) + _frustum[i].d > 0)
             continue;
-        if(_frustum[i].A * (x + size) + _frustum[i].B * (y - size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x + size) + _frustum[i].n.y * (y - size) + _frustum[i].n.z * (z + size) + _frustum[i].d > 0)
             continue;
-        if(_frustum[i].A * (x - size) + _frustum[i].B * (y + size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x - size) + _frustum[i].n.y * (y + size) + _frustum[i].n.z * (z + size) + _frustum[i].d > 0)
             continue;
-        if(_frustum[i].A * (x + size) + _frustum[i].B * (y + size) + _frustum[i].C * (z + size) + _frustum[i].D > 0)
+        if(_frustum[i].n.x * (x + size) + _frustum[i].n.y * (y + size) + _frustum[i].n.z * (z + size) + _frustum[i].d > 0)
             continue;
 
         // If we get here, it isn't in the frustum

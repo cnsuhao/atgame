@@ -16,6 +16,11 @@ atgVertexDecl GetVertexDeclaration(atgMesh::Vertices& vertices)
         decl.AppendElement(0, atgVertexDecl::VA_Normal);
     }
 
+    if (vertices.tangent != NULL)
+    {
+        decl.AppendElement(0, atgVertexDecl::VA_Tangent);
+    }
+
     if (vertices.texureCoords != NULL)
     {
         decl.AppendElement(0, atgVertexDecl::VA_Texture0);
@@ -50,6 +55,15 @@ void* AllocVertices(atgMesh::Vertices& vertices, atgVertexDecl& decl)
             *ptr++ = vertices.normals[index++];
         }
 
+        if (vertices.tangent)
+        {
+            uint32 index = i * 4;
+            *ptr++ = vertices.tangent[index++];
+            *ptr++ = vertices.tangent[index++];
+            *ptr++ = vertices.tangent[index++];
+            *ptr++ = vertices.tangent[index++];
+        }
+
         if (vertices.texureCoords)
         {
             uint32 index = i * 2;
@@ -72,14 +86,17 @@ void* AllocVertices(atgMesh::Vertices& vertices, atgVertexDecl& decl)
 
 inline void FreeVertices(void* Ptr)
 {
-    SAFE_DELETE_ARRAY(Ptr);
+    char* p = (char*)Ptr;
+    SAFE_DELETE_ARRAY(p);
 }
 
 
 atgMesh::atgMesh(void)
 {
-    memset(&_vertices, 0 , sizeof(_vertices));
+    //memset(&_vertices, 0 , sizeof(_vertices));
     _vertexBuffer = NULL;
+
+    _drawTangentSpace = false;
 }
 
 atgMesh::~atgMesh(void)
@@ -122,18 +139,19 @@ void atgMesh::Render()
 
         g_Renderer->SetMatrix(MD_WORLD, _transformation);
 
-        auto it = _submeshs.begin();
-        for (auto end = _submeshs.end(); it != end; ++it)
+        std::vector<SubMesh>::iterator it = _submeshs.begin();
+        for (std::vector<SubMesh>::iterator end = _submeshs.end(); it != end; ++it)
         {
             _materials[it->_materialIndex]->Setup();
             _vertexBuffer->Bind();
             it->Draw();
             _vertexBuffer->Unbind();
-            //float* tangent = (float*) new char[_vertices.number * sizeof(atgVec4)];
-            //CalculateTangentArray(_vertices.number, _vertices.positions, _vertices.normals, _vertices.texureCoords,
-            //                      it->_faces.number, it->_faces.indices, tangent);
-
             _materials[it->_materialIndex]->Desetup();
+
+            if (_drawTangentSpace)
+            {
+                it->DrawTangentSpace();
+            }
         }
     }
 }
@@ -144,8 +162,8 @@ void atgMesh::Render( std::vector<uint8> submeshIndices )
     {
         if (!submeshIndices.empty())
         {
-            auto it = submeshIndices.begin();
-            for (auto end = submeshIndices.end(); it != end; ++it)
+            std::vector<uint8>::iterator it = submeshIndices.begin();
+            for (std::vector<uint8>::iterator end = submeshIndices.end(); it != end; ++it)
             {
                 if (*it < _submeshs.size())
                 {
@@ -161,7 +179,6 @@ atgMesh::SubMesh::SubMesh()
 {
     _parent = NULL;
     _indexBuffer = NULL;
-
     memset(&_faces, 0 , sizeof(_faces));
 }
 
@@ -179,7 +196,7 @@ void atgMesh::SubMesh::Draw()
                 {
                     bool rs = _indexBuffer->Create(_faces.indices, 
                                                    _faces.number * _faces.numberIndices, 
-                                                   atgIndexBuffer::IFB_Index32, 
+                                                   atgIndexBuffer::IFB_Index16, 
                                                    BAM_Static);
                     if (!rs)
                     {
@@ -196,12 +213,178 @@ void atgMesh::SubMesh::Draw()
     }
 }
 
+void atgMesh::SubMesh::DrawTangentSpace()
+{
+    if (_parent)
+    {
+        if (_faces.number > 0)
+        {
+            atgMesh::Vertices& vertices = _parent->_vertices;
+            if (vertices.tangent == NULL || vertices.normals == NULL)
+                return;
 
+            atgVec3* pVec3Buf = new atgVec3[vertices.number * 2];
+            atgVec3* pVec3 = pVec3Buf;
+            float* ptr = (float*)pVec3Buf;
+            
+            for (uint32 i = 0; i < vertices.number; ++i)
+            {
+                uint32 index = i * 3;
+                *ptr++ = vertices.positions[index];
+                *ptr++ = vertices.positions[index+1];
+                *ptr++ = vertices.positions[index+2];
+
+                *ptr++ = vertices.positions[index] + vertices.normals[index] * 0.1f;
+                *ptr++ = vertices.positions[index+1] + vertices.normals[index+1] * 0.1f;
+                *ptr++ = vertices.positions[index+2] + vertices.normals[index+2] * 0.1f;
+            }
+
+            g_Renderer->BeginLine();
+            for (uint32 i = 0; i < vertices.number; ++i, pVec3 += 2)
+            {
+                g_Renderer->AddLine(*pVec3, *(pVec3 + 1), Vec3Up);
+            }
+            g_Renderer->EndLine();
+            
+            pVec3 = pVec3Buf; 
+            ptr = (float*)pVec3Buf;
+            for (uint32 i = 0; i < vertices.number; ++i)
+            {
+                uint32 index = i * 3;
+                *ptr++ = vertices.positions[index];
+                *ptr++ = vertices.positions[index+1];
+                *ptr++ = vertices.positions[index+2];
+
+                uint32 index_t = i * 4;
+                *ptr++ = vertices.positions[index] + vertices.tangent[index_t] * 0.1f;
+                *ptr++ = vertices.positions[index+1] + vertices.tangent[index_t+1] * 0.1f;
+                *ptr++ = vertices.positions[index+2] + vertices.tangent[index_t+2] * 0.1f;
+            }
+
+            g_Renderer->BeginLine();
+            for (uint32 i = 0; i < vertices.number; ++i, pVec3 += 2)
+            {
+                g_Renderer->AddLine(*pVec3, *(pVec3 + 1), Vec3Right);
+            }
+            g_Renderer->EndLine();
+            
+            
+            pVec3 = pVec3Buf; 
+            ptr = (float*)pVec3Buf;
+            for (uint32 i = 0; i < vertices.number; ++i)
+            {
+                uint32 index = i * 3;
+                *ptr++ = vertices.positions[index];
+                *ptr++ = vertices.positions[index+1];
+                *ptr++ = vertices.positions[index+2];
+
+                uint32 index_t = i * 4;
+                *ptr++ = vertices.positions[index] + (vertices.normals[index+1]*vertices.tangent[index_t+2] - vertices.normals[index+2]*vertices.tangent[index_t+1]) * 0.1f;
+                *ptr++ = vertices.positions[index+1] + (vertices.normals[index+2]*vertices.tangent[index_t] - vertices.normals[index]*vertices.tangent[index_t+2])* 0.1f;
+                *ptr++ = vertices.positions[index+2] + (vertices.normals[index]*vertices.tangent[index_t+1] - vertices.normals[index+1]*vertices.tangent[index_t])* 0.1f;
+            }
+
+            g_Renderer->BeginLine();
+            for (uint32 i = 0; i < vertices.number; ++i, pVec3 += 2)
+            {
+                g_Renderer->AddLine(*pVec3, *(pVec3 + 1), Vec3Forward);
+            }
+            g_Renderer->EndLine();
+            
+            SAFE_DELETE_ARRAY(pVec3Buf);
+        }
+    }
+}
+
+void CalculateTangentSpaceVector(long vertexCount, const float *position, const float *normal,
+                                 const float *texcoord, long triangleCount, const uint16 *triangle,
+                                 float *tangent)
+{
+    struct Face { uint16 index[3]; };
+
+    Face* pTri = (Face *)triangle;
+    atgVec3* pPos = (atgVec3*)position;
+    atgVec3* pNor = (atgVec3*)normal;
+    atgVec2* pUV = (atgVec2*)texcoord;
+    atgVec4* pTan = (atgVec4*)tangent;
+
+    for (long a = 0; a < triangleCount; a++)
+    {
+        uint16 i1 = pTri->index[0];
+        uint16 i2 = pTri->index[1];
+        uint16 i3 = pTri->index[2];
+
+        const atgVec3& position1 = pPos[i1];
+        const atgVec3& position2 = pPos[i2];
+        const atgVec3& position3 = pPos[i3];
+
+        const atgVec2& uv1 = pUV[i1];
+        const atgVec2& uv2 = pUV[i2];
+        const atgVec2& uv3 = pUV[i3];
+
+        //side0 is the vector along one side of the triangle of vertices passed in, 
+        //and side1 is the vector along another side. Taking the cross product of these returns the normal.
+        atgVec3 side0 = position1 - position2;
+        atgVec3 side1 = position3 - position1;
+
+        //Calculate face normal
+        atgVec3 normal = side1.Cross(side0);
+        normal.Normalize();
+
+        //Now we use a formula to calculate the tangent. 
+        float deltaV0 = uv1.y - uv2.y;
+        float deltaV1 = uv3.y - uv1.y;
+        atgVec3 tangent = deltaV1 * side0 - deltaV0 * side1;
+        tangent.Normalize();
+
+        //Calculate binormal
+        float deltaU0 = uv1.x - uv2.x;
+        float deltaU1 = uv3.x - uv1.x;
+        atgVec3 binormal = deltaU1 * side0 - deltaU0 * side1;
+        binormal.Normalize();
+
+        //Now, we take the cross product of the tangents to get a vector which 
+        //should point in the same direction as our normal calculated above. 
+        //If it points in the opposite direction (the dot product between the normals is less than zero), 
+        //then we need to reverse the s and t tangents. 
+        //This is because the triangle has been mirrored when going from tangent space to object space.
+        //reverse tangents if necessary
+        atgVec3 tangentCross = tangent.Cross(binormal);
+        if (tangentCross.Dot(normal) < 0.0f)
+        {
+            tangent = -tangent;
+            binormal = -binormal;
+        }
+
+        pTan[i1].Set(tangent.x, tangent.y, tangent.z, 1.0);
+        pTan[i2].Set(tangent.x, tangent.y, tangent.z, 1.0);
+        pTan[i3].Set(tangent.x, tangent.y, tangent.z, 1.0);
+
+        //pTan[i1] +=tangent;
+        //pTan[i2] +=tangent;
+        //pTan[i3] +=tangent;
+
+        pTri++;
+    }
+
+
+    //for (long a = 0; a < vertexCount; a++)
+    //{
+    //    // Gram-Schmidt orthogonalize
+    //    atgVec3 v3 = Vec4ClipToVec3(pTan[a]);
+    //    v3.Normalize();
+    //    pTan[a].Set(v3.x, v3.y, v3.z, 1.0f);
+    //}
+}
+
+
+// http://www.terathon.com/code/tangent.html
+//
 void CalculateTangentArray(long vertexCount, const float *position, const float *normal,
-                           const float *texcoord, long triangleCount, const uint32 *triangle,
+                           const float *texcoord, long triangleCount, const uint16 *triangle,
                            float *tangent)
 {
-    struct Face { uint32 index[3]; };
+    struct Face { uint16 index[3]; };
 
     struct Position { float x; float y; float z; };
 
@@ -220,9 +403,9 @@ void CalculateTangentArray(long vertexCount, const float *position, const float 
 
     for (long a = 0; a < triangleCount; a++)
     {
-        long i1 = pTri->index[0];
-        long i2 = pTri->index[1];
-        long i3 = pTri->index[2];
+        uint16 i1 = pTri->index[0];
+        uint16 i2 = pTri->index[1];
+        uint16 i3 = pTri->index[2];
 
         const Position& v1 = pPos[i1];
         const Position& v2 = pPos[i2];
@@ -234,8 +417,10 @@ void CalculateTangentArray(long vertexCount, const float *position, const float 
 
         float x1 = v2.x - v1.x;
         float x2 = v3.x - v1.x;
+
         float y1 = v2.y - v1.y;
         float y2 = v3.y - v1.y;
+
         float z1 = v2.z - v1.z;
         float z2 = v3.z - v1.z;
 
@@ -244,11 +429,9 @@ void CalculateTangentArray(long vertexCount, const float *position, const float 
         float t1 = w2.y - w1.y;
         float t2 = w3.y - w1.y;
 
-        float r = 1.0F / (s1 * t2 - s2 * t1);
-        atgVec3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,
-            (t2 * z1 - t1 * z2) * r);
-        atgVec3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,
-            (s1 * z2 - s2 * z1) * r);
+        float r = 1.0f / (s1 * t2 - s2 * t1);
+        atgVec3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,(t2 * z1 - t1 * z2) * r);
+        atgVec3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,(s1 * z2 - s2 * z1) * r);
 
         tan1[i1] += sdir;
         tan1[i2] += sdir;
@@ -267,10 +450,10 @@ void CalculateTangentArray(long vertexCount, const float *position, const float 
         const atgVec3& t = tan1[a];
 
         // Gram-Schmidt orthogonalize
-        pTan[a] = Vec3ToVec4((t - n * n.Dot(t)).Normalize());
+        pTan[a] = Vec3ToVec4((t - n * n.Dot(t)).Normalize()) * 1.0f;
 
         // Calculate handedness
-        pTan[a].w = (n.Cross(t).Dot(tan2[a]) < 0.0F) ? -1.0F : 1.0F;
+        pTan[a].w = (n.Cross(t).Dot(tan2[a]) < 0.0f) ? -1.0f : 1.0f;
     }
 
     delete[] tan1;

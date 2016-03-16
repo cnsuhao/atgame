@@ -83,6 +83,8 @@ public:
     virtual bool            ConfingAndCreate();
 
     void                    SetMaterial(atgMaterial* pMaterial) { _material = pMaterial; }
+
+    //void                    SetEyePosition(const atgVec3& cameraPosition) { _cameraPosition = cameraPosition; }
 protected:
     virtual void            BeginContext(void* data);
 
@@ -91,9 +93,20 @@ protected:
     atgPointLight           _tempLight;
     bool                    _usingTempLight;
     atgMaterial*            _material;
+    //atgVec3                 _cameraPosition;
 };
 
 #define LIGHT_TEXTURE_PASS_IDENTITY "atgLightTextureShader"
 EXPOSE_INTERFACE(atgShaderLightTexture, atgPass, LIGHT_TEXTURE_PASS_IDENTITY);
 
-//class atgShaderLightNormalTexture : public  atgShaderNotLighteTexture
+class atgShaderBumpMap : public  atgShaderLightTexture
+{
+public:
+    atgShaderBumpMap();
+    ~atgShaderBumpMap();
+
+    virtual bool            ConfingAndCreate();
+};
+
+#define BUMP_MAP_PASS_IDENTITY "atgBumpMapShader"
+EXPOSE_INTERFACE(atgShaderBumpMap, atgPass, BUMP_MAP_PASS_IDENTITY);

@@ -139,11 +139,11 @@ atgIndexBuffer::~atgIndexBuffer()
     g_Renderer->RemoveGpuResource(this);
 }
 
-bool atgIndexBuffer::Create( const void *pIndices, uint32 numIndices, IndexFormat format, BufferAccessMode accessMode )
+bool atgIndexBuffer::Create( uint16 *pIndices, uint32 numIndices, IndexFormat format, BufferAccessMode accessMode )
 {
     Destory();
 
-    int indexSize = sizeof(uint32);
+    int indexSize = sizeof(uint16);
     int bufSize = numIndices * indexSize;
     _impl = new atgIndexBufferImpl;
     _impl->accessMode = accessMode;
@@ -310,6 +310,7 @@ bool atgVertexDecl::AppendElement( uint32 streamIndex, atgVertexDecl::VertexAttr
             _impl->stride += 12;
         }break;
     case atgVertexDecl::VA_Pos4:
+    case atgVertexDecl::VA_Tangent:
     case atgVertexDecl::VA_BlendFactor4:
         {
             _impl->stride += 16;
@@ -394,43 +395,49 @@ bool atgVertexBufferImpl::Bind()
         {
         case atgVertexDecl::VA_Pos3:
             {
-                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexPosition") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VP) );
                 size = 3;
                 break;
             }
         case atgVertexDecl::VA_Normal:
             {
-                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexNormal") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VN) );
                 size = 3;
+                break;
+            }
+        case atgVertexDecl::VA_Tangent:
+            {
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VT) );
+                size = 4;
                 break;
             }
         case atgVertexDecl::VA_Pos4:
             {
-                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexPosition") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VP) );
                 size = 4;
                 break;
             }
         case atgVertexDecl::VA_Diffuse:
             {
-                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexColor") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VDC) );
                 size = 3;
                 break;
             }
         case atgVertexDecl::VA_Specular:
             {
-                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_vertexSpecular") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VSC) );
                 size = 4;
                 break;
             }
         case atgVertexDecl::VA_Texture0:
             {
-                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_textureCoord") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VT0) );
                 size = 2;
                 break;
             }
         case atgVertexDecl::VA_Texture1:
             {
-                GL_ASSERT( index = glGetAttribLocation(currentProgramID, "vs_textureCoord1") );
+                GL_ASSERT( index = glGetAttribLocation(currentProgramID, OGL_V_VT1) );
                 size = 2;
                 break;
             }
@@ -649,7 +656,7 @@ public:
 
         index = index_;
 
-        // Bind our texture in Texture Unit 0
+        // Bind our texture in Texture Unit + index
         GL_ASSERT( glActiveTexture(GL_TEXTURE0 + index) );
         GL_ASSERT( glBindTexture(GL_TEXTURE_2D, TextureID) );
 
@@ -1571,6 +1578,11 @@ bool atgPass::SetTexture(const char* var_name, uint8 index)
     return false;
 }
 
+uint8 atgPass::GetTexture(const char* var_name)
+{
+    return (uint8)-1;
+}
+
 class atgRenderTargetImpl
 {
 public:
@@ -2103,9 +2115,21 @@ bool atgRenderer::DrawPrimitive( PrimitveType pt, uint32 primitveCount, uint32 v
 
 bool atgRenderer::DrawIndexedPrimitive( PrimitveType pt, uint32 primitveCount,  uint32 indicesCount, uint32 verticesCount)
 {
+    //mode
+    //    Specifies what kind of primitives to render. Symbolic constants GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, and GL_TRIANGLES are accepted.
+
+    //count
+    //    Specifies the number of elements to be rendered.
+
+    //type
+    //    Specifies the type of the values in indices. Must be GL_UNSIGNED_BYTE or GL_UNSIGNED_SHORT.
+
+    //indices
+    //    Specifies a pointer to the location where the indices are stored.
+
     GLenum gl_pt;
     if(PrimitiveTypeConvertToOGL(pt, gl_pt)){
-        GL_ASSERT( glDrawElements(gl_pt, indicesCount, GL_UNSIGNED_INT, 0) ); // with VBO
+        GL_ASSERT( glDrawElements(gl_pt, indicesCount, GL_UNSIGNED_SHORT, 0) ); // with VBO
     }
     return true;
 }

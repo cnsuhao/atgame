@@ -27,6 +27,9 @@ public:
     inline void             SetIntensity(float scale);
     inline float            GetIntensity() const;
 
+    inline void             SetLambertFactor(float scale); // between [0, 1]
+    inline float            GetLambertFactor() const;
+
     virtual void            DebugDraw();
 protected:
 
@@ -36,6 +39,7 @@ protected:
     atgVec3    _specular;
 
     float   _intensity;
+    float   _lambertFactor;
 };
 
 
@@ -142,6 +146,15 @@ inline float atgLight::GetIntensity() const
     return _intensity;
 }
 
+inline void  atgLight::SetLambertFactor(float scale)
+{
+    _lambertFactor = atgMath::Clamp(scale, 0.0f, 1.0f);
+}
+
+inline float atgLight::GetLambertFactor() const
+{
+    return _lambertFactor;
+}
 
 inline void atgDirectionalLight::SetDirection(const atgVec3& direction)
 {

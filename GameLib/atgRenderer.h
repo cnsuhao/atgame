@@ -92,6 +92,7 @@ class atgIndexBuffer : public atgGpuResource
 {
     friend class atgRenderer;
 public:
+    //>统一使用16bit了.(opengles 2.0支持 byte or short)
     enum IndexFormat
     {
         IFB_Index16,
@@ -101,7 +102,7 @@ public:
     atgIndexBuffer();
     ~atgIndexBuffer();
 
-    bool                    Create(const void* pIndices, uint32 numIndices, 
+    bool                    Create(uint16* pIndices, uint32 numIndices, 
                                    IndexFormat format, BufferAccessMode accessMode);
     bool                    Destory();
 
@@ -141,16 +142,17 @@ public:
         VA_Pos3 = ( 1 << 1 ),           ///< Position in carthesian coordinates.
         VA_Pos4 = ( 1 << 2 ),           ///< Position in homogenious coordinates
         VA_Normal = ( 1 << 3 ),         ///< Normal vector.
-        VA_Diffuse = ( 1 << 4 ),        ///< Diffuse color, 4 components.
-        VA_Specular = ( 1 << 5 ),       ///< Specular color, 4 components.
-        VA_Texture0 = ( 1 << 6 ),       ///< Texture coordinates for texture unit 0.
-        VA_Texture1 = ( 1 << 7 ),       ///< Texture coordinates for texture unit 1.
-        VA_Texture2 = ( 1 << 8 ),       ///< Texture coordinates for texture unit 2.
-        VA_Texture3 = ( 1 << 9 ),       ///< Texture coordinates for texture unit 3.
-        VA_Texture4 = ( 1 << 10 ),      ///< Texture coordinates for texture unit 4.
-        VA_Texture5 = ( 1 << 11 ),      ///< Texture coordinates for texture unit 5.
-        VA_Texture6 = ( 1 << 12 ),      ///< Texture coordinates for texture unit 6.
-        VA_Texture7 = ( 1 << 13 ),      ///< Texture coordinates for texture unit 7.
+        VA_Tangent = ( 1 << 4 ),        ///< Tangent vector. 4 components.
+        VA_Diffuse = ( 1 << 5 ),        ///< Diffuse color, 3 components.
+        VA_Specular = ( 1 << 6 ),       ///< Specular color, 3 components.
+        VA_Texture0 = ( 1 << 7 ),       ///< Texture coordinates for texture unit 0.
+        VA_Texture1 = ( 1 << 8 ),       ///< Texture coordinates for texture unit 1.
+        VA_Texture2 = ( 1 << 9 ),       ///< Texture coordinates for texture unit 2.
+        VA_Texture3 = ( 1 << 10 ),       ///< Texture coordinates for texture unit 3.
+        VA_Texture4 = ( 1 << 11 ),      ///< Texture coordinates for texture unit 4.
+        VA_Texture5 = ( 1 << 12 ),      ///< Texture coordinates for texture unit 5.
+        VA_Texture6 = ( 1 << 13 ),      ///< Texture coordinates for texture unit 6.
+        VA_Texture7 = ( 1 << 14 ),      ///< Texture coordinates for texture unit 7.
         VA_PointSize = ( 1 << 15 ),     ///< Point size.
         VA_BlendFactor4 = ( 1 << 16 ),  ///< Blend factors for vertex blending
         VA_Max                          ///< Upper limit.
@@ -382,6 +384,24 @@ public:
 #define UNF_V_VU             "vec_viewer_up"
 
 #define UNF_V_GAC            "vec_global_ambient_color"
+
+#define OGL_V_VP             "vs_vertexPosition"
+#define OGL_V_VN             "vs_vertexNormal"
+#define OGL_V_VT             "vs_vertexTangent"
+#define OGL_V_VDC            "vs_vertexDiffuse"
+#define OGL_V_VSC            "vs_vertexSpecular"
+#define OGL_V_VT0            "vs_textureCoord"
+#define OGL_V_VT1            "vs_textureCoord1"
+
+#define SAMPLER_DIFFUSE      "sampler_diffuse"
+#define SAMPLER_NORMAL       "sampler_normal"
+#define SAMPLER_BUMPMAP      "sampler_bumpmap"
+#define SAMPLER_LIGHTMAP     "sampler_lightmap"
+#define SAMPLER_SHADOWMAP    "sampler_shadowmap"
+#define SAMPLER_CUSTOM1      "sampler_custom1"
+#define SAMPLER_CUSTOM2      "sampler_custom2"
+#define SAMPLER_CUSTOM3      "sampler_custom3"
+
 public:
     atgPass();
     virtual ~atgPass();
@@ -400,6 +420,7 @@ public:
     bool                    SetMatrix4x4(const char* var_name, const atgMatrix& mat);
 
     bool                    SetTexture(const char* var_name, uint8 index);
+    uint8                   GetTexture(const char* var_name);
 #ifdef USE_DIRECTX
 
     bool                    SetVsInt(const char* var_name, int value);
@@ -415,6 +436,8 @@ public:
     bool                    SetPsFloat3(const char* var_name, const atgVec3& f);
     bool                    SetPsFloat4(const char* var_name, const atgVec4& f);
     bool                    SetPsMatrix4x4(const char* var_name, const atgMatrix& mat);
+    bool                    SetPsTexture(const char* var_name, uint8 index);
+    uint8                   GetPsTexture(const char* var_name);
 #endif // USE_DIRECTX
 
     bool                    Bind();

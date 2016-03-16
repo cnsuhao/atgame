@@ -37,7 +37,7 @@ void atgRenderer_Private_AddLine(std::vector<float>& drawLines, const atgVec3& p
     drawLines.push_back(point1.z);
     drawLines.push_back(color.x);
     drawLines.push_back(color.y);
-    drawLines.push_back(color.x);
+    drawLines.push_back(color.z);
     drawLines.push_back(point2.x);
     drawLines.push_back(point2.y);
     drawLines.push_back(point2.z);
