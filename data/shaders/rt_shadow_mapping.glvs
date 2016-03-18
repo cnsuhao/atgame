@@ -4,12 +4,12 @@
 precision highp float; 
 
 attribute vec3 vs_vertexPosition;
-attribute vec3 vs_vertexColor;
+attribute vec3 vs_vertexDiffuse;
 
 uniform mat4 mat_world_view_projection;
 uniform mat4 mat_light_view_Projection;
 
-varying vec4 ps_vertexColor;
+varying vec4 ps_vertexDiffuse;
 varying	vec3 Vertex;
 varying	vec4 LigViewPos;
 
@@ -24,5 +24,5 @@ void main(){
 	
 	LigViewPos = mat_light_view_Projection * vec4(vs_vertexPosition, 1.0);
 	
-	ps_vertexColor = vec4(vs_vertexColor, 1.0);
+	ps_vertexDiffuse = vec4(vs_vertexDiffuse, 1.0);
 }
