@@ -244,6 +244,8 @@ void atgRenderer::AddPoint(const atgVec3& center, const atgVec3& color)
 
 void atgRenderer::EndPoint()
 {
+#ifndef GL_ES_VERSION_2_0
+
     if(!_drawPoints.empty())
     {
         static const int dataCount = 6;
@@ -298,6 +300,8 @@ void atgRenderer::EndPoint()
         pColorPass->Unbind();
         //g_Renderer->SetDepthTestEnable(true);
     }
+
+#endif
 }
 
 bool atgRenderer::BeginLine()

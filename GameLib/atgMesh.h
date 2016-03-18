@@ -1,5 +1,6 @@
 #pragma once
 
+#include "atgBase.h"
 #include "atgMath.h"
 
 class atgMaterial;
@@ -49,8 +50,8 @@ public:
         atgIndexBuffer* _indexBuffer;
     };
 
-    void Render();
-    void Render(std::vector<uint8> submeshIndices);
+    void Render(const atgMatrix& worldMatrix);
+    void Render(std::vector<uint8> submeshIndices, const atgMatrix& worldMatrix);
 
     void SetDrawTanget(bool enable) { _drawTangentSpace = enable; }
 

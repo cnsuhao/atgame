@@ -23,6 +23,7 @@ atgPass* atgShaderLibFactory::FindOrCreatePass(const char* Identity, int *pRetur
             SAFE_DELETE(pass);
             return NULL;
         }
+        libPass->SetName(Identity);
         g_Renderer->InsertCachePass(Identity, libPass);
         return libPass;
     }
@@ -158,6 +159,11 @@ atgShaderLightTexture::atgShaderLightTexture()
 {
     _usingTempLight = false;
     _material = NULL;
+
+    _tempLight.SetRange(500.0f);
+    _tempLight.SetPosition(atgVec3(0.0f, 50.0f, 50.0f));
+    _tempLight.SetColor(atgVec3(0.8f, 0.8f, 0.8f));
+    _tempLight.SetSpecular(Vec3One);
 }
 
 atgShaderLightTexture::~atgShaderLightTexture()
@@ -178,10 +184,6 @@ bool atgShaderLightTexture::ConfingAndCreate()
         rs = atgPass::Create("shaders/light_texture.dxvs", "shaders/light_texture.dxps");
     }
 
-    _tempLight.SetRange(500.0f);
-    _tempLight.SetPosition(atgVec3(0.0f, 0.0f, 0.0f));
-    _tempLight.SetColor(atgVec3(0.8f, 0.8f, 0.8f));
-    _tempLight.SetSpecular(Vec3One);
     return rs;
 }
 

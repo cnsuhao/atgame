@@ -63,9 +63,6 @@
     <ClInclude Include="atgIntersection.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="atgBlenderImport.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="atgMaterial.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -76,6 +73,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="atgUtility.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="atgAssimpImport.h">
       <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>
@@ -122,9 +122,6 @@
     <ClCompile Include="atgIntersection.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="atgBlenderImport.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
     <ClCompile Include="atgMaterial.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -135,6 +132,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="atgUtility.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="atgAssimpImport.cpp">
       <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>

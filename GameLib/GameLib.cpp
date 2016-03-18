@@ -12,8 +12,6 @@
 #include "atgShaderLibrary.h"
 #include "atgUtility.h"
 
-#include "atgBlenderImport.h"
-
 //#include "perfMonitor.h"
 
 static atgTexture* g_Texture = NULL;
@@ -66,15 +64,15 @@ public :
         _camera.GetCamera()->SetFov(30.f);
         _camera.GetCamera()->SetClipFar(10000.0f);
 
-        //if (false == shadowMapping.Create())
-        //{
-        //    return false;
-        //}
-
-        if (meshTest.Init())
+        if (false == shadowMapping.Create())
         {
             return false;
         }
+
+        //if (meshTest.Init())
+        //{
+        //    return false;
+        //}
 
         //TGA_Loader::Load(&image, "model/CHRNPCICOHER156_DIFFUSE.tga", false, IsOpenGLGraph() ? CO_RGBA : CO_ARGB);
         //if (image.width > 0)
@@ -175,9 +173,9 @@ public :
 
         //g_Renderer->BindTexture(0, g_Texture);
 
-        //shadowMapping.Render(_camera.GetCamera());
+        shadowMapping.Render(_camera.GetCamera());
 
-        meshTest.Render(_camera.GetCamera());
+        //meshTest.Render(_camera.GetCamera());
 
 
         g_Renderer->EndFrame();

@@ -205,6 +205,8 @@ public:
     int8                ReadByte();
     int32               ReadDWord();
     float               ReadFloat();
+    bool                IsEnd();
+    bool                ReadLine(std::string& line);
 protected:
 #ifdef _ANDROID
     struct AAsset* _asset;
