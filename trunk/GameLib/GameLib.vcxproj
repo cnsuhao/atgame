@@ -41,13 +41,13 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OpenGLES|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Directx9|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -187,7 +187,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atgBase.h" />
-    <ClInclude Include="atgBlenderImport.h" />
+    <ClInclude Include="atgAssimpImport.h" />
     <ClInclude Include="atgCamera.h" />
     <ClInclude Include="atgGame.h" />
     <ClInclude Include="atgIntersection.h" />
@@ -207,7 +207,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="atgBase.cpp" />
-    <ClCompile Include="atgBlenderImport.cpp" />
+    <ClCompile Include="atgAssimpImport.cpp" />
     <ClCompile Include="atgCamera.cpp" />
     <ClCompile Include="atgGame.cpp" />
     <ClCompile Include="atgIntersection.cpp" />

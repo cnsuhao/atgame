@@ -67,15 +67,20 @@ LOCAL_SRC_FILES := \
 	../../atgMesh.cpp \
 	../../atgMaterial.cpp \
 	../../atgUtility.cpp \
-	../../atgBlenderImport.cpp \
-	../../GameLib.cpp \
+	../../atgAssimpImport.cpp \
+	../../../Game1/Component.cpp \
+	../../../Game1/Entity.cpp \
+	../../../Game1/IniFile.cpp \
+	../../../Game1/Propertie.cpp \
+	../../../Game1/Scene.cpp \
+	../../../Game1/Game1.cpp \
     androidMain.cpp
   
 #这里加入必要的
-LOCAL_LDLIBS    := -llog -landroid -lEGL -lGLESv2   
+LOCAL_LDLIBS    := -llog -landroid -lEGL -lGLESv2
 
 #这里加入必要的编译选项 -fno-exceptions -fno-rtti
-LOCAL_CFLAGS    := -fexceptions -finput-charset=utf-8 -D_ANDROID -DUSE_OPENGL -D_DEBUG -I"../" -I"../../jpeg-6b/src" -I"../../FreeType/include" -I"../../zlib/include" -I"../../libpng/include" -I"../android_assimp/include"
+LOCAL_CFLAGS    := -fexceptions -finput-charset=utf-8 -D_ANDROID -DUSE_OPENGL -D_DEBUG -I"../" -I"../../jpeg-6b/src" -I"../../FreeType/include" -I"../../zlib/include" -I"../../libpng/include" -I"../android_assimp/include" -I"../../Game1"
 
 #这里加入依赖的静态模块, 如果A依赖B,那么A放前面,B放后面
 LOCAL_STATIC_LIBRARIES := android_native_app_glue libjpeg FreeType png zlib assimp

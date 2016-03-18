@@ -910,7 +910,7 @@ struct atgMatrix
         m[2][index] = v.z;
     }
 
-    void GetColumn3(unsigned int index, atgVec3& v)
+    void GetColumn3(unsigned int index, atgVec3& v) const
     {
         assert(index < 4);
         v.x = m[0][index];
@@ -932,6 +932,13 @@ struct atgMatrix
         atgVec4 temp;
         temp = Transfrom(atgVec4(v, 1.0));
         return atgVec3(temp.x / temp.w, temp.y / temp.w, temp.z / temp.w);
+    }
+
+    inline atgVec3 TransfromNormal(const atgVec3& v) const
+    {
+        atgVec4 temp;
+        temp = Transfrom(atgVec4(v, 0.0));
+        return atgVec3(temp.x, temp.y, temp.z);
     }
 
     atgVec4 Transfrom(const atgVec4& v) const;

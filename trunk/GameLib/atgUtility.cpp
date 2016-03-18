@@ -1075,7 +1075,7 @@ void atgSimpleShadowMapping::DrawPlane(const char* pPassIdentity /* = NULL */)
     g_Renderer->EndFullQuad(pPassIdentity);
 }
 
-#include "atgBlenderImport.h"
+#include "atgAssimpImport.h"
 #include "atgMesh.h"
 #include "atgMaterial.h"
 
@@ -1096,7 +1096,7 @@ bool MeshTest::Init()
     _light.SetSpecular(Vec3One);
     _light.SetIntensity(1.0f);
     g_Renderer->AddBindLight(&_light);
-    return atgBlenderImport::loadMesh("model/powergirl hero156.fbx", _meshs);
+    return atgAssimpImport::loadMesh("model/powergirl hero156.fbx", _meshs);
     //return atgBlenderImport::loadMesh("model/modelBuilding_House1.fbx", _meshs);
     //return atgBlenderImport::loadMesh("model/boxA.fbx", _meshs);
 }
@@ -1107,11 +1107,11 @@ void MeshTest::Render( class atgCamera* sceneCamera )
     g_Renderer->SetMatrix(MD_PROJECTION, sceneCamera->GetProj());
     g_Renderer->SetFaceCull(FCM_CW);
 
-    //_light.DebugDraw();
+    _light.DebugDraw();
 
     for (std::vector<class atgMesh*>::iterator it = _meshs.begin(); it != _meshs.end(); ++it)
     {
-        (*it)->Render();
+        (*it)->Render(MatrixIdentity);
     }
 }
 

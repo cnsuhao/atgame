@@ -166,6 +166,48 @@ float atgReadFile::ReadFloat()
     return real; 
 }
 
+bool atgReadFile::IsEnd()
+{
+#ifdef _ANDROID
+    int32 result = AAsset_getRemainingLength(_asset);
+    return result <= 0;
+#else
+    return 0 != feof(_pf);
+#endif
+}
+
+bool atgReadFile::ReadLine( std::string& line )
+{
+    int n = 0;
+    while (!IsEnd())
+    {
+        char c = ReadByte();
+        if (c == '\r')
+        {
+            if (n != 0)
+            {
+                return true;
+            }
+            else
+            {
+                continue;
+            }
+        }
+        if (c != '\n')
+        {
+            if (c == '\t')
+            {
+                c = ' ';
+            }
+            ++n;
+            line.push_back(c);
+        }
+    }
+
+    return false;
+}
+
+
 #define FVCC(a, b, c, d) (uint32)( ((uint32)d) + (((uint32)c)<<8) + (((uint32)b)<<16) + (((uint32)a)<<24) )
 #define TAG(x) (uint32)( (((uint32)x&0x000000ff)<<24) + (((uint32)x&0x0000ff00)<<8) + (((uint32)x&0x00ff0000)>>8) + (((uint32)x&0xff000000)>>24) )
 

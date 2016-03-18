@@ -411,6 +411,7 @@ public:
     bool                    Destory();
 
     const char*             GetName();
+    void                    SetName(const char* name) { _name = name; }
 
     bool                    SetInt(const char* var_name, int value);
     bool                    SetFloat(const char* var_name, float value);

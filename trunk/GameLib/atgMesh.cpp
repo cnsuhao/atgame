@@ -104,7 +104,7 @@ atgMesh::~atgMesh(void)
    
 }
 
-void atgMesh::Render()
+void atgMesh::Render(const atgMatrix& worldMatrix)
 {
     if(_vertices.number  > 0 && !_submeshs.empty())
     {
@@ -137,7 +137,7 @@ void atgMesh::Render()
             }
         }
 
-        g_Renderer->SetMatrix(MD_WORLD, _transformation);
+        g_Renderer->SetMatrix(MD_WORLD, worldMatrix * _transformation);
 
         std::vector<SubMesh>::iterator it = _submeshs.begin();
         for (std::vector<SubMesh>::iterator end = _submeshs.end(); it != end; ++it)
@@ -156,12 +156,14 @@ void atgMesh::Render()
     }
 }
 
-void atgMesh::Render( std::vector<uint8> submeshIndices )
+void atgMesh::Render(std::vector<uint8> submeshIndices, const atgMatrix& worldMatrix)
 {
     if(_vertices.number  > 0 && !_submeshs.empty())
     {
         if (!submeshIndices.empty())
         {
+            g_Renderer->SetMatrix(MD_WORLD, worldMatrix * _transformation);
+
             std::vector<uint8>::iterator it = submeshIndices.begin();
             for (std::vector<uint8>::iterator end = submeshIndices.end(); it != end; ++it)
             {
