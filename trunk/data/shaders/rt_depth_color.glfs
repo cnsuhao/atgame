@@ -6,7 +6,6 @@ precision highp float;
 
 uniform float use_depth_texture_OES;
 
-varying vec4 ps_vertexColor;
 varying vec2 ps_depthInfo;
 
 // from Fabien Sangalard's DEngine 

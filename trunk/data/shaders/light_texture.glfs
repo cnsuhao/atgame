@@ -43,6 +43,10 @@
 //    float shininess;
 //};
 
+#ifdef GL_ES
+	precision highp float;
+#endif
+
 const int c_numberOfLights = 8;
 
 uniform int u_numberOfLights;
@@ -96,7 +100,7 @@ float Lambert( vec3 normalDir,
 ////////////////////////////////////////
 void main()
 {
-    vec3 ambient = u_globalAmbient * u_materialAmbient * texture2D(sampler_diffuse, ps_textureCoord);
+    vec3 ambient = u_globalAmbient * u_materialAmbient * texture2D(sampler_diffuse, ps_textureCoord).xyz;
     vec3 diffuse_total = vec3(0.0, 0.0, 0.0);
     vec3 specular_total = vec3(0.0, 0.0, 0.0);
 

@@ -6,7 +6,7 @@ precision highp float;
 
 uniform sampler2D rtDepthSampler;
 
-varying vec4 ps_vertexColor;
+varying vec4 ps_vertexDiffuse;
 varying	vec3 Vertex;
 varying	vec4 LigViewPos;
 
@@ -101,5 +101,5 @@ void main()
 		effect = 0.0;
 	}
    
-	gl_FragColor = ambient * ps_vertexColor + shadow * effect * ps_vertexColor;
+	gl_FragColor = ambient * ps_vertexDiffuse + shadow * effect * ps_vertexDiffuse;
 }

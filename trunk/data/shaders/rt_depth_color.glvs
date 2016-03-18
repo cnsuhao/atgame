@@ -4,12 +4,11 @@
 precision highp float; 
 
 attribute vec3 vs_vertexPosition;
-attribute vec3 vs_vertexColor;
+attribute vec3 vs_vertexDiffuse;
 
 uniform mat4 mat_world_view_projection;
 uniform mat4 mat_light_view_Projection;
 
-varying vec4 ps_vertexColor;
 varying vec2 ps_depthInfo;
 
 ////////////////////////////////////////
@@ -20,8 +19,6 @@ void main(){
 	vec4 position = mat_light_view_Projection * vec4(vs_vertexPosition, 1.0);
 	
 	gl_Position = position;
-	
-	ps_vertexColor = vec4(vs_vertexColor, 1.0);
 	
 	ps_depthInfo = position.zw;
 }
