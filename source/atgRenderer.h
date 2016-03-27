@@ -393,8 +393,11 @@ class atgEffect
 
 enum RenderTargetFormat
 {
-    RTF_A8R8G8B8,       // color
-    RTF_R32F,           // color
+    RBF_A8R8G8B8,       // color
+    RBF_R32F,           // color
+    RBF_R16F,           // color
+    RBF_D24S8,          // depth/stencil
+    RBF_D16,            // depth/stencil
 };
 
 class atgRenderTarget

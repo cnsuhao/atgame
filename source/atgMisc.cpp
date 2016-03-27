@@ -1008,9 +1008,8 @@ using namespace MdxSizeOf_Ns;
 
 class atgReadFile* g_pMdxReader = NULL;
 
-MdxModel::MdxModel(const char* fullFileName)
+MdxModel::MdxModel()
 {
-    _loadSuccess = false;
     _version = 0;
 
     _numberSequences = 0;
@@ -1023,12 +1022,131 @@ MdxModel::MdxModel(const char* fullFileName)
     _numberNodes = 0;
 
     memset(_nodes, 0, sizeof(_nodes));
-
-    load(fullFileName);
 }
 
 MdxModel::~MdxModel(void)
 {
+}
+
+
+bool MdxModel::Load( const char* fullFileName )
+{
+    atgReadFile MdxReader;
+    g_pMdxReader = &MdxReader;
+    if(!MdxReader.Open(fullFileName))
+    {
+        LOG("can't open file=%s.\n", fullFileName);
+        return false;
+    }
+    uint32 fileSize = g_pMdxReader->GetLength();
+    uint32 date = g_pMdxReader->ReadDWord();
+    if(FVCC('M','D','L','X') != TAG(date))
+    {
+        return false;
+    }
+    fileSize -= sizeOfDW;
+    int sectionSize = 0; 
+    do
+    {
+        if(!(fileSize > 0))
+        {
+            break;
+        }
+        sectionSize = 0; 
+        date = g_pMdxReader->ReadDWord();
+        fileSize -= sizeOfDW;
+        switch(TAG(date))
+        {
+        case FVCC('V','E','R','S') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadVersionSection(sectionSize)) return false;
+            break;}
+        case FVCC('M','O','D','L') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadModelInfoSection(sectionSize)) return false;;
+            break;}
+        case FVCC('S','E','Q','S'):{
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadSecquencesSection(sectionSize)) return false;
+            break;}
+        case FVCC('G','L','B','S') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadGlobalSequencesSection(sectionSize)) return false;
+            break;}
+        case FVCC('M','T','L','S') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadMaterialSeciton(sectionSize)) return false;
+            break;}
+        case FVCC('T','E','X','S') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadTexturesSection(sectionSize)) return false;
+            break;}
+        case FVCC('G','E','O','S') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadGeosetSection(sectionSize)) return false;
+            break;}
+        case FVCC('G','E','O','A') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadGeosetAnimationSection(sectionSize)) return false;
+            break; }
+        case FVCC('B','O','N','E') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadBoneSection(sectionSize)) return false;
+            break;} 
+        case FVCC('L','I','T','E') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            g_pMdxReader->Seek(sectionSize);
+            break;}
+        case FVCC('H','E','L','P') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if (!loadHelpesSection(sectionSize)) return false;            
+            break;}
+        case FVCC('A','T','C','H') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadAttachmentSection(sectionSize)) return false;
+            break;}
+        case FVCC('P','R','E','M') : { // Particle emitters
+            sectionSize = g_pMdxReader->ReadDWord();
+            g_pMdxReader->Seek(sectionSize);
+            break;}
+        case FVCC('P','R','E','2') : { // Particle emitters 2
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadParticleEmitters2Section(sectionSize)) return false;
+            break;}
+        case FVCC('R','I','B','B') : { // Ribbon emitters
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadRibbonEmittersSection(sectionSize)) return false;
+            break;}
+        case FVCC('K','E','V','T') : { // Tracks
+            sectionSize = g_pMdxReader->ReadDWord();
+            g_pMdxReader->Seek(sectionSize);
+            break;}
+        case FVCC('E','V','T','S') : { // Event objects
+            sectionSize = g_pMdxReader->ReadDWord();
+            g_pMdxReader->Seek(sectionSize);
+            break;}
+        case FVCC('C','A','M','S') : { // Cameras
+            sectionSize = g_pMdxReader->ReadDWord();
+            g_pMdxReader->Seek(sectionSize);
+            break;}
+        case FVCC('P','I','V','T') : {
+            sectionSize = g_pMdxReader->ReadDWord();
+            if(!loadPivotPointSection(sectionSize)) return false;
+            break;}
+        case FVCC('C','L','I','D') : { // Collision shapes
+            sectionSize = g_pMdxReader->ReadDWord();
+            if (!loadCollisionShapeSection(sectionSize)) return false;
+            break;}
+        default:{
+            return false;
+                }
+        }
+        fileSize -= (sectionSize + sizeOfDW);
+    } while (1);
+
+    g_pMdxReader = NULL;
+    LOG("load MdxModel(%s) Success!\n", fullFileName);
+    return true;
 }
 
 int MdxModel::GetNumberOfMesh()
@@ -1145,127 +1263,6 @@ int MdxModel::GetNumberAnimation()
 const MdxSequence& MdxModel::GetAnimation(int index)
 {
     return _sequences[index];
-}
-
-bool MdxModel::load( const char* fullFileName )
-{
-    atgReadFile MdxReader;
-    g_pMdxReader = &MdxReader;
-    if(!MdxReader.Open(fullFileName))
-    {
-        LOG("can't open file=%s.\n", fullFileName);
-        return false;
-    }
-    uint32 fileSize = g_pMdxReader->GetLength();
-    uint32 date = g_pMdxReader->ReadDWord();
-    if(FVCC('M','D','L','X') != TAG(date))
-    {
-        return false;
-    }
-    fileSize -= sizeOfDW;
-    int sectionSize = 0; 
-    do
-    {
-        if(!(fileSize > 0))
-        {
-            break;
-        }
-        sectionSize = 0; 
-        date = g_pMdxReader->ReadDWord();
-        fileSize -= sizeOfDW;
-        switch(TAG(date))
-        {
-        case FVCC('V','E','R','S') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadVersionSection(sectionSize)) return false;
-            break;}
-        case FVCC('M','O','D','L') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadModelInfoSection(sectionSize)) return false;;
-            break;}
-        case FVCC('S','E','Q','S'):{
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadSecquencesSection(sectionSize)) return false;
-            break;}
-        case FVCC('G','L','B','S') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadGlobalSequencesSection(sectionSize)) return false;
-            break;}
-        case FVCC('M','T','L','S') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadMaterialSeciton(sectionSize)) return false;
-            break;}
-        case FVCC('T','E','X','S') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadTexturesSection(sectionSize)) return false;
-            break;}
-        case FVCC('G','E','O','S') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadGeosetSection(sectionSize)) return false;
-            break;}
-        case FVCC('G','E','O','A') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadGeosetAnimationSection(sectionSize)) return false;
-            break; }
-        case FVCC('B','O','N','E') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadBoneSection(sectionSize)) return false;
-            break;} 
-        case FVCC('L','I','T','E') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            g_pMdxReader->Seek(sectionSize);
-            break;}
-        case FVCC('H','E','L','P') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if (!loadHelpesSection(sectionSize)) return false;            
-            break;}
-        case FVCC('A','T','C','H') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadAttachmentSection(sectionSize)) return false;
-            break;}
-        case FVCC('P','R','E','M') : { // Particle emitters
-            sectionSize = g_pMdxReader->ReadDWord();
-            g_pMdxReader->Seek(sectionSize);
-            break;}
-        case FVCC('P','R','E','2') : { // Particle emitters 2
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadParticleEmitters2Section(sectionSize)) return false;
-            break;}
-        case FVCC('R','I','B','B') : { // Ribbon emitters
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadRibbonEmittersSection(sectionSize)) return false;
-            break;}
-        case FVCC('K','E','V','T') : { // Tracks
-            sectionSize = g_pMdxReader->ReadDWord();
-            g_pMdxReader->Seek(sectionSize);
-            break;}
-        case FVCC('E','V','T','S') : { // Event objects
-            sectionSize = g_pMdxReader->ReadDWord();
-            g_pMdxReader->Seek(sectionSize);
-            break;}
-        case FVCC('C','A','M','S') : { // Cameras
-            sectionSize = g_pMdxReader->ReadDWord();
-            g_pMdxReader->Seek(sectionSize);
-            break;}
-        case FVCC('P','I','V','T') : {
-            sectionSize = g_pMdxReader->ReadDWord();
-            if(!loadPivotPointSection(sectionSize)) return false;
-            break;}
-        case FVCC('C','L','I','D') : { // Collision shapes
-            sectionSize = g_pMdxReader->ReadDWord();
-            if (!loadCollisionShapeSection(sectionSize)) return false;
-            break;}
-        default:{
-            return false;
-                }
-        }
-        fileSize -= (sectionSize + sizeOfDW);
-    } while (1);
-
-    g_pMdxReader = NULL;
-    _loadSuccess = true;
-    LOG("load MdxModel(%s) Success!\n", fullFileName);
-    return true;
 }
 
 bool MdxModel::loadVersionSection(int sectionSize)
@@ -2091,3 +2088,350 @@ int MdxModel::loadCollisionShape(MdxCollisionShape& CS)
     }
     return currentSize;
 }
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+#include <iostream>
+#include <sstream>
+#include <set>
+
+using namespace std;
+
+SmdModel::SmdModel()
+{
+    texDirection = true;
+
+    numVertices = 0;
+    numTriangles = 0;
+}
+
+SmdModel::~SmdModel( void )
+{
+
+}
+
+bool SmdModel::Load( const char* fullFileName )
+{
+    atgReadFile reader;
+    if (!reader.Open(fullFileName))
+    {
+        cout<<"无法打开文件"<<fullFileName<<endl;
+        return false;
+    }
+    uint32 srcBufLen = reader.GetLength();
+    int8* SourceBuffer = new int8[srcBufLen];
+    reader.Read(SourceBuffer, srcBufLen, 1);
+    reader.Close();
+
+    istringstream is(SourceBuffer);
+    //检查文件头
+    string token;
+    int num;
+    is>>token>>num;
+    if (token!="version" || num!=1)
+    {
+        cout<<"文件头错误"<<endl;
+        delete [] SourceBuffer;
+        return false;
+    }
+
+    //第一次读入mesh文件需要创建初始动作
+    SmdAnimation animation;
+    animation.name = "init_pose";
+    is>>token;
+    while (!is.eof()) //读入文件的所有信息
+    {
+        if (token == "nodes")
+        {
+            ParseNodes(is);
+        }
+        else if (token == "skeleton")
+        {
+            ParseSkeleton(is, animation);
+        }
+        else if (token == "triangles")
+        {
+            ParseTriangles(is);
+        }
+        is>>token;
+    }
+
+    animations.push_back(animation);
+
+    //统计顶点和三角形数
+    numVertices = vertices.size();
+    numTriangles = 0;
+    for (unsigned int i=0; i<groups.size(); i++)
+        numTriangles += groups[i].vertexIndices.size()/3;
+
+    delete [] SourceBuffer;
+    return true;
+}
+
+bool SmdModel::LoadAnimation( const char* fullFileName )
+{
+    if (hierarchy.empty())
+    {
+        cout<<"必须先读入模型文件"<<endl;
+        return false;
+    }
+
+    atgReadFile reader;
+    if (!reader.Open(fullFileName))
+    {
+        cout<<"无法打开文件"<<fullFileName<<endl;
+        return false;
+    }
+    uint32 srcBufLen = reader.GetLength();
+    int8* SourceBuffer = new int8[srcBufLen];
+    reader.Read(SourceBuffer, srcBufLen, 1);
+    reader.Close();
+
+    istringstream is(SourceBuffer);
+
+    //检查文件头
+    string token;
+    int num;
+    is>>token>>num;
+    if (token!="version" || num!=1)
+    {
+        cout<<"文件头错误"<<endl;
+        delete [] SourceBuffer;
+        return false;
+    }
+
+    SmdAnimation temp; //读入的动画信息保存在临时对象中
+    is>>token;
+    //读入文件的所有信息
+    while (!is.eof())
+    {
+        if (token == "nodes")
+        {
+            ParseNodes(is);
+        }
+        else if (token == "skeleton")
+        {
+            ParseSkeleton(is, temp);
+        }
+        is>>token;
+    }
+
+    animations.push_back(SmdAnimation());
+    SmdAnimation &animation = animations.back();
+    //从文件名中提取动画名称
+    animation.name = fullFileName;
+    size_t found = animation.name.find_last_of("/\\"); //去除文件路径
+    if (found != string::npos)
+        animation.name = animation.name.substr(found + 1); //去除扩展名
+    found = animation.name.find_last_of(".");
+    if (found != string::npos)
+        animation.name.erase(found);
+    //按照模型文件的架构读入动画信息
+    animation.frames.resize(temp.frames.size());
+    for(unsigned int i=0; i<animation.frames.size(); i++)
+    {
+        animation.frames[i].time = temp.frames[i].time;
+        animation.frames[i].jointkeys.resize(hierarchy.size());
+        for (unsigned int j=0; j<hierarchy.size(); j++)
+        {
+            if (hierarchyMap[j] == -1)
+                animation.frames[i].jointkeys[j] = animations[0].frames[0].jointkeys[j]; //如果没有动画信息就保持初始状态
+            else
+                animation.frames[i].jointkeys[j] = temp.frames[i].jointkeys[hierarchyMap[j]];
+        }
+    }
+
+    delete [] SourceBuffer;
+    return true;
+
+}
+
+//读入位于引号内的字符串
+void ReadString(std::istringstream &is, string &str)
+{
+    char c = 0;
+
+    while (c != '"')
+        is>>c;
+
+    is>>c;
+    while (c != '"')
+    {
+        str.push_back(c);
+        is>>c;
+    }
+}
+
+//在字符串数组里寻找字符串
+int FindName(vector<string> &names, string &name)
+{
+    for (unsigned int i=0; i<names.size(); i++)
+    {
+        if (name == names[i])
+            return i;
+    }
+
+    return -1;
+}
+
+void SmdModel::ParseNodes( std::istringstream & is)
+{
+    string token;
+    if (hierarchy.empty()) //第一次读入模型则创建骨骼架构
+    {
+        while (true)
+        {
+            SmdJointInfo info;
+            is>>token;
+            if (token == "end")
+                break;
+
+            ReadString(is, info.name);
+            is>>info.parentID;
+
+            hierarchy.push_back(info);
+        }
+    }
+    else //建立动画骨架和原始模型骨架结构的对应关系
+    {
+        vector<string> names;
+        hierarchyMap.clear();
+        while (true)
+        {
+            is>>token;
+            if (token == "end")
+                break;
+
+            string name;
+            ReadString(is, name);
+            names.push_back(name);
+
+            int parentID;
+            is>>parentID;
+        }
+
+        //对应关系保存在hierarchyMap中
+        for (unsigned int i=0; i<hierarchy.size(); i++)
+            hierarchyMap.push_back(FindName(names, hierarchy[i].name));
+    }
+}
+
+void SmdModel::ParseSkeleton( std::istringstream & is, SmdAnimation & animation)
+{
+    string token;
+    while (true)
+    {
+        is>>token;
+        if (token == "end")
+        {
+            break;
+        }
+        else if (token == "time")
+        {
+            animation.frames.push_back(SmdFrame());
+            is>>animation.frames.back().time;
+            is>>token;
+        }
+
+        animation.frames.back().jointkeys.push_back(SmdKey());
+        SmdKey &jointkey = animation.frames.back().jointkeys.back();
+
+        int index = atoi(token.c_str());
+        is>>jointkey.position[0]>>jointkey.position[1]>>jointkey.position[2];
+
+        float rotation[3];
+        is>>rotation[0]>>rotation[1]>>rotation[2];
+        QuatFromEulers(rotation, jointkey.rotation);
+    }
+}
+
+//比较两个顶点是否相等
+bool VertexCmp(SmdVertex &v1, SmdVertex &v2)
+{
+    if (abs(v1.position[0]-v2.position[0])<EPSILON &&
+        abs(v1.position[1]-v2.position[1])<EPSILON &&
+        abs(v1.position[2]-v2.position[2])<EPSILON &&
+        abs(v1.texcoord[0]-v2.texcoord[0])<EPSILON &&
+        abs(v1.texcoord[1]-v2.texcoord[1])<EPSILON)
+    {
+        if (VecDot(v1.normal, v2.normal) > 0.7f)
+            return true;
+    }
+
+    return false;
+}
+
+void SmdModel::ParseTriangles( std::istringstream & is)
+{
+    unsigned int begin;
+    set<int> normalSet;
+
+    string token;
+    is>>token;
+    while (token != "end")
+    {
+        if (groups.empty() || groups.back().name!=token)
+        {
+            begin = vertices.size(); //搜索重复的顶点的起始位置位于每个group的开头
+
+            groups.push_back(SmdGroup());
+            groups.back().name = token;
+        }
+
+        for (int i=0; i<3; i++)
+        {
+            int jointID;
+            SmdVertex vertex;
+            is>>jointID>>vertex.position[0]>>vertex.position[1]>>vertex.position[2];
+            is>>vertex.normal[0]>>vertex.normal[1]>>vertex.normal[2];
+            is>>vertex.texcoord[0]>>vertex.texcoord[1]>>vertex.numJoints;
+            //mdl反编译的SMD需要修改UV坐标
+            if (1)
+                vertex.texcoord[1] = -vertex.texcoord[1];
+
+            //分配权重的存储空间
+            vertex.jointIDs = new unsigned int[vertex.numJoints];
+            vertex.weights = new float[vertex.numJoints];
+            //读入权重
+            for (unsigned int j=0; j<vertex.numJoints; j++)
+                is>>vertex.jointIDs[j]>>vertex.weights[j];
+
+            unsigned int index;
+            int flag = -1;
+            for (index=begin; index<vertices.size(); index++) //遍历现有顶点数组
+            {
+                if (VertexCmp(vertices[index], vertex)) //如果读入的顶点已经存在则记录该顶点index
+                {
+                    flag = index;
+                    normalSet.insert(index); //记录需要重新计算法线的顶点
+                    VecAdd(vertices[index].normal, vertex.normal, vertices[index].normal); //法线相加
+                    break;
+                }
+            }
+
+            groups.back().vertexIndices.push_back(index); //记录新顶点的index
+
+            if (flag == -1)
+                vertices.push_back(vertex); //如果读入的顶点不在已有顶点列表中则保存该顶点
+        }
+
+        is>>token;
+    }
+
+    //去掉名字中的扩展名
+    for (unsigned int i=0; i<groups.size(); i++)
+    {
+        size_t found = groups[i].name.find_last_of(".");
+        if (found != string::npos)
+            groups[i].name.erase(found);
+    }
+
+    //归一化法线
+    set<int>::iterator it;
+    for (it=normalSet.begin(); it!=normalSet.end(); it++)
+        VecNormalize(vertices[*it].normal);
+}
+

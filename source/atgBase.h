@@ -47,9 +47,9 @@ bool IsOpenGLGraph();
 // Assert macros.
 #ifdef _DEBUG
     #undef AASSERT
-    #define AASSERT(expression) assert(expression)
+    #define AASSERT(expression, ...) assert(expression)
 #else
-    #define AASSERT(expression)
+    #define AASSERT(expression, ...)
 #endif
 
 // Log

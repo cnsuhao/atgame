@@ -1114,22 +1114,22 @@ atgRenderTarget::atgRenderTarget():_impl(NULL)
 
 bool atgRenderTarget::Create( uint16 width, uint16 height, RenderTargetFormat format )
 {
-    if (_impl == NULL)
-    {
-        _impl = new atgRenderTargetImpl();
-    }
-    glGenRenderbuffers(1, &_impl->renderBufferId);
-    glBindRenderbuffer(GL_RENDERBUFFER, _impl->renderBufferId);
-    //uint32 offsetX, offsetY, width, height;
-    //g_Renderer->GetViewPort(offsetX, offsetY, width, height);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4 /* 4 samples */, GL_RGBA8,  width, height);
+    //if (_impl == NULL)
+    //{
+    //    _impl = new atgRenderTargetImpl();
+    //}
+    //glGenRenderbuffers(1, &_impl->renderBufferId);
+    //glBindRenderbuffer(GL_RENDERBUFFER, _impl->renderBufferId);
+    ////uint32 offsetX, offsetY, width, height;
+    ////g_Renderer->GetViewPort(offsetX, offsetY, width, height);
+    //glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4 /* 4 samples */, GL_RGBA8,  width, height);
 
-    GLuint fbID;
-    glGenFramebuffers(1, &fbID);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbID);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _impl->renderBufferId);
+    //GLuint fbID;
+    //glGenFramebuffers(1, &fbID);
+    //glBindFramebuffer(GL_FRAMEBUFFER, fbID);
+    //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _impl->renderBufferId);
 
-    //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+    ////glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
     return true;
 }
@@ -1393,7 +1393,7 @@ void atgRenderer::SetBlendFunction(BlendFunction SrcBlend, BlendFunction DestBle
 void atgRenderer::Clear()
 {
     ATG_PROFILE("atgRenderer::Clear");
-    GL_ASSERT( glClearColor(0.0f, 0.0f, 0.0f, 1.0f) );              // Set Black Background
+    GL_ASSERT( glClearColor(0.0f, 0.141f, 0.141f, 1.0f) );              // Set Black Background
     GL_ASSERT( glClearDepth(1.0f) );                                // Set Depth Buffer Setup
     GL_ASSERT( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );// Clear Screen And Depth Buffer
 }
@@ -1540,8 +1540,10 @@ void atgRenderer::BindTexture( uint8 index, atgTexture* texture )
 
 void atgRenderer::SetPointSize(float size)
 {
+#ifndef _ANDROID
     GLfloat pointSize = size;
     glPointSize(size);
+#endif
 }
 
 #endif

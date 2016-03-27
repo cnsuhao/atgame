@@ -55,23 +55,26 @@ void atgJoint::UpdateJointTransform()
     static Matrix rotaMat;
     static Matrix scalMat;
 
-    MatIdentity(_transform.m);
+    //MatIdentity(_transform.m);
+    
     float pivot[3] = { (*_pivot)[0], (*_pivot)[1], (*_pivot)[2] };
     MatTranslation(pivot[0], pivot[1], pivot[2], pivotMat.m);
     MatTranslation(-pivot[0], -pivot[1], -pivot[2], negativePivotMat.m);
-
+    //> 计算变换矩阵
     MatScaling((*_scaling)[0], (*_scaling)[1], (*_scaling)[2], scalMat.m);  // 缩放
     QuatToMat(*_rotation, rotaMat.m);   // 旋转
     MatTranslation((*_translation)[0], (*_translation)[1], (*_translation)[2], transMat.m); // 平移
 
-    ConcatTransforms(scalMat.m, negativePivotMat.m, scalMat.m); 
-    ConcatTransforms(pivotMat.m, scalMat.m, scalMat.m); // 先平移到原点缩放后再平移回来
-    ConcatTransforms(rotaMat.m, negativePivotMat.m, rotaMat.m);
-    ConcatTransforms(pivotMat.m, rotaMat.m, rotaMat.m); // 先平移到原点旋转后再平移回来
+    ConcatTransforms(scalMat.m, negativePivotMat.m, scalMat.m); // 先平移到原点.
+
+    //ConcatTransforms(pivotMat.m, scalMat.m, scalMat.m); // 先平移到原点缩放后再平移回来
+    //ConcatTransforms(rotaMat.m, negativePivotMat.m, rotaMat.m);
+    //ConcatTransforms(pivotMat.m, rotaMat.m, rotaMat.m); // 先平移到原点旋转后再平移回来
 
     ConcatTransforms(rotaMat.m, scalMat.m, _transform.m);   // 缩放->旋转
     ConcatTransforms(transMat.m, _transform.m, _transform.m);   // ->平移
-
+    ConcatTransforms(pivotMat.m, _transform.m, _transform.m);  // 再平移回来
+    
     if (_parent)
     {
         ConcatTransforms(_parent->_transform.m, _transform.m, _transform.m);
@@ -118,6 +121,8 @@ void atgJoint::DrawJoint( atgJoint* joint, int dep )
             atgJoint::DrawJoint(child, dep);
         }
     }
+    
+    
     float pivot[3];
     VecTransform(*(joint->_pivot), joint->_transform.m, pivot);
     if (joint->GetParent())
@@ -130,7 +135,31 @@ void atgJoint::DrawJoint( atgJoint* joint, int dep )
     {
         g_Renderer->DrawPoint(pivot, lineColor[dep]);
     }
+    
+    /*
+    
+    if (joint->GetParent())
+    {
+        atgJoint* parent = joint->GetParent();
+        g_Renderer->DrawLine(*(parent->_pivot), *(joint->_pivot), lineColor[dep]);
+    }else
+    {
+        g_Renderer->DrawPoint(*(joint->_pivot), lineColor[dep]);
+    }
 
+    float pivot[3] = { 0, 0, 0 };
+    VecTransform(pivot, joint->_transform.m, pivot);
+    if (joint->GetParent())
+    {
+        float parentPivot[3] = { 0, 0, 0};
+        atgJoint* parent = joint->GetParent();
+        VecTransform(parentPivot, parent->_transform.m, parentPivot);
+        g_Renderer->DrawLine(parentPivot, pivot, lineColor[dep]);
+    }else
+    {
+        g_Renderer->DrawPoint(pivot, lineColor[dep]);
+    }
+    */
 }
 
 void atgJointAnimData::UpdateAnimTranslation( atgJoint* joint, atgJointAnimData* data, uint32 time, uint32 starTime, uint32 endTime )
@@ -157,7 +186,7 @@ void atgJointAnimData::UpdateAnimTranslation( atgJoint* joint, atgJointAnimData*
         uint32 key2Time = key1Time;
         int i = 1;
         for (; i < numberKey; i++)
-        {
+        {//>找到时间满足条件的两帧,keyIndex为前一帧
             key2Time = data->GetTimeTranslationKey(i);
             if (starTime <= key1Time && key1Time < endTime && time < key2Time)
             {
@@ -170,7 +199,7 @@ void atgJointAnimData::UpdateAnimTranslation( atgJoint* joint, atgJointAnimData*
         }
 
         if (-1 != keyIndex && key2Time > endTime)
-        {
+        {//>如果下一帧超出动作结束.那么将不使用下一帧来做插值.
             data->GetKeyTranslation(&key1Data, NULL, NULL, keyIndex);
             data->_translation[0] = key1Data[0];
             data->_translation[1] = key1Data[1];
@@ -181,14 +210,14 @@ void atgJointAnimData::UpdateAnimTranslation( atgJoint* joint, atgJointAnimData*
         if (-1 == keyIndex)
         {
             if (starTime <= key1Time &&  key1Time <= endTime && i == numberKey)
-            {
+            {//>如果当前帧满足条件.因为但是没有下一帧,而找不到插值数据.那么直接用当前帧
                 data->GetKeyTranslation(&key1Data, NULL, NULL, data->GetNumberTranslationKey() - 1);
                 data->_translation[0] = key1Data[0];
                 data->_translation[1] = key1Data[1];
                 data->_translation[2] = key1Data[2];
                 return;
             }
-
+            //>如果没有匹配帧那么默认不平移
             data->_translation[0] = 0.0f;
             data->_translation[1] = 0.0f;
             data->_translation[2] = 0.0f;
