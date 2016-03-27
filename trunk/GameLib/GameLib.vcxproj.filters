@@ -78,6 +78,9 @@
     <ClInclude Include="atgAssimpImport.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="atgModel.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -135,6 +138,9 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="atgAssimpImport.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="atgModel.cpp">
       <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>

@@ -196,6 +196,7 @@
     <ClInclude Include="atgMath.h" />
     <ClInclude Include="atgMesh.h" />
     <ClInclude Include="atgMisc.h" />
+    <ClInclude Include="atgModel.h" />
     <ClInclude Include="atgProfile.h" />
     <ClInclude Include="atgRenderer.h" />
     <ClInclude Include="atgShaderLibrary.h" />
@@ -216,6 +217,7 @@
     <ClCompile Include="atgMath.cpp" />
     <ClCompile Include="atgMesh.cpp" />
     <ClCompile Include="atgMisc.cpp" />
+    <ClCompile Include="atgModel.cpp" />
     <ClCompile Include="atgProfile.cpp" />
     <ClCompile Include="atgRenderer_Common.cpp" />
     <ClCompile Include="atgRenderer_dx.cpp" />
