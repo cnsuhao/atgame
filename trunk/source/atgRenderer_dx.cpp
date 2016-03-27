@@ -1324,6 +1324,7 @@ atgRenderTarget::~atgRenderTarget()
 
 bool atgRenderTarget::Create(uint16 width, uint16 height, RenderTargetFormat format)
 {
+    /*
     Destroy();
     
     _impl = new atgRenderTargetImpl();
@@ -1352,7 +1353,7 @@ bool atgRenderTarget::Create(uint16 width, uint16 height, RenderTargetFormat for
     {
         SAFE_DELETE( _impl );
     }
-
+    */
     return false;
 }
 

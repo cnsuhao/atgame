@@ -28,7 +28,9 @@ public:
     void                SetProjection(float Fov_y, float Aspect, float ZNear, float ZFar);
     void                SetFov(float Fov_y);
     void                SetAspect(float Aspect);
+    float               GetClipNear() const { return _zNear; }
     void                SetClipNear(float ZNear);
+    float               GetClipFar() const { return _zFar; }
     void                SetClipFar(float ZFar);
 
     void                Update();

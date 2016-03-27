@@ -1031,10 +1031,10 @@ struct MdxCollisionShape
 class MdxModel
 {
 public:
-    MdxModel(const char* fullFileName);
+    MdxModel();
     ~MdxModel(void);
 
-    bool                    IsLoadSuccess() { return _loadSuccess; }
+    bool                    Load(const char* fullFileName);
 
     int                     GetNumberOfMesh();
     int                     GetNumberOfVertexs(uint32 meshIndex);
@@ -1049,7 +1049,7 @@ public:
     MdxMaterial*            GetMeshMaterial(uint32 meshIndex);
     MdxTexture*             GetTexture(uint8 textureId);
             
-    uint8                    GetNumberOfNodes();
+    uint8                   GetNumberOfNodes();
     MdxNode*                GetNode(uint8 nodeId);
     MdxFloat3*              GetPivot(uint8 nodeId);
 
@@ -1058,7 +1058,7 @@ public:
     int                     GetNumberAnimation();
     const MdxSequence&      GetAnimation(int index);
 protected:
-    bool                    load(const char* fullFileName);
+
     bool                    loadVersionSection(int sectionSize);
     bool                    loadModelInfoSection(int sectionSize);
     bool                    loadSecquencesSection(int sectionSize);
@@ -1084,8 +1084,6 @@ protected:
     int                     loadRibbonEmitters(MdxRibbonEmitter& RE);
     int                     loadCollisionShape(MdxCollisionShape& CS);
 
-
-    bool _loadSuccess;
     uint32 _version;
     uint8 _numberSequences;
     MdxSequence _sequences[MdxSequenceMaxLength];
@@ -1115,6 +1113,133 @@ protected:
 };
 
 
+struct SmdVertex
+{
+    float position[3];
+    float normal[3];
+    float texcoord[2];
+
+    //控制顶点的骨骼节点和权重
+    unsigned int numJoints;
+    unsigned int *jointIDs;
+    float *weights;
+
+    SmdVertex()
+    {
+        numJoints = 0;
+        jointIDs = NULL;
+        weights = NULL;
+    }
+
+    //拷贝构造函数
+    SmdVertex(const SmdVertex &vertex)
+    {
+        memcpy(position, vertex.position, sizeof(float)*3);
+        memcpy(normal, vertex.normal, sizeof(float)*3);
+        memcpy(texcoord, vertex.texcoord, sizeof(float)*2);
+        numJoints = vertex.numJoints;
+        if (numJoints != 0)
+        {
+            jointIDs = new unsigned int[vertex.numJoints];
+            weights = new float[vertex.numJoints];
+            memcpy(jointIDs, vertex.jointIDs, sizeof(unsigned int)*numJoints);
+            memcpy(weights, vertex.weights, sizeof(float)*numJoints);
+        }
+        else
+        {
+            jointIDs = NULL;
+            weights = NULL;
+        }
+    }
+
+    ~SmdVertex()
+    {
+        if (jointIDs != NULL)
+            delete [] jointIDs;
+        if (weights != NULL)
+            delete [] weights;
+    }
+};
+
+
+
+class SmdMaterial
+{
+public:
+    //透明属性
+    bool translucent;
+
+private:
+    std::string name;
+    std::string basetexture;
+    std::string bumpmap;
+    std::string iris;
+};
+
+struct SmdGroup
+{
+    std::string name;
+    std::vector<int> vertexIndices;
+    SmdMaterial material;
+};
+
+struct SmdJointInfo
+{
+    std::string name;
+    int parentID;
+};
+
+struct SmdKey
+{
+    float position[3];
+    float rotation[4]; //Quaternion
+};
+
+struct SmdFrame
+{
+    unsigned int time;
+    std::vector<SmdKey> jointkeys;
+};
+
+struct SmdAnimation
+{
+    std::string name;
+    std::vector<SmdFrame> frames;
+};
+
+
+class SmdModel
+{
+public:
+    SmdModel();
+    ~SmdModel(void);
+
+    bool            Load(const char* fullFileName);
+
+    bool            LoadAnimation(const char* fullFileName);
+
+protected:
+
+    //读入骨骼架构
+    void            ParseNodes(std::istringstream &);
+    //读入骨骼运动信息
+    void            ParseSkeleton(std::istringstream &, SmdAnimation &);
+    //读入多边形信息
+    void            ParseTriangles(std::istringstream &);
+
+
+    std::vector<SmdVertex> vertices;
+    std::vector<SmdJointInfo> hierarchy;
+    std::vector<SmdAnimation> animations;
+    std::vector<SmdGroup> groups;
+
+    std::vector<int> hierarchyMap;
+
+    bool texDirection;
+
+    unsigned int numVertices;
+    unsigned int numTriangles;
+};
 
 
 #endif // _ATG_MISC_H_

@@ -69,7 +69,7 @@ struct AABBox
         return center;
     }
 
-    bool IsInner(const AABBox& other)
+    bool IsInner(const AABBox& other) const
     {
         if(IsInner(other.vMin) && IsInner(other.vMax))
         {
@@ -79,7 +79,7 @@ struct AABBox
         return false;
     }
 
-    bool IsInner(const Vec3& point)
+    bool IsInner(const Vec3& point) const
     {
         if (vMin.x < point.x && vMin.y < point.y && vMin.z < point.z && 
             point.x < vMax.x && point.y < vMax.y && point.z < vMax.z)
