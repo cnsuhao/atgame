@@ -1,14 +1,14 @@
 ////////////////////////////////////////
 // Global variable
 ////////////////////////////////////////
-matrix mat_world          			: register(vs, c0);
+matrix mat_world                    : register(vs, c0);
 matrix mat_world_view_projection    : register(vs, c4);
 matrix mat_world_inverse_transpose  : register(vs, c8);
 
 static const int c_numberOfLights = 8;
 
 float3 u_globalAmbient              :register(ps, c0);  // 全局环境光.
-float3 u_eyePosition				:register(ps, c1);	// 眼睛的位置 in world space
+float3 u_eyePosition                :register(ps, c1);  // 眼睛的位置 in world space
 
 float3 u_materialAmbient            :register(ps, c2);
 float3 u_materialDiffuse            :register(ps, c3);
@@ -101,7 +101,7 @@ float4 ps_main(VS_OUTPUT input):COLOR0
                 }
             }
             
-			float3 vertexNormal = normalize(input.ps_vertexNormal);
+            float3 vertexNormal = normalize(input.ps_vertexNormal);
             float ndl = half_lambert(vertexNormal, vertexToLightDirection, u_lightData0[i].y);
             float3 diffuse = effect * u_materialDiffuse * u_lightDiffuse[i] * ndl;
             diffuse_total += attenuation * diffuse * tex2D(sampler_diffuse, input.ps_textureCoord).xyz;
@@ -111,7 +111,7 @@ float4 ps_main(VS_OUTPUT input):COLOR0
             
             // u_materialData0.x is material shininess.
             float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
-							  pow(max(0.0, dot(vertexNormal, h)), u_materialData0.x); 
+                              pow(max(0.0, dot(vertexNormal, h)), u_materialData0.x); 
 
             specular_total += attenuation * specular;
         }

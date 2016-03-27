@@ -44,7 +44,7 @@
 //};
 
 #ifdef GL_ES
-	precision highp float;
+    precision highp float;
 #endif
 
 const int c_numberOfLights = 8;
@@ -52,7 +52,7 @@ const int c_numberOfLights = 8;
 uniform int u_numberOfLights;
 
 uniform vec3 u_globalAmbient;   // 全局环境光.
-uniform vec3 u_eyePosition;		// 眼睛的位置 in world space
+uniform vec3 u_eyePosition;     // 眼睛的位置 in world space
 
 uniform vec3 u_lightPosition[c_numberOfLights];   // in world space.
 uniform vec3 u_lightDirection[c_numberOfLights];  // in world space.
@@ -83,16 +83,16 @@ float Lambert( vec3 normalDir,
                     vec3 lightDir, float factor)
 {
     // Kajiya_Kay漫反射
-	//float TdotL = float3::dot( tangentDir, lightDir );
-	//diffuse = sqrt(1.f - TdotL * TdotL );
+    //float TdotL = float3::dot( tangentDir, lightDir );
+    //diffuse = sqrt(1.f - TdotL * TdotL );
     
     // Half-Lambert漫反射
     //float NdotL = dot(normalDir, lightDir);
     //return max(0.0, (NdotL * 0.5 + 0.5));
-	
-	// 参数式Lambert漫反射
-	float NdotL = dot(normalDir, lightDir);
-	return max(0.0, (NdotL * (1.0 - factor) + factor));
+    
+    // 参数式Lambert漫反射
+    float NdotL = dot(normalDir, lightDir);
+    return max(0.0, (NdotL * (1.0 - factor) + factor));
 }
 
 ////////////////////////////////////////
@@ -130,14 +130,14 @@ void main()
                 }
             }
             
-			vec3 vertexNormal = normalize(ps_vertexNormal);
+            vec3 vertexNormal = normalize(ps_vertexNormal);
             float ndl = Lambert(vertexNormal, vertexToLightDirection, u_lightData0[i].y);
             vec3 diffuse = effect * u_materialDiffuse * u_lightDiffuse[i] * ndl;
             diffuse_total += attenuation * diffuse * texture2D(sampler_diffuse, ps_textureCoord).xyz;
 
             vec3 h = vertexToLightDirection + normalize(u_eyePosition - ps_vertexPosition);
             h = normalize(h);
-			
+            
             // u_materialData0.x is material shininess.
             vec3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
                             pow(max(0.0, dot(vertexNormal, h)), u_materialData0.x); 

@@ -14,6 +14,6 @@ varying vec2 ps_textureCoord;
 ////////////////////////////////////////
 void main(){
 
-	gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
+    gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
     ps_textureCoord = vs_textureCoord;
 }

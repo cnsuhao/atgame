@@ -46,6 +46,6 @@ void main()
     gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
     ps_vertexPosition = (mat_world * vec4(vs_vertexPosition, 1.0)).xyz;
     ps_vertexNormal = (mat_world_inverse_transpose * vec4(vs_vertexNormal, 1.0)).xyz;
-	ps_vertexTangent = (mat_world_inverse_transpose * vs_vertexTangent).xyz;
+    ps_vertexTangent = (mat_world_inverse_transpose * vs_vertexTangent).xyz;
     ps_textureCoord = vs_textureCoord;
 }

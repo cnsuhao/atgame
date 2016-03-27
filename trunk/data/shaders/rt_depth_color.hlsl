@@ -9,14 +9,14 @@ matrix mat_light_view_Projection     : register(vs, c4);
 struct VS_INPUT
 {
     float3 position : POSITION0;
-	float3 colour   : COLOR0;
+    float3 colour   : COLOR0;
 };
 
 
 struct VS_OUTPUT
 {
     float4 position : POSITION;
-	float2 depthInfo : TEXCOORD0;
+    float2 depthInfo : TEXCOORD0;
 };
 
 //
@@ -24,12 +24,12 @@ struct VS_OUTPUT
 //
 VS_OUTPUT vs_main(VS_INPUT input)
 {
-		VS_OUTPUT output = (VS_OUTPUT)0;
+        VS_OUTPUT output = (VS_OUTPUT)0;
 
         output.position = mul(float4(input.position, 1.0f), mat_light_view_Projection);
 
-		output.depthInfo = output.position.zw;
-		
+        output.depthInfo = output.position.zw;
+        
         return output;
 }
 

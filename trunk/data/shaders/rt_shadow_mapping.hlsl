@@ -9,16 +9,16 @@ matrix mat_light_view_Projection     : register(vs, c4);
 struct VS_INPUT
 {
     float3 position : POSITION0;
-	float3 colour   : COLOR0;
+    float3 colour   : COLOR0;
 };
 
 
 struct VS_OUTPUT
 {
     float4 position : POSITION;
-	float4 colour   : COLOR0;
-	float3 Vertex   : TEXCOORD0;
-	float4 LigViewPos : TEXCOORD1;
+    float4 colour   : COLOR0;
+    float3 Vertex   : TEXCOORD0;
+    float4 LigViewPos : TEXCOORD1;
 };
 
 //
@@ -26,20 +26,20 @@ struct VS_OUTPUT
 //
 VS_OUTPUT vs_main(VS_INPUT input)
 {
-		VS_OUTPUT output = (VS_OUTPUT)0;
+        VS_OUTPUT output = (VS_OUTPUT)0;
 
         output.position = mul(float4(input.position, 1.0f), mat_world_view_projection);
 
-		output.colour = float4(input.colour, 1.0);
-		
-		output.Vertex = input.position;
-		
-		output.LigViewPos = mul(float4(input.position, 1.0f), mat_light_view_Projection);
-		
+        output.colour = float4(input.colour, 1.0);
+        
+        output.Vertex = input.position;
+        
+        output.LigViewPos = mul(float4(input.position, 1.0f), mat_light_view_Projection);
+        
         return output;
 }
 
-sampler rtDepthSampler				: register(ps, s0);
+sampler rtDepthSampler              : register(ps, s0);
 
 float3 LightPosition;
 float3 LightDirection;
@@ -89,25 +89,25 @@ float PCF(sampler depths, float2 size, float2 uv, float compare){
 //
 float4 ps_main(VS_OUTPUT input):COLOR0
 {
-	float3 v2l_dir = normalize(LightPosition - input.Vertex);
+    float3 v2l_dir = normalize(LightPosition - input.Vertex);
 
-	float cos_outer_cone = cos(clamp(spot_outer_cone, 0.0, 90.0)*_1_DIV_PI);
-	float cos_inner_cone = cos(clamp(spot_inner_cone, 0.0, 90.0)*_1_DIV_PI);
+    float cos_outer_cone = cos(clamp(spot_outer_cone, 0.0, 90.0)*_1_DIV_PI);
+    float cos_inner_cone = cos(clamp(spot_inner_cone, 0.0, 90.0)*_1_DIV_PI);
    
-	float con = dot(normalize(LightDirection), -v2l_dir);
-	float effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
-	float shadow = 1.0f;
-	if(effect > 0.0)
-	{
-		float d1 = input.LigViewPos.z / input.LigViewPos.w;
-	  
-		float2 st = float2(input.LigViewPos.xy / input.LigViewPos.w);
-		st.x = st.x * 0.5 + 0.5;
-		st.y = 1.0 - (st.y * 0.5 + 0.5);
-	  
-		//shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias * 0.01);
-		shadow = texture2DCompare(rtDepthSampler, st, d1 - bias * 0.01);
-	}
+    float con = dot(normalize(LightDirection), -v2l_dir);
+    float effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
+    float shadow = 1.0f;
+    if(effect > 0.0)
+    {
+        float d1 = input.LigViewPos.z / input.LigViewPos.w;
+      
+        float2 st = float2(input.LigViewPos.xy / input.LigViewPos.w);
+        st.x = st.x * 0.5 + 0.5;
+        st.y = 1.0 - (st.y * 0.5 + 0.5);
+      
+        //shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias * 0.01);
+        shadow = texture2DCompare(rtDepthSampler, st, d1 - bias * 0.01);
+    }
    
-	return ambient * input.colour + shadow * effect * input.colour;
+    return ambient * input.colour + shadow * effect * input.colour;
 }

@@ -11,17 +11,17 @@ varying vec2 ps_depthInfo;
 // from Fabien Sangalard's DEngine 
 vec4 pack (float depth)
 {
-	const vec4 bitSh = vec4(256.0 * 256.0 * 256.0,
-							256.0 * 256.0,
-							256.0,
-							1.0);
-	const vec4 bitMsk = vec4(0,
-							 1.0 / 256.0,
-							 1.0 / 256.0,
-							 1.0 / 256.0);
-	vec4 comp = fract(depth * bitSh);
-	comp -= comp.xxyz * bitMsk;
-	return comp;
+    const vec4 bitSh = vec4(256.0 * 256.0 * 256.0,
+                            256.0 * 256.0,
+                            256.0,
+                            1.0);
+    const vec4 bitMsk = vec4(0,
+                             1.0 / 256.0,
+                             1.0 / 256.0,
+                             1.0 / 256.0);
+    vec4 comp = fract(depth * bitSh);
+    comp -= comp.xxyz * bitMsk;
+    return comp;
 }
 
 ////////////////////////////////////////
@@ -29,23 +29,23 @@ vec4 pack (float depth)
 ////////////////////////////////////////
 void main()
 {
-	if(use_depth_texture_OES <= 0.1)
-	{
-		if(ps_depthInfo.y > 0.0)
-		{
-			// the depth
-			float normalizedDistance  = fract(ps_depthInfo.x / ps_depthInfo.y);
-		
-			// pack value into 32-bit RGBA texture
-			gl_FragColor = pack(normalizedDistance);
-		}else
-		{
-			gl_FragColor = pack(0.999999);
-		}
-	}
-	else
-	{
-		float normalizedDistance  = fract(ps_depthInfo.x / ps_depthInfo.y);
-		gl_FragColor = vec4(normalizedDistance,0.0,0.0,0.0);
-	}
+    if(use_depth_texture_OES <= 0.1)
+    {
+        if(ps_depthInfo.y > 0.0)
+        {
+            // the depth
+            float normalizedDistance  = fract(ps_depthInfo.x / ps_depthInfo.y);
+        
+            // pack value into 32-bit RGBA texture
+            gl_FragColor = pack(normalizedDistance);
+        }else
+        {
+            gl_FragColor = pack(0.999999);
+        }
+    }
+    else
+    {
+        float normalizedDistance  = fract(ps_depthInfo.x / ps_depthInfo.y);
+        gl_FragColor = vec4(normalizedDistance,0.0,0.0,0.0);
+    }
 }

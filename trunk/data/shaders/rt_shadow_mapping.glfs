@@ -7,8 +7,8 @@ precision highp float;
 uniform sampler2D rtDepthSampler;
 
 varying vec4 ps_vertexDiffuse;
-varying	vec3 Vertex;
-varying	vec4 LigViewPos;
+varying vec3 Vertex;
+varying vec4 LigViewPos;
 
 uniform vec3 LightPosition;
 uniform vec3 LightDirection;
@@ -27,21 +27,21 @@ float unpack (vec4 colour)
                                 1.0 / (256.0 * 256.0),
                                 1.0 / 256.0,
                                 1.0);
-								
+                                
     return dot(colour , bitShifts);
 }
 
 float texture2DCompare(sampler2D depths, vec2 uv, float compare){
-	float depth;
-	if(use_depth_texture_OES <= 0.0)
-	{
-		depth = unpack(texture2D(depths, uv));
-	}
-	else
-	{
-		depth = texture2D(depths, uv).x;
-	}
-	return step(compare, depth);
+    float depth;
+    if(use_depth_texture_OES <= 0.0)
+    {
+        depth = unpack(texture2D(depths, uv));
+    }
+    else
+    {
+        depth = texture2D(depths, uv).x;
+    }
+    return step(compare, depth);
 }
 
 float texture2DShadowLerp(sampler2D depths, vec2 size, vec2 uv, float compare)
@@ -77,29 +77,29 @@ float PCF(sampler2D depths, vec2 size, vec2 uv, float compare){
 // Fragment Shader Function
 ////////////////////////////////////////
 void main()
-{	
-	vec3 v2l_dir = normalize(LightPosition - Vertex);
+{   
+    vec3 v2l_dir = normalize(LightPosition - Vertex);
 
-	float cos_outer_cone = cos(clamp(spot_outer_cone, 0.0, 90.0)*_1_DIV_PI);
-	float cos_inner_cone = cos(clamp(spot_inner_cone, 0.0, 90.0)*_1_DIV_PI);
+    float cos_outer_cone = cos(clamp(spot_outer_cone, 0.0, 90.0)*_1_DIV_PI);
+    float cos_inner_cone = cos(clamp(spot_inner_cone, 0.0, 90.0)*_1_DIV_PI);
    
-	float con = dot(normalize(LightDirection), -v2l_dir);
-	float effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
-	float shadow = 1.0;
-	if(effect > 0.0)
-	{
-		float d1 = LigViewPos.z / LigViewPos.w;
-	  
-		vec2 st = vec2(LigViewPos.xy / LigViewPos.w);
-		st = (st + 1.0) /2.0;
-	  
-		//shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias * 0.01);
-		shadow = texture2DCompare(rtDepthSampler, st, d1 - bias * 0.01);
-	}
-	else
-	{
-		effect = 0.0;
-	}
+    float con = dot(normalize(LightDirection), -v2l_dir);
+    float effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
+    float shadow = 1.0;
+    if(effect > 0.0)
+    {
+        float d1 = LigViewPos.z / LigViewPos.w;
+      
+        vec2 st = vec2(LigViewPos.xy / LigViewPos.w);
+        st = (st + 1.0) /2.0;
+      
+        //shadow = PCF(rtDepthSampler, fViewportDimensions, st, d1 - bias * 0.01);
+        shadow = texture2DCompare(rtDepthSampler, st, d1 - bias * 0.01);
+    }
+    else
+    {
+        effect = 0.0;
+    }
    
-	gl_FragColor = ambient * ps_vertexDiffuse + shadow * effect * ps_vertexDiffuse;
+    gl_FragColor = ambient * ps_vertexDiffuse + shadow * effect * ps_vertexDiffuse;
 }
