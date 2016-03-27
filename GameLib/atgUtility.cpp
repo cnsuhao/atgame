@@ -66,6 +66,30 @@ void atgFlyCamera::OnKeyScanDown( Key::Scan keyscan )
             _pCamera->SetPosition(pos);
         }
         break;
+    case Key::E:
+        {
+            float oYaw = _pCamera->GetYaw();
+            oYaw += 0.01f;
+            _pCamera->SetYaw(oYaw);
+        }break;
+    case Key::Q:
+        {
+            float oYaw = _pCamera->GetYaw();
+            oYaw -= 0.01f;
+            _pCamera->SetYaw(oYaw);
+        }break;
+    case Key::Z:
+        {
+            float oPitch = _pCamera->GetPitch();
+            oPitch += 0.01f;
+            _pCamera->SetPitch(oPitch);
+        }break;
+    case Key::X:
+        {
+            float oPitch = _pCamera->GetPitch();
+            oPitch -= 0.01f;
+            _pCamera->SetPitch(oPitch);
+        }break;
     default:
         break;
     }
@@ -1078,6 +1102,7 @@ void atgSimpleShadowMapping::DrawPlane(const char* pPassIdentity /* = NULL */)
 #include "atgAssimpImport.h"
 #include "atgMesh.h"
 #include "atgMaterial.h"
+#include "atgModel.h"
 
 MeshTest::MeshTest()
 {
@@ -1086,6 +1111,7 @@ MeshTest::MeshTest()
 
 MeshTest::~MeshTest()
 {
+    SAFE_DELETE(_model);
 }
 
 bool MeshTest::Init()
@@ -1096,7 +1122,8 @@ bool MeshTest::Init()
     _light.SetSpecular(Vec3One);
     _light.SetIntensity(1.0f);
     g_Renderer->AddBindLight(&_light);
-    return atgAssimpImport::loadMesh("model/powergirl hero156.fbx", _meshs);
+    _model = new atgModel();
+    return atgAssimpImport::loadModel("model/powergirl hero156.fbx", _model);
     //return atgBlenderImport::loadMesh("model/modelBuilding_House1.fbx", _meshs);
     //return atgBlenderImport::loadMesh("model/boxA.fbx", _meshs);
 }
@@ -1108,11 +1135,7 @@ void MeshTest::Render( class atgCamera* sceneCamera )
     g_Renderer->SetFaceCull(FCM_CW);
 
     _light.DebugDraw();
-
-    for (std::vector<class atgMesh*>::iterator it = _meshs.begin(); it != _meshs.end(); ++it)
-    {
-        (*it)->Render(MatrixIdentity);
-    }
+    _model->render(MatrixIdentity);
 }
 
 void MeshTest::OnKeyScanDown( Key::Scan keyscan )
@@ -1175,38 +1198,38 @@ void MeshTest::OnKeyScanDown( Key::Scan keyscan )
         {
             static bool drawTangentSpace = false;
             drawTangentSpace = !drawTangentSpace;
-            for (uint32 i = 0; i < _meshs.size(); ++i)
+            for (uint32 i = 0; i < _model->_meshs.size(); ++i)
             {
-                _meshs[i]->SetDrawTanget(drawTangentSpace);
+                _model->_meshs[i]->SetDrawTanget(drawTangentSpace);
             }
         }break;
     case Key::One:
         {
-            for (uint32 i = 0; i < _meshs.size(); ++i)
+            for (uint32 i = 0; i < _model->_meshs.size(); ++i)
             {
-                for (uint32 j = 0; j < _meshs[i]->_materials.size(); j++)
+                for (uint32 j = 0; j < _model->_meshs[i]->_materials.size(); j++)
                 {
-                    _meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(BUMP_MAP_PASS_IDENTITY));
+                    _model->_meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(BUMP_MAP_PASS_IDENTITY));
                 }
             }
         }break;
     case Key::Two:
         {
-            for (uint32 i = 0; i < _meshs.size(); ++i)
+            for (uint32 i = 0; i < _model->_meshs.size(); ++i)
             {
-                for (uint32 j = 0; j < _meshs[i]->_materials.size(); j++)
+                for (uint32 j = 0; j < _model->_meshs[i]->_materials.size(); j++)
                 {
-                    _meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(LIGHT_TEXTURE_PASS_IDENTITY));
+                    _model->_meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(LIGHT_TEXTURE_PASS_IDENTITY));
                 }
             }
         }break;
     case Key::Three:
         {
-            for (uint32 i = 0; i < _meshs.size(); ++i)
+            for (uint32 i = 0; i < _model->_meshs.size(); ++i)
             {
-                for (uint32 j = 0; j < _meshs[i]->_materials.size(); j++)
+                for (uint32 j = 0; j < _model->_meshs[i]->_materials.size(); j++)
                 {
-                    _meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(NOT_LIGNTE_TEXTURE_PASS_IDENTITY));
+                    _model->_meshs[i]->_materials[j]->SetPass(atgShaderLibFactory::FindOrCreatePass(NOT_LIGNTE_TEXTURE_PASS_IDENTITY));
                 }
             }
         }break;

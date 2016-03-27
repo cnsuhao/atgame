@@ -169,7 +169,17 @@ void atgCamera::_UpdateView()
         _forward = q.GetColumn2();
         _updateViewByAngle = false;
     }
+    else
+    {
+        atgMatrix mat(MatrixIdentity);
+        mat.SetColumn3(0, GetRight().m);
+        mat.SetColumn3(1, _up.m);
+        mat.SetColumn3(2, _forward.m);
 
+        atgQuaternion q;
+        mat.Get(q);
+        q.GetEulerAngle(_eulerAngle);
+    }
     atgVec3 at = _position + _forward;
     atgMatrix::LookAt(_position, at, _up, _viewMat);
 }

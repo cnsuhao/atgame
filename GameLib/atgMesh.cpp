@@ -101,7 +101,17 @@ atgMesh::atgMesh(void)
 
 atgMesh::~atgMesh(void)
 {
-   
+    std::vector<SubMesh>::iterator it = _submeshs.begin();
+    for (std::vector<SubMesh>::iterator end = _submeshs.end(); it != end; ++it)
+    {
+        SAFE_DELETE_ARRAY((*it)._faces.indices);
+    }
+
+   SAFE_DELETE_ARRAY(_vertices.positions);
+   SAFE_DELETE_ARRAY(_vertices.normals);
+   SAFE_DELETE_ARRAY(_vertices.tangent);
+   SAFE_DELETE_ARRAY(_vertices.colors);
+   SAFE_DELETE_ARRAY(_vertices.texureCoords);
 }
 
 void atgMesh::Render(const atgMatrix& worldMatrix)

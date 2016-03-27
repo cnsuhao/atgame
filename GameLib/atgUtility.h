@@ -143,6 +143,6 @@ public:
     void OnKeyScanDown(Key::Scan keyscan);
 
 
-    std::vector<class atgMesh*> _meshs;
+    class atgModel* _model;
     atgPointLight _light;
 };
