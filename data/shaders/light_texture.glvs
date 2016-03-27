@@ -33,7 +33,7 @@ uniform mat4 mat_world_view_projection;
 uniform mat4 mat_world_inverse_transpose;
 
 varying vec3 ps_vertexPosition; // in world space
-varying vec3 ps_vertexNormal;	// in world space
+varying vec3 ps_vertexNormal;   // in world space
 varying vec2 ps_textureCoord;
 
 ////////////////////////////////////////

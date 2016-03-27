@@ -10,19 +10,19 @@ uniform mat4 mat_world_view_projection;
 uniform mat4 mat_light_view_Projection;
 
 varying vec4 ps_vertexDiffuse;
-varying	vec3 Vertex;
-varying	vec4 LigViewPos;
+varying vec3 Vertex;
+varying vec4 LigViewPos;
 
 ////////////////////////////////////////
 // Vertex Shader Function
 ////////////////////////////////////////
 void main(){
 
-	gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
-	
-	Vertex = vs_vertexPosition;
-	
-	LigViewPos = mat_light_view_Projection * vec4(vs_vertexPosition, 1.0);
-	
-	ps_vertexDiffuse = vec4(vs_vertexDiffuse, 1.0);
+    gl_Position = mat_world_view_projection * vec4(vs_vertexPosition, 1.0);
+    
+    Vertex = vs_vertexPosition;
+    
+    LigViewPos = mat_light_view_Projection * vec4(vs_vertexPosition, 1.0);
+    
+    ps_vertexDiffuse = vec4(vs_vertexDiffuse, 1.0);
 }

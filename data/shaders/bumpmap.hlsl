@@ -1,14 +1,14 @@
 ////////////////////////////////////////
 // Global variable
 ////////////////////////////////////////
-matrix mat_world          			: register(vs, c0);
+matrix mat_world                    : register(vs, c0);
 matrix mat_world_view_projection    : register(vs, c4);
 matrix mat_world_inverse_transpose  : register(vs, c8);
 
 static const int c_numberOfLights = 8;
 
 float3 u_globalAmbient              :register(ps, c0);  // 全局环境光.
-float3 u_eyePosition				:register(ps, c1);	// 眼睛的位置 in world space
+float3 u_eyePosition                :register(ps, c1);  // 眼睛的位置 in world space
 
 float3 u_materialAmbient            :register(ps, c2);
 float3 u_materialDiffuse            :register(ps, c3);
@@ -28,7 +28,7 @@ struct VS_INPUT
 {
     float4 vs_vertexPosition    : POSITION0;
     float3 vs_vertexNormal      : NORMAL0;
-	float4 vs_vertexTangent		: TANGENT0;
+    float4 vs_vertexTangent     : TANGENT0;
     float2 vs_textureCoord      : TEXCOORD0;
 };
 
@@ -37,7 +37,7 @@ struct VS_OUTPUT
     float4 ps_vertexFinalPosition   : POSITION;
     float3 ps_vertexPosition        : TEXCOORD0;
     float3 ps_vertexNormal          : TEXCOORD1;
-	float3 ps_vertexTangent 		: TEXCOORD2;
+    float3 ps_vertexTangent         : TEXCOORD2;
     float2 ps_textureCoord          : TEXCOORD3;
 };
 
@@ -51,7 +51,7 @@ VS_OUTPUT vs_main(VS_INPUT input)
     output.ps_vertexFinalPosition = mul(input.vs_vertexPosition, mat_world_view_projection);
     output.ps_vertexPosition = mul(input.vs_vertexPosition, mat_world).xyz;
     output.ps_vertexNormal = mul(float4(input.vs_vertexNormal, 1.0), mat_world_inverse_transpose).xyz;
-	output.ps_vertexTangent = mul(input.vs_vertexTangent, mat_world_inverse_transpose).xyz;
+    output.ps_vertexTangent = mul(input.vs_vertexTangent, mat_world_inverse_transpose).xyz;
     output.ps_textureCoord = input.vs_textureCoord;
 
     return output;
@@ -75,7 +75,7 @@ float half_lambert( in float3 normalDir,
 ////////////////////////////////////////
 float4 ps_main(VS_OUTPUT input):COLOR0
 {
-	float3 diffuse_color = tex2D(sampler_diffuse, input.ps_textureCoord).xyz;
+    float3 diffuse_color = tex2D(sampler_diffuse, input.ps_textureCoord).xyz;
     float3 ambient = u_globalAmbient * u_materialAmbient * diffuse_color;
     float3 diffuse_total = float3(0.0, 0.0, 0.0);
     float3 specular_total = float3(0.0, 0.0, 0.0);
@@ -105,28 +105,28 @@ float4 ps_main(VS_OUTPUT input):COLOR0
                     effect = smoothstep(cos_outer_cone, cos_inner_cone, con);
                 }
             }
-			
-			float3 vertexNormal = normalize(input.ps_vertexNormal);
-			float3 vertexTangent = normalize(input.ps_vertexTangent);
-			float3 vertexBitangent = cross(vertexNormal, vertexTangent);
-			float3x3 matrixTS = float3x3(vertexTangent.x, vertexBitangent.x, vertexNormal.x,
-			   						     vertexTangent.y, vertexBitangent.y, vertexNormal.y,
-								         vertexTangent.z, vertexBitangent.z, vertexNormal.z);
-			
-			vertexToLightDirection = mul(vertexToLightDirection, matrixTS);
             
-			float3 finalVertexNormal = normalize(tex2D(sampler_bumpmap, input.ps_textureCoord).xyz * 2.0 - 1.0);
+            float3 vertexNormal = normalize(input.ps_vertexNormal);
+            float3 vertexTangent = normalize(input.ps_vertexTangent);
+            float3 vertexBitangent = cross(vertexNormal, vertexTangent);
+            float3x3 matrixTS = float3x3(vertexTangent.x, vertexBitangent.x, vertexNormal.x,
+                                         vertexTangent.y, vertexBitangent.y, vertexNormal.y,
+                                         vertexTangent.z, vertexBitangent.z, vertexNormal.z);
+            
+            vertexToLightDirection = mul(vertexToLightDirection, matrixTS);
+            
+            float3 finalVertexNormal = normalize(tex2D(sampler_bumpmap, input.ps_textureCoord).xyz * 2.0 - 1.0);
             float ndl = half_lambert(finalVertexNormal, vertexToLightDirection, u_lightData0[i].y);
             float3 diffuse = effect * u_materialDiffuse * u_lightDiffuse[i] * ndl;
             diffuse_total += attenuation * diffuse * diffuse_color;
             
-			float3 eyeDirection = mul(normalize(u_eyePosition - input.ps_vertexPosition), matrixTS);
+            float3 eyeDirection = mul(normalize(u_eyePosition - input.ps_vertexPosition), matrixTS);
             float3 h = vertexToLightDirection + eyeDirection;
             h = normalize(h);
             
             // u_materialData0.x is material shininess.
             float3 specular = effect * u_materialSpecular * u_lightSpecular[i] * 
-							  pow(max(0.0, dot(finalVertexNormal, h)), u_materialData0.x); 
+                              pow(max(0.0, dot(finalVertexNormal, h)), u_materialData0.x); 
 
             specular_total += attenuation * specular;
         }

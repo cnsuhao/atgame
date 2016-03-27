@@ -16,9 +16,9 @@ varying vec2 ps_depthInfo;
 ////////////////////////////////////////
 void main(){
 
-	vec4 position = mat_light_view_Projection * vec4(vs_vertexPosition, 1.0);
-	
-	gl_Position = position;
-	
-	ps_depthInfo = position.zw;
+    vec4 position = mat_light_view_Projection * vec4(vs_vertexPosition, 1.0);
+    
+    gl_Position = position;
+    
+    ps_depthInfo = position.zw;
 }
