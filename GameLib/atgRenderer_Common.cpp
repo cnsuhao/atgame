@@ -5,6 +5,11 @@
 
 extern void __atgSetVSyncState(bool enable);
 
+//>nvidia卡优先使用
+//extern "C" {
+//    _declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+//}
+
 atgRenderer* g_Renderer = NULL;
 
 const char* StringOpenGLIdentity = "OpenGL Renderer";

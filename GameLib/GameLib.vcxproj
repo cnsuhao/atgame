@@ -194,6 +194,7 @@
     <ClInclude Include="atgLight.h" />
     <ClInclude Include="atgMaterial.h" />
     <ClInclude Include="atgMath.h" />
+    <ClInclude Include="atgMdxImport.h" />
     <ClInclude Include="atgMesh.h" />
     <ClInclude Include="atgMisc.h" />
     <ClInclude Include="atgModel.h" />
@@ -215,6 +216,7 @@
     <ClCompile Include="atgLight.cpp" />
     <ClCompile Include="atgMaterial.cpp" />
     <ClCompile Include="atgMath.cpp" />
+    <ClCompile Include="atgMdxImport.cpp" />
     <ClCompile Include="atgMesh.cpp" />
     <ClCompile Include="atgMisc.cpp" />
     <ClCompile Include="atgModel.cpp" />
