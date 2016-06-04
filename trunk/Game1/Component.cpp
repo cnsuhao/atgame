@@ -1,6 +1,6 @@
 #include "Component.h"
 #include "Entity.h"
-#include "atgAssimpImport.h"
+#include "ModelMgr.h"
 #include "atgMaterial.h"
 #include "atgShaderLibrary.h"
 
@@ -88,14 +88,15 @@ void* CameraComponent::GetFunc()
 }
 
 
-ModelComponent::ModelComponent():_model(0)
+ModelComponent::ModelComponent():_model(0),_pass(0)
 {
 
 }
 
 ModelComponent::~ModelComponent()
 {
-    SAFE_DELETE(_model);
+    _model = 0;
+    _pass = 0;
 }
 
 bool ModelComponent::Load( const Propertie& prop, Entity* ent )
@@ -112,27 +113,13 @@ bool ModelComponent::Load( const Propertie& prop, Entity* ent )
         return false;
     }
 
-    _model = new atgModel();
-    if(!atgAssimpImport::loadModel(prop.GetString("model_path", "").c_str(), _model))
+    _model = ModelMgr::Get().Load(prop.GetString("model_path", "").c_str());
+    if (_model == 0)
     {
-        SAFE_DELETE(_model);
         return false;
     }
 
-    if (prop.HasKey("shader"))
-    {
-        atgPass* pass = atgShaderLibFactory::FindOrCreatePass(prop.GetString("shader", "").c_str());
-        if (pass)
-        {
-            for (uint32 i = 0; i < _model->_meshs.size(); ++i)
-            {
-                for (uint32 j = 0; j < _model->_meshs[i]->_materials.size(); j++)
-                {
-                    _model->_meshs[i]->_materials[j]->SetPass(pass);
-                }
-            }
-        }
-    }
+    _pass = atgShaderLibFactory::FindOrCreatePass(prop.GetString("shader", "").c_str());
 
 
     return true;
@@ -152,6 +139,17 @@ void ModelComponent::Render()
 {
     if (_model)
     {
+        if (_pass)
+        {
+            for (uint32 i = 0; i < _model->_meshs.size(); ++i)
+            {
+                for (uint32 j = 0; j < _model->_meshs[i]->_materials.size(); j++)
+                {
+                    _model->_meshs[i]->_materials[j]->SetPass(_pass);
+                }
+            }
+        }
+
         _model->render(_parent->GetWorldMatrix());
     }
 }

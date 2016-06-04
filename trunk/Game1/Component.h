@@ -1,6 +1,7 @@
 #pragma once
 
 #include "atgCamera.h"
+#include "atgRenderer.h"
 #include "atgMesh.h"
 #include "atgModel.h"
 #include "atgLight.h"
@@ -62,6 +63,7 @@ public:
 
 private:
     atgModel* _model;
+    atgPass* _pass;
 };
 
 
