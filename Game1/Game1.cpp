@@ -40,6 +40,7 @@ public :
 
     void OnKeyScanDown(Key::Scan keyscan)
     {
+        _scene.OnKeyScanDown(keyscan);
         atgGame::OnKeyScanDown(keyscan);
     }
 

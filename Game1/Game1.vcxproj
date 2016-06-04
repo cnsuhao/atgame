@@ -190,6 +190,7 @@
     <ClInclude Include="Component.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="IniFile.h" />
+    <ClInclude Include="ModelMgr.h" />
     <ClInclude Include="Propertie.h" />
     <ClInclude Include="PropertieMgr.h" />
     <ClInclude Include="Scene.h" />
@@ -201,6 +202,7 @@
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game1.cpp" />
     <ClCompile Include="IniFile.cpp" />
+    <ClCompile Include="ModelMgr.cpp" />
     <ClCompile Include="Propertie.cpp" />
     <ClCompile Include="PropertieMgr.cpp" />
     <ClCompile Include="Scene.cpp" />

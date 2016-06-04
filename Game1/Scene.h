@@ -29,6 +29,8 @@ namespace G1
         void SetActiveCamera(const std::string name) { _cameraName = name; }
         const std::string& GetActiveName() { return _cameraName; }
 
+        void OnKeyScanDown(Key::Scan keyscan);
+
     protected:
         atgCamera* GetRenderCamera(const std::string& cameraName);
 

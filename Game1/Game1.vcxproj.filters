@@ -45,6 +45,9 @@
     <ClInclude Include="Scene.h">
       <Filter>Enitiy</Filter>
     </ClInclude>
+    <ClInclude Include="ModelMgr.h">
+      <Filter>Enitiy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -69,6 +72,9 @@
       <Filter>Enitiy</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
+      <Filter>Enitiy</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelMgr.cpp">
       <Filter>Enitiy</Filter>
     </ClCompile>
   </ItemGroup>

@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include "Component.h"
 #include "atgRenderer.h"
+#include "atgUtility.h"
 
 using namespace std;
 
@@ -180,7 +181,7 @@ void Scene::Unload()
 
 void Scene::AddEntity(Entity* ent)
 {
-    LOG("=====>AddEntity[%s]", ent->GetName().c_str());
+    LOG("=====>AddEntity[%s]\n", ent->GetName().c_str());
     _entitys.push_back(ent);
 }
 
@@ -251,6 +252,26 @@ atgCamera* Scene::GetRenderCamera( const std::string& cameraName )
     }
 
     return 0;
+}
+
+void Scene::OnKeyScanDown( Key::Scan keyscan )
+{
+    atgCamera* pCamera = NULL;
+    std::list<Component*>::iterator it = _cameras.begin();
+    for (std::list<Component*>::iterator end = _cameras.end(); it != end; ++it)
+    {
+        if ((*it)->GetName() == _cameraName)
+        {
+            pCamera = (atgCamera*)((*it)->GetFunc());
+
+            atgFlyCamera flyCam;
+            if(flyCam.Create(pCamera))
+            {
+                flyCam.OnKeyScanDown(keyscan);
+            }
+            return;
+        }
+    }
 }
 
 }
