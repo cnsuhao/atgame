@@ -893,7 +893,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     }
 
     //LOG("create a atgTexture[%p].\n", this);
-
+    SetFilterMode(TFM_FILTER_BILINEAR);
     return true;
 }
 
@@ -972,6 +972,7 @@ void atgTexture::SetFilterMode(TextureFilterMode filter)
     GL_ASSERT( glBindTexture(GL_TEXTURE_2D, _impl->TextureID) );
     switch (filter)
     {
+    case TFM_FILTER_DEFAULT:
     case TFM_FILTER_NEAREST:
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) );
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
@@ -989,8 +990,6 @@ void atgTexture::SetFilterMode(TextureFilterMode filter)
     case TFM_FILTER_NOT_MIPMAP_ONLY_LINEAR:
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
         GL_ASSERT( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-        break;
-    case TFM_FILTER_DEFAULT:
         break;
     case MAX_FILTERMODES:
         break;

@@ -67,6 +67,7 @@ LOCAL_SRC_FILES := \
 	../../atgMesh.cpp \
 	../../atgMaterial.cpp \
 	../../atgUtility.cpp \
+    ../../atgModel.cpp \
 	../../atgAssimpImport.cpp \
 	../../../Game1/Component.cpp \
 	../../../Game1/Entity.cpp \

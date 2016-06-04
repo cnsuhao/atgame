@@ -68,6 +68,45 @@ uint64 GetAbsoluteMsecTime()
 #endif // _WIN32
 }
 
+bool FileInfo::GetInfo( const char* fullFileName, std::string& fileName, std::string& path, std::string& extension )
+{
+    char fullName[260];
+    size_t len = strlen(fullFileName);
+    strcpy(fullName, fullFileName);
+
+    // convert '//' to '\'
+    int i = -1;
+    while (fullName[++i] != '\0')
+    {
+        if(fullName[i] == '\\')
+            fullName[i] = '/';
+    }
+
+    i = len;
+    int step = 0;
+    while (--i >= 0)
+    {
+        if (fullName[i] == '.'){
+            step = 1;
+            continue;
+        }
+        
+        if (step == 1 && fullName[i] == '/')
+            step = 2;
+
+        if (step == 0)
+            extension = fullName[i] + extension;
+
+        if (step == 1)
+            fileName = fullName[i] + fileName;
+
+        if(step == 2)
+            path = fullName[i] + path;
+    }
+
+    return step == 2;
+}
+
 atgReadFile::atgReadFile()
 {
 #ifdef _ANDROID
@@ -1478,6 +1517,24 @@ MdxFace* MdxModel::GetFace( uint32 meshIndex )
     return NULL;
 }
 
+int MdxModel::GetNumberOfFaceGroups(uint32 meshIndex)
+{
+    if (meshIndex < _numberMesh)
+    {
+        return _meshs[meshIndex].numberFaceGroups;
+    }
+    return 0;
+}
+
+uint32* MdxModel::GetFaceGroup(uint32 meshIndex)
+{
+    if (meshIndex < _numberMesh)
+    {
+        return _meshs[meshIndex].faceGroups;
+    }
+    return NULL;
+}
+
 MdxFloat3* MdxModel::GetNormalsOfVertexs( uint32 meshIndex )
 {
     if (meshIndex < _numberMesh)
@@ -1494,6 +1551,16 @@ MdxFloat2* MdxModel::GetTexturesOfVertexs( uint32 meshIndex )
         return _meshs[meshIndex].vertexTexturePositions;
     }
     return NULL;
+}
+
+int32 MdxModel::GetMeshMaterialId(uint32 meshIndex)
+{
+    if (meshIndex < _numberMesh)
+    {
+        return _meshs[meshIndex].materialId;
+    }
+
+    return -1;
 }
 
 MdxMaterial* MdxModel::GetMeshMaterial(uint32 meshIndex)
@@ -2942,6 +3009,23 @@ void ImageLoader::AddLoader( LoaderInterface* loader )
     }
 }
 
+
+bool ImageLoader::HasLoader( std::string& fileExt )
+{
+    std::vector<LoaderInterface*>::iterator it = ImageLoader::loaders.begin();
+    for (std::vector<LoaderInterface*>::iterator end = ImageLoader::loaders.end(); 
+        it != end; ++it)
+    {
+        if((*it)->FileExt() == fileExt)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 std::string ImageLoader::GetFileExt( const char* filename )
 {
     std::string fileName(filename);
@@ -2973,3 +3057,4 @@ std::string ImageLoader::GetFilePath( const char* filename )
 
     return "";
 }
+

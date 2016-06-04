@@ -191,6 +191,13 @@ void DumpBinaryData(void* pData, unsigned int pDataLen, unsigned int numNewLine,
     logfunc("\n");
 }
 
+class FileInfo
+{
+public:
+    static bool GetInfo(const char* fullFileName, std::string& fileName, std::string& path, std::string& extension);
+};
+
+
 class atgReadFile
 {
 public:
@@ -254,7 +261,7 @@ public:
     void Release(Image* image);
 
     void AddLoader(LoaderInterface* loader);
-
+    bool HasLoader(std::string& fileExt);
 public:
     static std::string GetFileExt(const char* filename);
     static std::string GetFilePath(const char* filename);
@@ -1120,9 +1127,13 @@ public:
     int                     GetNumberOfFaces(uint32 meshIndex);
     MdxFace*                GetFace(uint32 meshIndex);
 
+    int                     GetNumberOfFaceGroups(uint32 meshIndex);
+    uint32*                 GetFaceGroup(uint32 meshIndex);
+
     MdxFloat3*              GetNormalsOfVertexs(uint32 meshIndex);
     MdxFloat2*              GetTexturesOfVertexs(uint32 meshIndex);
 
+    int32                   GetMeshMaterialId(uint32 meshIndex);
     MdxMaterial*            GetMeshMaterial(uint32 meshIndex);
     MdxTexture*             GetTexture(uint8 textureId);
             

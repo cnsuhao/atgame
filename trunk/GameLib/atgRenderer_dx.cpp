@@ -750,8 +750,8 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     switch (_format)
     {
     case TF_R8G8B8:
-        _inputFormat = D3DFMT_R8G8B8; //> directx9 don't support 24 bit format.
-        _inputFormat = D3DFMT_X8R8G8B8;
+        //_inputFormat = D3DFMT_R8G8B8; //> directx9 don't support 24 bit format.
+        _inputFormat = D3DFMT_A8R8G8B8;
         pixelSize = 3;
         break;
     case TF_R5G6B5:
@@ -827,6 +827,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
     if(!isFloatData)
     {
         usage |= D3DUSAGE_AUTOGENMIPMAP;
+        levels = 0;
     }
 
     if (useToRenderTarget)
@@ -868,7 +869,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         lockData = Lock();
         if (lockData.pAddr)
         {
-            if (_inputFormat == D3DFMT_X8R8G8B8 && pixelSize == 3)
+            if (/*_inputFormat == D3DFMT_X8R8G8B8 && */pixelSize == 3)
             {
                 uint8 *pPtr = (uint8 *)pData;
                 for (uint32 i=0; i < _height; ++i)
@@ -916,7 +917,7 @@ bool atgTexture::Create( uint32 width, uint32 height, TextureFormat format, cons
         DX_ASSERT( _impl->pDXTX->SetAutoGenFilterType(D3DTEXF_LINEAR) );
         _impl->pDXTX->GenerateMipSubLevels();
     }
-
+    _filter = TFM_FILTER_BILINEAR;
     return true;
 }
 
@@ -991,6 +992,7 @@ bool atgTexture::Bind(uint8 index)
     {
         switch (_filter)
         {
+        case TFM_FILTER_DEFAULT:
         case TFM_FILTER_NEAREST:
             {
                 DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MINFILTER, D3DTEXF_POINT) );
@@ -1021,11 +1023,6 @@ bool atgTexture::Bind(uint8 index)
                 DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR) );
                 DX_ASSERT( g_pd3dDevice->SetSamplerState(index, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR) );
             }break;
-        case TFM_FILTER_DEFAULT:
-            {
-                //>什么也不做
-                break;
-            }
         default:
             break;
         }
@@ -2126,6 +2123,22 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
         LOG("%s\n", VendorName.c_str());
     }
 
+    UINT adapter            = D3DADAPTER_DEFAULT;
+    D3DDEVTYPE deviceType   = D3DDEVTYPE_HAL;
+    for (UINT adapterIndex = 0; adapterIndex < g_pD3D->GetAdapterCount(); ++adapterIndex)
+    {
+        D3DADAPTER_IDENTIFIER9 identifier;
+
+        g_pD3D->GetAdapterIdentifier(adapterIndex, 0 ,&identifier);
+
+        if (strcmp(identifier.Description,"NVIDIA NVPerfHUD")==0)
+        {
+            adapter    = adapterIndex;
+            deviceType = D3DDEVTYPE_REF;
+            break;
+        }
+    }
+
     // Set Render Parameter
     g_d3dpp = new D3DPRESENT_PARAMETERS();
     ZeroMemory( g_d3dpp, sizeof(D3DPRESENT_PARAMETERS) );
@@ -2152,7 +2165,7 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
     {
         DWORD QualityLevels = 0;
         HRESULT Result = g_pD3D->CheckDeviceMultiSampleType(
-            D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, g_d3dpp->BackBufferFormat,
+            adapter, deviceType, g_d3dpp->BackBufferFormat,
             g_d3dpp->Windowed, g_d3dpp->MultiSampleType, &QualityLevels);
 
         if (Result == D3D_OK)
@@ -2164,7 +2177,7 @@ bool atgRenderer::Initialize( uint32 width, uint32 height, uint8 bpp )
     }
 
 
-    if( FAILED( g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, g_hWnd,
+    if( FAILED( g_pD3D->CreateDevice(adapter, deviceType, g_hWnd,
         D3DCREATE_HARDWARE_VERTEXPROCESSING,
         g_d3dpp, &g_pd3dDevice ) ) )
     {
